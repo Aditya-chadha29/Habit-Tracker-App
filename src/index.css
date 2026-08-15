@@ -1,0 +1,38 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-ground: #181716;
+  --color-tabbar: #1c1b19;
+  --color-ink: #f3f2f2;
+  --color-gold: #e1ad66;
+  --color-gold-pressed: #c28d41;
+
+  --font-heading: 'Cormorant Garamond', serif;
+  --font-body: 'Lora', serif;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background: var(--color-ground);
+    color: var(--color-ink);
+    font-family: var(--font-body);
+    font-size: 14px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-gold);
+    outline-offset: 2px;
+  }
+}
+
+@utility tnum {
+  font-feature-settings: 'tnum';
+}

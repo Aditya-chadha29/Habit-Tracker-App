@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="_ds/classical-809dfa09-84ce-4d8b-9213-1b16ffa72192/styles.css">
+<script src="_ds/classical-809dfa09-84ce-4d8b-9213-1b16ffa72192/_ds_bundle.js"></script>
+<style>
+body{margin:0;background:#f3f2f2}
+a{color:var(--color-accent-700);text-underline-offset:3px}
+a:hover{color:var(--color-accent-600)}
+</style>
+</helmet>
+<section style="display:flex;gap:44px;align-items:flex-start;padding:44px 48px 64px;font-family:var(--font-body);color:#201f1d">
+
+<div style="width:360px;flex:none;display:flex;flex-direction:column;gap:14px">
+<div style="font-family:var(--font-heading);font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--color-accent-700)">Habit Tracker · v1 · Aditya Chadha</div>
+<h1 style="font-family:var(--font-heading);font-weight:400;font-size:40px;line-height:1.05;margin:0">Four screens, one honest record.</h1>
+<hr class="hr" style="margin:4px 0">
+<p style="margin:0;font-size:13.5px;line-height:1.6;text-align:justify;color:rgba(32,31,29,0.78)">Dark ground first — a 4 AM habit means the app opens in the dark. Classical's paper type and hairline rules carry over: Cormorant for figures, Lora for rows, gold as stroke only. The paper sheet's navy survives as an alternative chart ramp (see Tweaks) rather than a second identity.</p>
+<div style="display:grid;gap:9px;font-size:12.5px;line-height:1.5;color:rgba(32,31,29,0.7)">
+<div style="display:grid;grid-template-columns:104px 1fr;gap:12px"><span style="font-family:var(--font-heading);color:#201f1d">Tap target</span><span>The whole row ticks. 44px minimum, 17 rows, one scroll.</span></div>
+<div style="display:grid;grid-template-columns:104px 1fr;gap:12px"><span style="font-family:var(--font-heading);color:#201f1d">Reach</span><span>Navigation at the bottom; date nav sits in the header where it is read, not tapped often.</span></div>
+<div style="display:grid;grid-template-columns:104px 1fr;gap:12px"><span style="font-family:var(--font-heading);color:#201f1d">Polarity</span><span>Abstain habits are marked <em>held / broken</em>, never <em>completed</em>.</span></div>
+<div style="display:grid;grid-template-columns:104px 1fr;gap:12px"><span style="font-family:var(--font-heading);color:#201f1d">Retire</span><span>No delete anywhere in the UI. Retired habits keep their history and leave the denominator.</span></div>
+<div style="display:grid;grid-template-columns:104px 1fr;gap:12px"><span style="font-family:var(--font-heading);color:#201f1d">Guards</span><span>Every chart states its data requirement instead of drawing on thin data.</span></div>
+</div>
+<hr class="hr" style="margin:4px 0">
+<div style="font-size:12px;color:rgba(32,31,29,0.55);line-height:1.6">Open questions: full names for NS and NF; whether the Week screen should allow entry beyond the 7-day lock (spec says no — it is enforced here); and whether charts keep the gold ramp or the navy one.</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:14px;flex:none">
+<div style="display:flex;align-items:center;gap:8px">
+<span style="font-family:var(--font-heading);font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:rgba(32,31,29,0.5);margin-right:4px">Data state</span>
+<sc-for list="{{ modeBtns }}" as="b" hint-placeholder-count="3"><button class="btn btn-secondary" style="font-size:12px;padding:5px 11px;border-color:{{ b.border }};color:{{ b.color }}" onClick="{{ b.onClick }}">{{ b.label }}</button></sc-for>
+</div>
+
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ true }}" width="{{ 390 }}" height="{{ 844 }}" hint-size="390px,844px">
+<div style="height:100%;display:flex;flex-direction:column;background:#181716;color:#f3f2f2;font-family:var(--font-body);font-size:14px;padding-top:54px">
+
+<sc-if value="{{ isToday }}" hint-placeholder-val="{{ true }}">
+<div style="padding:8px 16px 12px;border-bottom:1px solid rgba(243,242,242,0.14)">
+<div style="display:flex;align-items:center;justify-content:space-between">
+<button style="width:44px;height:44px;border:0;background:transparent;color:{{ prevColor }};font-family:var(--font-heading);font-size:22px;cursor:pointer" onClick="{{ onPrevDay }}">‹</button>
+<div style="text-align:center">
+<div style="font-family:var(--font-heading);font-size:18px;letter-spacing:0.01em">{{ dayTitle }}</div>
+<div style="font-size:10.5px;letter-spacing:0.12em;text-transform:uppercase;color:rgba(243,242,242,0.45);margin-top:2px">{{ daySub }}</div>
+</div>
+<button style="width:44px;height:44px;border:0;background:transparent;color:{{ nextColor }};font-family:var(--font-heading);font-size:22px;cursor:pointer" onClick="{{ onNextDay }}">›</button>
+</div>
+<div style="display:flex;align-items:baseline;gap:9px;margin-top:6px">
+<span style="font-family:var(--font-heading);font-size:36px;line-height:1;font-feature-settings:'tnum'">{{ scoreText }}</span>
+<span style="font-size:11.5px;color:rgba(243,242,242,0.5)">{{ scoreQualifier }}</span>
+</div>
+<div style="height:2px;background:rgba(243,242,242,0.12);margin-top:10px"><div style="height:2px;background:#e1ad66;width:{{ scorePct }}%"></div></div>
+</div>
+<div style="flex:1;overflow:auto;min-height:0">
+<sc-if value="{{ showFirstDayNote }}" hint-placeholder-val="{{ false }}">
+<div style="padding:12px 16px;font-size:11.5px;line-height:1.5;color:rgba(243,242,242,0.5);border-bottom:1px solid rgba(243,242,242,0.14)">First day logged. Nothing to compare against yet — Insights unlocks as history accumulates.</div>
+</sc-if>
+<sc-for list="{{ todayRows }}" as="row" hint-placeholder-count="8">
+<div style="display:flex;align-items:center;gap:12px;min-height:46px;padding:0 16px;border-bottom:1px solid rgba(243,242,242,0.09);cursor:pointer;background:{{ row.rowBg }}" onClick="{{ row.onClick }}">
+<div style="width:20px;height:20px;flex:none;border-radius:2px;border:1px solid {{ row.tickBorder }};background:{{ row.tickBg }};display:flex;align-items:center;justify-content:center">
+<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#181716" stroke-width="3.2" stroke-linecap="round" opacity="{{ row.checkOp }}"><path d="M4 12.5 L9.5 18 L20 6.5"></path></svg>
+</div>
+<div style="flex:1;min-width:0">
+<div style="font-size:14px;line-height:1.25;color:{{ row.nameColor }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ row.name }}</div>
+</div>
+<div style="font-size:9.5px;letter-spacing:0.1em;text-transform:uppercase;color:{{ row.stateColor }};flex:none">{{ row.stateLabel }}</div>
+</div>
+</sc-for>
+<div style="height:12px"></div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isWeek }}" hint-placeholder-val="{{ false }}">
+<div style="padding:8px 16px 10px;border-bottom:1px solid rgba(243,242,242,0.14);display:flex;align-items:center;justify-content:space-between">
+<button style="width:44px;height:44px;border:0;background:transparent;color:#e1ad66;font-family:var(--font-heading);font-size:22px;cursor:pointer" onClick="{{ onPrevWeek }}">‹</button>
+<div style="text-align:center">
+<div style="font-family:var(--font-heading);font-size:17px">{{ weekTitle }}</div>
+<div style="font-size:10.5px;letter-spacing:0.12em;text-transform:uppercase;color:rgba(243,242,242,0.45);margin-top:2px">{{ weekSub }}</div>
+</div>
+<button style="width:44px;height:44px;border:0;background:transparent;color:{{ nextWeekColor }};font-family:var(--font-heading);font-size:22px;cursor:pointer" onClick="{{ onNextWeek }}">›</button>
+</div>
+<div style="flex:1;overflow:auto;min-height:0;padding:10px 12px 16px">
+<div style="display:grid;grid-template-columns:104px repeat(7,1fr);gap:3px;align-items:center;margin-bottom:5px">
+<div></div>
+<sc-for list="{{ weekHeads }}" as="h" hint-placeholder-count="7"><div style="text-align:center;font-size:9.5px;letter-spacing:0.06em;text-transform:uppercase;color:{{ h.color }}">{{ h.label }}</div></sc-for>
+</div>
+<sc-for list="{{ weekRows }}" as="row" hint-placeholder-count="10">
+<div style="display:grid;grid-template-columns:104px repeat(7,1fr);gap:3px;align-items:center;margin-bottom:3px">
+<div style="font-size:11px;line-height:1.2;color:{{ row.labelColor }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ row.label }}</div>
+<sc-for list="{{ row.cells }}" as="c" hint-placeholder-count="7"><div style="height:26px;border-radius:2px;border:1px solid {{ c.border }};background:{{ c.bg }};cursor:{{ c.cursor }};display:flex;align-items:center;justify-content:center" onClick="{{ c.onClick }}"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#181716" stroke-width="3.4" stroke-linecap="round" opacity="{{ c.checkOp }}"><path d="M4 12.5 L9.5 18 L20 6.5"></path></svg></div></sc-for>
+</div>
+</sc-for>
+<div style="display:grid;grid-template-columns:104px repeat(7,1fr);gap:3px;align-items:center;margin-top:7px;padding-top:7px;border-top:1px solid rgba(243,242,242,0.14)">
+<div style="font-size:9.5px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(243,242,242,0.45)">Score</div>
+<sc-for list="{{ weekScores }}" as="s" hint-placeholder-count="7"><div style="text-align:center;font-family:var(--font-heading);font-size:12px;font-feature-settings:'tnum';color:{{ s.color }}">{{ s.label }}</div></sc-for>
+</div>
+<hr class="hr" style="border-color:rgba(243,242,242,0.14);background:rgba(243,242,242,0.14);margin:16px 0 12px">
+<div style="display:flex;gap:12px;align-items:flex-end">
+<div style="width:132px">
+<div style="font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(243,242,242,0.45);margin-bottom:5px">Weight (kg)</div>
+<input value="{{ weightVal }}" onChange="{{ onWeight }}" placeholder="—" style="width:100%;min-height:40px;background:transparent;border:1px solid rgba(243,242,242,0.2);border-radius:4px;color:#f3f2f2;font-family:var(--font-heading);font-size:20px;font-feature-settings:'tnum';padding:4px 10px">
+</div>
+<div style="flex:1;font-size:10.5px;line-height:1.45;color:rgba(243,242,242,0.4);padding-bottom:6px">End of week. One decimal. Trend chart needs six weeks.</div>
+</div>
+<div style="margin-top:12px">
+<div style="font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(243,242,242,0.45);margin-bottom:5px">Notes</div>
+<textarea value="{{ notesVal }}" onChange="{{ onNotes }}" placeholder="What changed this week." style="width:100%;min-height:74px;background:transparent;border:1px solid rgba(243,242,242,0.2);border-radius:4px;color:#f3f2f2;font-family:var(--font-body);font-size:12.5px;line-height:1.5;padding:8px 10px;resize:none"></textarea>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isInsights }}" hint-placeholder-val="{{ false }}">
+<div style="padding:10px 16px 10px;border-bottom:1px solid rgba(243,242,242,0.14)">
+<div style="font-family:var(--font-heading);font-size:22px">Insights</div>
+<div style="font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(243,242,242,0.45);margin-top:2px">{{ historyLabel }}</div>
+</div>
+<div style="flex:1;overflow:auto;min-height:0;padding:14px 16px 20px">
+
+<div style="font-size:10.5px;letter-spacing:0.12em;text-transform:uppercase;color:#e1ad66">A · Habit × weekday</div>
+<div style="font-family:var(--font-heading);font-size:16px;margin-top:3px">Which habits fail, and when</div>
+<sc-if value="{{ heat.ok }}" hint-placeholder-val="{{ true }}">
+<div style="margin-top:10px">
+<div style="display:grid;grid-template-columns:96px repeat(7,1fr);gap:3px;margin-bottom:4px">
+<div></div>
+<sc-for list="{{ heat.heads }}" as="h" hint-placeholder-count="7"><div style="text-align:center;font-size:9px;letter-spacing:0.06em;text-transform:uppercase;color:rgba(243,242,242,0.4)">{{ h.label }}</div></sc-for>
+</div>
+<sc-for list="{{ heat.rows }}" as="row" hint-placeholder-count="10">
+<div style="display:grid;grid-template-columns:96px repeat(7,1fr);gap:3px;align-items:center;margin-bottom:3px">
+<div style="font-size:10.5px;line-height:1.2;color:rgba(243,242,242,0.72);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ row.label }}</div>
+<sc-for list="{{ row.cells }}" as="c" hint-placeholder-count="7"><div title="{{ c.title }}" style="height:18px;border-radius:2px;background:{{ c.fill }}"></div></sc-for>
+</div>
+</sc-for>
+<div style="display:flex;align-items:center;gap:6px;margin-top:8px;font-size:9.5px;color:rgba(243,242,242,0.4)">
+<span>0%</span>
+<sc-for list="{{ heat.legend }}" as="l" hint-placeholder-count="5"><div style="width:22px;height:8px;border-radius:1px;background:{{ l.fill }}"></div></sc-for>
+<span>100%</span>
+</div>
+<p style="margin:10px 0 0;font-size:12px;line-height:1.5;color:rgba(243,242,242,0.62)">{{ heat.reading }}</p>
+</div>
+</sc-if>
+<sc-if value="{{ heat.blocked }}" hint-placeholder-val="{{ false }}">
+<div style="margin-top:10px;border:1px solid rgba(243,242,242,0.16);border-radius:4px;padding:14px;font-size:12px;line-height:1.5;color:rgba(243,242,242,0.55)">{{ heat.need }}</div>
+</sc-if>
+
+<hr class="hr" style="border-color:rgba(243,242,242,0.14);background:rgba(243,242,242,0.14);margin:20px 0">
+
+<div style="font-size:10.5px;letter-spacing:0.12em;text-transform:uppercase;color:#e1ad66">B · Daily score</div>
+<div style="font-family:var(--font-heading);font-size:16px;margin-top:3px">Am I actually improving</div>
+<sc-if value="{{ trend.ok }}" hint-placeholder-val="{{ true }}">
+<div style="margin-top:10px">
+<svg width="100%" viewBox="0 0 340 128" preserveAspectRatio="none">
+<line x1="0" y1="8" x2="340" y2="8" stroke="rgba(243,242,242,0.1)" stroke-width="1"></line>
+<line x1="0" y1="58" x2="340" y2="58" stroke="rgba(243,242,242,0.1)" stroke-width="1"></line>
+<line x1="0" y1="108" x2="340" y2="108" stroke="rgba(243,242,242,0.16)" stroke-width="1"></line>
+<path d="{{ trend.rawPath }}" fill="none" stroke="rgba(243,242,242,0.3)" stroke-width="1"></path>
+<path d="{{ trend.avgPath }}" fill="none" stroke="#e1ad66" stroke-width="2" stroke-dasharray="7 4" stroke-linejoin="round"></path>
+</svg>
+<div style="display:flex;justify-content:space-between;font-size:9.5px;color:rgba(243,242,242,0.4);margin-top:2px"><span>{{ trend.startLabel }}</span><span>100%</span><span>{{ trend.endLabel }}</span></div>
+<div style="display:flex;gap:14px;margin-top:8px;font-size:10px;color:rgba(243,242,242,0.5)">
+<span style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:1px;background:rgba(243,242,242,0.45);display:inline-block"></span>Daily</span>
+<span style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:2px;background:#e1ad66;display:inline-block"></span>7-day average</span>
+</div>
+<p style="margin:10px 0 0;font-size:12px;line-height:1.5;color:rgba(243,242,242,0.62)">{{ trend.reading }}</p>
+</div>
+</sc-if>
+<sc-if value="{{ trend.blocked }}" hint-placeholder-val="{{ false }}">
+<div style="margin-top:10px;border:1px solid rgba(243,242,242,0.16);border-radius:4px;padding:14px;font-size:12px;line-height:1.5;color:rgba(243,242,242,0.55)">{{ trend.need }}</div>
+</sc-if>
+
+<hr class="hr" style="border-color:rgba(243,242,242,0.14);background:rgba(243,242,242,0.14);margin:20px 0">
+
+<div style="font-size:10.5px;letter-spacing:0.12em;text-transform:uppercase;color:#e1ad66">C · Ranked</div>
+<div style="font-family:var(--font-heading);font-size:16px;margin-top:3px">What to work on next</div>
+<sc-if value="{{ ranked.ok }}" hint-placeholder-val="{{ true }}">
+<div style="margin-top:10px">
+<sc-for list="{{ ranked.rows }}" as="row" hint-placeholder-count="10">
+<div style="display:grid;grid-template-columns:96px 1fr 34px;gap:8px;align-items:center;margin-bottom:5px">
+<div style="font-size:10.5px;line-height:1.2;color:rgba(243,242,242,0.72);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ row.label }}</div>
+<div style="height:12px;background:rgba(243,242,242,0.07)"><div style="height:12px;background:{{ row.fill }};width:{{ row.pct }}%"></div></div>
+<div style="font-size:10.5px;text-align:right;font-feature-settings:'tnum';color:rgba(243,242,242,0.6)">{{ row.pctLabel }}</div>
+</div>
+</sc-for>
+<p style="margin:10px 0 0;font-size:12px;line-height:1.5;color:rgba(243,242,242,0.62)">{{ ranked.reading }}</p>
+</div>
+</sc-if>
+<sc-if value="{{ ranked.blocked }}" hint-placeholder-val="{{ false }}">
+<div style="margin-top:10px;border:1px solid rgba(243,242,242,0.16);border-radius:4px;padding:14px;font-size:12px;line-height:1.5;color:rgba(243,242,242,0.55)">{{ ranked.need }}</div>
+</sc-if>
+
+<hr class="hr" style="border-color:rgba(243,242,242,0.14);background:rgba(243,242,242,0.14);margin:20px 0">
+
+<div style="font-size:10.5px;letter-spacing:0.12em;text-transform:uppercase;color:#e1ad66">D · Streaks</div>
+<div style="font-family:var(--font-heading);font-size:16px;margin-top:3px">Am I holding it right now</div>
+<div style="margin-top:10px">
+<div style="display:grid;grid-template-columns:1fr 48px 48px;gap:8px;padding-bottom:5px;border-bottom:1px solid rgba(243,242,242,0.14);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(243,242,242,0.4)">
+<div>Habit</div><div style="text-align:right">Now</div><div style="text-align:right">Best</div>
+</div>
+<sc-for list="{{ streaks }}" as="row" hint-placeholder-count="8">
+<div style="display:grid;grid-template-columns:1fr 48px 48px;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid rgba(243,242,242,0.07)">
+<div style="font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:rgba(243,242,242,0.8)">{{ row.label }}</div>
+<div style="text-align:right;font-family:var(--font-heading);font-size:15px;font-feature-settings:'tnum';color:{{ row.curColor }}">{{ row.cur }}</div>
+<div style="text-align:right;font-family:var(--font-heading);font-size:15px;font-feature-settings:'tnum';color:rgba(243,242,242,0.42)">{{ row.best }}</div>
+</div>
+</sc-for>
+<p style="margin:10px 0 0;font-size:12px;line-height:1.5;color:rgba(243,242,242,0.62)">Days, counted to yesterday — today stays pending until logged.</p>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isHabits }}" hint-placeholder-val="{{ false }}">
+<div style="padding:10px 16px 10px;border-bottom:1px solid rgba(243,242,242,0.14);display:flex;align-items:flex-end;justify-content:space-between">
+<div>
+<div style="font-family:var(--font-heading);font-size:22px">Habits</div>
+<div style="font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(243,242,242,0.45);margin-top:2px">{{ habitsSub }}</div>
+</div>
+<button style="min-height:36px;padding:6px 12px;background:transparent;border:1px solid #e1ad66;border-radius:4px;color:#e1ad66;font-family:var(--font-heading);font-size:13px;cursor:pointer" onClick="{{ onToggleAdd }}">{{ addLabel }}</button>
+</div>
+<div style="flex:1;overflow:auto;min-height:0">
+<sc-if value="{{ addOpen }}" hint-placeholder-val="{{ false }}">
+<div style="padding:12px 16px;border-bottom:1px solid rgba(243,242,242,0.14);background:rgba(243,242,242,0.03)">
+<input value="{{ addName }}" onChange="{{ onAddName }}" placeholder="Habit name" style="width:100%;min-height:42px;background:transparent;border:1px solid rgba(243,242,242,0.2);border-radius:4px;color:#f3f2f2;font-family:var(--font-body);font-size:14px;padding:6px 10px">
+<div style="display:flex;gap:8px;margin-top:9px">
+<button style="flex:1;min-height:42px;background:transparent;border:1px solid #e1ad66;border-radius:4px;color:#e1ad66;font-family:var(--font-heading);font-size:14px;cursor:pointer" onClick="{{ onAddSave }}">Add habit</button>
+<button style="min-height:42px;padding:0 14px;background:transparent;border:1px solid rgba(243,242,242,0.2);border-radius:4px;color:rgba(243,242,242,0.6);font-family:var(--font-heading);font-size:14px;cursor:pointer" onClick="{{ onToggleAdd }}">Cancel</button>
+</div>
+<div style="font-size:10.5px;color:rgba(243,242,242,0.4);margin-top:8px;line-height:1.5">Starts counting from today. Earlier days are never counted as misses.</div>
+</div>
+</sc-if>
+<sc-for list="{{ habitRows }}" as="row" hint-placeholder-count="8">
+<div style="display:flex;align-items:center;gap:10px;min-height:52px;padding:6px 16px;border-bottom:1px solid rgba(243,242,242,0.09)">
+<svg width="12" height="16" viewBox="0 0 12 16" fill="rgba(243,242,242,0.28)" style="flex:none;cursor:grab"><circle cx="3" cy="3" r="1.4"></circle><circle cx="9" cy="3" r="1.4"></circle><circle cx="3" cy="8" r="1.4"></circle><circle cx="9" cy="8" r="1.4"></circle><circle cx="3" cy="13" r="1.4"></circle><circle cx="9" cy="13" r="1.4"></circle></svg>
+<div style="flex:1;min-width:0">
+<div style="font-size:14px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ row.name }}</div>
+<div style="font-size:10.5px;color:rgba(243,242,242,0.42);margin-top:2px">{{ row.meta }}</div>
+</div>
+<button style="min-height:36px;padding:5px 10px;background:transparent;border:1px solid {{ row.btnBorder }};border-radius:4px;color:{{ row.btnColor }};font-family:var(--font-heading);font-size:12px;cursor:pointer;flex:none" onClick="{{ row.onAction }}">{{ row.action }}</button>
+</div>
+</sc-for>
+<div style="padding:14px 16px 20px;font-size:11px;line-height:1.55;color:rgba(243,242,242,0.4)">Habits are never deleted. Retiring stops a habit appearing from today forward and removes it from the daily denominator; every past entry stays as recorded.</div>
+</div>
+</sc-if>
+
+<div style="display:flex;border-top:1px solid rgba(243,242,242,0.16);flex:none;background:#1c1b19">
+<sc-for list="{{ tabs }}" as="t" hint-placeholder-count="4">
+<button style="flex:1;min-height:56px;padding:8px 0 10px;background:transparent;border:0;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;color:{{ t.color }}" onClick="{{ t.onClick }}">
+<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="{{ t.color }}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="{{ t.icon }}"></path></svg>
+<span style="font-family:var(--font-heading);font-size:10.5px;letter-spacing:0.06em">{{ t.label }}</span>
+</button>
+</sc-for>
+</div>
+
+</div>
+</x-import>
+<div style="font-size:11.5px;color:rgba(32,31,29,0.5);line-height:1.6;width:390px">Live: tick rows on Today, tap cells on Week (last 7 days only), switch the data state above to see the guards and the first-day state. Retiring a habit on Habits changes today's denominator.</div>
+</div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:940,&quot;height&quot;:1000},&quot;dataMode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;full&quot;,&quot;thin&quot;,&quot;empty&quot;],&quot;default&quot;:&quot;full&quot;,&quot;tsType&quot;:&quot;'full'|'thin'|'empty'&quot;,&quot;section&quot;:&quot;Prototype data&quot;},&quot;chartRamp&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;accent&quot;,&quot;navy&quot;],&quot;default&quot;:&quot;accent&quot;,&quot;tsType&quot;:&quot;'accent'|'navy'&quot;,&quot;section&quot;:&quot;Charts&quot;}}">
+const BASE = [
+  ['Wake up at 4:00 AM','Wake up 4 AM','do',0.62],
+  ['Brush with right hand','Brush right hand','do',0.86],
+  ['Water + chia seeds','Water + chia','do',0.90],
+  ['Soaked nuts / dry fruits','Soaked nuts','do',0.74],
+  ['Meditation (Isha Kriya)','Meditation','do',0.68],
+  ['Read / learn / writing','Read / write','do',0.66],
+  ['Useful / educational video','Educational video','do',0.55],
+  ['Gym / training','Gym','do',0.72],
+  ['Creatine','Creatine','do',0.83],
+  ['2.5–3 L water','2.5–3 L water','do',0.79],
+  ['Skincare','Skincare','do',0.64],
+  ['Hair care','Hair care','do',0.58],
+  ['Sleep before 10:00 PM','Sleep before 10','do',0.50],
+  ['No alcohol','No alcohol','abstain',0.90],
+  ['No fast food','No fast food','abstain',0.60],
+  ['NS','NS','abstain',0.70],
+  ['NF','NF','abstain',0.54]
+];
+const DIP = {0:0.42,4:0.58,7:0.5,12:0.48,14:0.42,16:0.6};
+const RAMPS = {
+  accent: ['rgba(243,242,242,0.06)','#4b3208','#7d5411','#a06f24','#c28d41','#e1ad66'],
+  navy:   ['rgba(243,242,242,0.06)','#1b3352','#215079','#2c6a99','#4a8cbb','#84b7da']
+};
+const DAYNAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const ICONS = {
+  today: 'M4 6h16M4 12h10M4 18h7',
+  week: 'M3 4h18v16H3zM3 9h18M9 9v11M15 9v11',
+  insights: 'M4 20V9M10 20V4M16 20v-7M22 20H2',
+  habits: 'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01'
+};
+const hash = (a, b) => { const x = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return x - Math.floor(x); };
+
+class Component extends DCLogic {
+  state = { tab: 'today', dayOff: 0, weekOff: 0, ov: {}, retired: {}, extra: [], modeOverride: null,
+            weight: '74.2', notes: '', addOpen: false, addName: '' };
+
+  get mode() { return this.state.modeOverride || this.props.dataMode || 'full'; }
+  get ramp() { return RAMPS[this.props.chartRamp === 'navy' ? 'navy' : 'accent']; }
+  today() { return new Date(2026, 7, 16); }
+  iso(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  shift(d, n) { const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate() + n); return x; }
+
+  habits() {
+    const t = this.iso(this.today());
+    const start = this.iso(this.shift(this.today(), -(this.days() - 1)));
+    const list = BASE.map((h, i) => ({ id: 'h' + i, idx: i, name: h[0], short: h[1], pol: h[2], created: start }));
+    this.state.extra.forEach((e, k) => list.push({ id: 'x' + k, idx: -1, name: e.name, short: e.name.slice(0, 22), pol: 'do', created: t }));
+    return list.map(h => ({ ...h, retired: this.state.retired[h.id] || null }));
+  }
+  days() { return this.mode === 'full' ? 70 : this.mode === 'thin' ? 5 : 1; }
+  dates() { const n = this.days(), out = []; for (let i = n - 1; i >= 0; i--) out.push(this.iso(this.shift(this.today(), -i))); return out; }
+
+  base() {
+    if (this._bk === this.mode) return this._bc;
+    const set = {}, ds = this.dates(), n = ds.length;
+    if (this.mode !== 'empty') {
+      BASE.forEach((h, i) => ds.forEach((iso, j) => {
+        const wd = new Date(iso + 'T12:00').getDay();
+        const weekend = wd === 0 || wd === 6;
+        let p = h[3] * (weekend && DIP[i] !== undefined ? DIP[i] : 1) * (0.84 + 0.3 * (n > 1 ? j / (n - 1) : 1));
+        if (j === n - 1) p *= 0.62;
+        if (hash(i + 1, j + 1) < Math.min(p, 0.98)) set[h[0] + '|' + iso] = true;
+      }));
+    }
+    this._bk = this.mode; this._bc = set; return set;
+  }
+  isDone(h, iso) {
+    const k = h.id + '|' + iso;
+    if (k in this.state.ov) return this.state.ov[k];
+    return !!this.base()[h.name + '|' + iso];
+  }
+  active(iso) { return this.habits().filter(h => h.created <= iso && (!h.retired || h.retired > iso)); }
+  score(iso) { const a = this.active(iso); return { done: a.filter(h => this.isDone(h, iso)).length, total: a.length }; }
+  toggle(h, iso) {
+    const k = h.id + '|' + iso, cur = this.isDone(h, iso);
+    this.setState(s => ({ ov: { ...s.ov, [k]: !cur } }));
+  }
+  editable(iso) { const t = this.iso(this.today()); return iso <= t && iso >= this.iso(this.shift(this.today(), -6)); }
+
+  monday(off) { const t = this.today(); const wd = (t.getDay() + 6) % 7; return this.shift(t, -wd + off * 7); }
+
+  rateGrid() {
+    const ds = this.dates(), hs = this.habits();
+    return hs.map(h => {
+      const cells = [];
+      for (let wd = 0; wd < 7; wd++) {
+        let n = 0, d = 0;
+        ds.forEach(iso => {
+          if (iso < h.created || (h.retired && h.retired <= iso)) return;
+          if (((new Date(iso + 'T12:00').getDay()) + 6) % 7 !== wd) return;
+          n++; if (this.isDone(h, iso)) d++;
+        });
+        cells.push(n ? d / n : null);
+      }
+      return { h, cells };
+    });
+  }
+  allRate(h) {
+    const ds = this.dates().filter(iso => iso >= h.created && (!h.retired || h.retired > iso));
+    if (!ds.length) return null;
+    return ds.filter(iso => this.isDone(h, iso)).length / ds.length;
+  }
+  streak(h) {
+    const ds = this.dates().filter(iso => iso >= h.created);
+    const t = this.iso(this.today());
+    let cur = 0, best = 0, run = 0;
+    ds.forEach(iso => { if (this.isDone(h, iso)) { run++; best = Math.max(best, run); } else if (iso !== t) run = 0; });
+    for (let i = ds.length - 1; i >= 0; i--) { const iso = ds[i]; if (this.isDone(h, iso)) cur++; else if (iso !== t) break; }
+    return { cur, best };
+  }
+  fill(v) { const r = this.ramp; if (v === null) return 'rgba(243,242,242,0.03)'; return r[Math.min(5, Math.max(1, Math.ceil(v * 5)))] || r[0]; }
+
+  renderVals() {
+    const ink = '#f3f2f2', gold = '#e1ad66', mut = 'rgba(243,242,242,0.45)';
+    const t = this.today(), tIso = this.iso(t), n = this.days();
+    const dayDate = this.shift(t, this.state.dayOff), dayIso = this.iso(dayDate);
+    const sc = this.score(dayIso), isTodayDate = dayIso === tIso;
+    const acts = this.active(dayIso);
+
+    const todayRows = acts.map(h => {
+      const done = this.isDone(h, dayIso);
+      const pending = isTodayDate && !done;
+      return {
+        name: h.name,
+        rowBg: done ? 'rgba(225,173,102,0.06)' : 'transparent',
+        tickBorder: done ? gold : 'rgba(243,242,242,0.32)',
+        tickBg: done ? gold : 'transparent',
+        checkOp: done ? 1 : 0,
+        nameColor: done ? ink : 'rgba(243,242,242,0.72)',
+        stateLabel: done ? (h.pol === 'abstain' ? 'held' : 'done') : pending ? 'pending' : (h.pol === 'abstain' ? 'broken' : 'missed'),
+        stateColor: done ? 'rgba(225,173,102,0.85)' : pending ? 'rgba(243,242,242,0.3)' : 'rgba(243,242,242,0.5)',
+        onClick: () => this.toggle(h, dayIso)
+      };
+    });
+
+    // week
+    const mon = this.monday(this.state.weekOff);
+    const wDates = []; for (let i = 0; i < 7; i++) wDates.push(this.iso(this.shift(mon, i)));
+    const wHabits = this.habits().filter(h => h.created <= wDates[6] && (!h.retired || h.retired > wDates[0]));
+    const weekRows = wHabits.map(h => ({
+      label: h.short,
+      labelColor: 'rgba(243,242,242,0.72)',
+      cells: wDates.map(iso => {
+        const future = iso > tIso, ok = this.editable(iso), done = !future && this.isDone(h, iso);
+        return {
+          border: done ? gold : future ? 'rgba(243,242,242,0.08)' : 'rgba(243,242,242,0.18)',
+          bg: done ? gold : 'transparent',
+          checkOp: done ? 1 : 0,
+          cursor: ok ? 'pointer' : 'default',
+          onClick: ok ? () => this.toggle(h, iso) : () => {}
+        };
+      })
+    }));
+    const weekHeads = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map((l, i) => ({ label: l, color: wDates[i] === tIso ? gold : mut }));
+    const weekScores = wDates.map(iso => {
+      if (iso > tIso) return { label: '—', color: 'rgba(243,242,242,0.2)' };
+      const s = this.score(iso);
+      return { label: s.done + '/' + s.total, color: iso === tIso ? gold : 'rgba(243,242,242,0.6)' };
+    });
+
+    // A heatmap
+    const weeks = n / 7;
+    const grid = this.rateGrid();
+    const heatOk = n >= 21;
+    let heatReading = '';
+    if (heatOk) {
+      let worst = null;
+      grid.forEach(g => g.cells.forEach((v, wd) => { if (v !== null && (!worst || v < worst.v)) worst = { v, wd, h: g.h }; }));
+      if (worst) heatReading = worst.h.short + ' holds worst on ' + ['Mondays','Tuesdays','Wednesdays','Thursdays','Fridays','Saturdays','Sundays'][worst.wd] + ' — ' + Math.round(worst.v * 100) + '% across ' + Math.floor(weeks) + ' weeks.';
+    }
+    const heat = {
+      ok: heatOk, blocked: !heatOk,
+      need: Math.max(1, Math.ceil(3 - n / 7)) + (Math.ceil(3 - n / 7) === 1 ? ' more week' : ' more weeks') + ' of logging before weekday patterns are reliable. Needs 3 complete weeks; ' + n + (n === 1 ? ' day' : ' days') + ' recorded.',
+      heads: ['M','T','W','T','F','S','S'].map(l => ({ label: l })),
+      rows: grid.map(g => ({ label: g.h.short, cells: g.cells.map((v, wd) => ({ fill: this.fill(v), title: g.h.short + ' · ' + (v === null ? 'no data' : Math.round(v * 100) + '%') })) })),
+      legend: [1, 2, 3, 4, 5].map(i => ({ fill: this.ramp[i] })),
+      reading: heatReading
+    };
+
+    // B trend
+    const ds = this.dates();
+    const pcts = ds.map(iso => { const s = this.score(iso); return s.total ? s.done / s.total : 0; });
+    const roll = pcts.map((_, i) => { const a = pcts.slice(Math.max(0, i - 6), i + 1); return a.reduce((x, y) => x + y, 0) / a.length; });
+    const px = i => (ds.length > 1 ? (i / (ds.length - 1)) * 340 : 0);
+    const py = v => 108 - v * 100;
+    const path = arr => arr.map((v, i) => (i ? 'L' : 'M') + px(i).toFixed(1) + ' ' + py(v).toFixed(1)).join(' ');
+    const trendOk = n >= 14;
+    const last = roll[roll.length - 1] || 0, prior = roll[Math.max(0, roll.length - 15)] || 0;
+    const dLabel = iso => { const d = new Date(iso + 'T12:00'); return d.getDate() + ' ' + MONTHS[d.getMonth()].slice(0, 3); };
+    const trend = {
+      ok: trendOk, blocked: !trendOk,
+      need: (14 - n) + ((14 - n) === 1 ? ' more day' : ' more days') + ' of logging before a trend line means anything. Needs 14 days.',
+      rawPath: path(pcts), avgPath: path(roll),
+      startLabel: dLabel(ds[0]), endLabel: dLabel(ds[ds.length - 1]),
+      reading: 'Seven-day average is at ' + Math.round(last * 100) + '%, ' + (last >= prior ? 'up ' : 'down ') + Math.abs(Math.round((last - prior) * 100)) + ' points on two weeks ago.'
+    };
+
+    // C ranked
+    const rows = this.habits().map(h => ({ h, r: this.allRate(h) })).filter(x => x.r !== null).sort((a, b) => a.r - b.r);
+    const rankOk = n >= 14;
+    const ranked = {
+      ok: rankOk, blocked: !rankOk,
+      need: (14 - n) + ((14 - n) === 1 ? ' more day' : ' more days') + ' of logging before ranking habits. Needs 14 days.',
+      rows: rows.map(x => ({ label: x.h.short, pct: Math.round(x.r * 100), pctLabel: Math.round(x.r * 100) + '%', fill: x.r < 0.5 ? this.ramp[2] : x.r < 0.75 ? this.ramp[4] : this.ramp[5] })),
+      reading: rows.length ? 'Weakest is ' + rows[0].h.short + ' at ' + Math.round(rows[0].r * 100) + '%. Work down from the top of this list, one at a time.' : ''
+    };
+
+    const streaks = this.habits().map(h => { const s = this.streak(h); return { label: h.short, cur: s.cur, best: s.best, curColor: s.cur >= 5 ? gold : 'rgba(243,242,242,0.8)' }; }).sort((a, b) => b.cur - a.cur);
+
+    // habits screen
+    const habitRows = this.habits().map(h => ({
+      name: h.name,
+      meta: (h.retired ? 'Retired · ' : (h.pol === 'abstain' ? 'Abstain · ' : 'Do · ')) + h.short,
+      action: h.retired ? 'Restore' : 'Retire',
+      btnBorder: h.retired ? gold : 'rgba(243,242,242,0.2)',
+      btnColor: h.retired ? gold : 'rgba(243,242,242,0.6)',
+      onAction: () => this.setState(s => ({ retired: { ...s.retired, [h.id]: h.retired ? null : tIso } }))
+    }));
+
+    const tabs = [['today','Today'],['week','Week'],['insights','Insights'],['habits','Habits']].map(([k, l]) => ({
+      label: l, icon: ICONS[k],
+      color: this.state.tab === k ? gold : 'rgba(243,242,242,0.42)',
+      onClick: () => this.setState({ tab: k })
+    }));
+
+    const modeBtns = [['full','10 weeks'],['thin','5 days'],['empty','First day']].map(([k, l]) => ({
+      label: l,
+      border: this.mode === k ? 'var(--color-accent)' : 'var(--color-divider)',
+      color: this.mode === k ? 'var(--color-accent-700)' : 'rgba(32,31,29,0.6)',
+      onClick: () => this.setState({ modeOverride: k, dayOff: 0, weekOff: 0, ov: {} })
+    }));
+
+    return {
+      isToday: this.state.tab === 'today', isWeek: this.state.tab === 'week',
+      isInsights: this.state.tab === 'insights', isHabits: this.state.tab === 'habits',
+      tabs, modeBtns, todayRows,
+      dayTitle: DAYNAMES[dayDate.getDay()] + ' ' + dayDate.getDate() + ' ' + MONTHS[dayDate.getMonth()],
+      daySub: isTodayDate ? 'Today' : this.state.dayOff === -1 ? 'Yesterday' : Math.abs(this.state.dayOff) + ' days back',
+      scoreText: sc.done + '/' + sc.total,
+      scoreQualifier: isTodayDate ? 'so far' : 'recorded',
+      scorePct: sc.total ? Math.round((sc.done / sc.total) * 100) : 0,
+      prevColor: this.state.dayOff > -6 ? gold : 'rgba(243,242,242,0.18)',
+      nextColor: this.state.dayOff < 0 ? gold : 'rgba(243,242,242,0.18)',
+      onPrevDay: () => this.setState(s => ({ dayOff: Math.max(-6, s.dayOff - 1) })),
+      onNextDay: () => this.setState(s => ({ dayOff: Math.min(0, s.dayOff + 1) })),
+      showFirstDayNote: this.mode === 'empty',
+      weekTitle: mon.getDate() + '–' + this.shift(mon, 6).getDate() + ' ' + MONTHS[this.shift(mon, 6).getMonth()],
+      weekSub: this.state.weekOff === 0 ? 'This week' : Math.abs(this.state.weekOff) + ' weeks back',
+      nextWeekColor: this.state.weekOff < 0 ? gold : 'rgba(243,242,242,0.18)',
+      onPrevWeek: () => this.setState(s => ({ weekOff: s.weekOff - 1 })),
+      onNextWeek: () => this.setState(s => ({ weekOff: Math.min(0, s.weekOff + 1) })),
+      weekHeads, weekRows, weekScores,
+      weightVal: this.state.weight, notesVal: this.state.notes,
+      onWeight: e => this.setState({ weight: e.target.value }),
+      onNotes: e => this.setState({ notes: e.target.value }),
+      historyLabel: n >= 21 ? Math.floor(n / 7) + ' weeks recorded' : n + (n === 1 ? ' day recorded' : ' days recorded'),
+      heat, trend, ranked, streaks,
+      habitRows, habitsSub: acts.length + ' active · ' + this.habits().filter(h => h.retired).length + ' retired',
+      addOpen: this.state.addOpen, addName: this.state.addName,
+      addLabel: this.state.addOpen ? 'Close' : '+ New',
+      onToggleAdd: () => this.setState(s => ({ addOpen: !s.addOpen, addName: '' })),
+      onAddName: e => this.setState({ addName: e.target.value }),
+      onAddSave: () => { const nm = this.state.addName.trim(); if (!nm) return; this.setState(s => ({ extra: [...s.extra, { name: nm }], addOpen: false, addName: '' })); }
+    };
+  }
+}
+</script>
+</body>
+</html>
