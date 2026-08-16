@@ -1,10 +1,32 @@
+import { useState, type ReactNode } from 'react'
+import { TabBar, type TabKey } from './components/TabBar'
+import { TodayScreen } from './screens/TodayScreen'
+import { WeekScreen } from './screens/WeekScreen'
+import { InsightsScreen } from './screens/InsightsScreen'
+import { HabitsScreen } from './screens/HabitsScreen'
+
+function Panel({ active, children }: { active: boolean; children: ReactNode }) {
+  return <div className={active ? 'flex min-h-0 flex-1 flex-col' : 'hidden'}>{children}</div>
+}
+
 function App() {
+  const [tab, setTab] = useState<TabKey>('today')
+
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-[390px] flex-col bg-ground text-ink">
-      <main className="flex flex-1 flex-col items-center justify-center gap-2 px-4">
-        <h1 className="font-heading text-[22px] font-medium text-gold">Habit Tracker</h1>
-        <p className="font-body text-[12px] text-ink/50">Scaffold ready.</p>
-      </main>
+    <div className="mx-auto flex h-dvh w-full max-w-[390px] flex-col overflow-hidden bg-ground text-ink pt-[env(safe-area-inset-top)]">
+      <Panel active={tab === 'today'}>
+        <TodayScreen />
+      </Panel>
+      <Panel active={tab === 'week'}>
+        <WeekScreen />
+      </Panel>
+      <Panel active={tab === 'insights'}>
+        <InsightsScreen />
+      </Panel>
+      <Panel active={tab === 'habits'}>
+        <HabitsScreen />
+      </Panel>
+      <TabBar tab={tab} onChange={setTab} />
     </div>
   )
 }

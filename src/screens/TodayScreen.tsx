@@ -1,0 +1,125 @@
+import { useState } from 'react'
+import { Check } from 'lucide-react'
+import { activeHabits, computeScore, historyDayCount, isDone } from '../lib/derive'
+import { addDays, formatDayTitle, todayLocalStr } from '../lib/dates'
+import { toggleEntry } from '../lib/mutations'
+import { useDoneMap, useHabits } from '../lib/hooks'
+
+export function TodayScreen() {
+  const [dayOffset, setDayOffset] = useState(0)
+  const habits = useHabits()
+  const doneMap = useDoneMap()
+
+  const today = todayLocalStr()
+  const dateStr = addDays(today, dayOffset)
+  const isTodayDate = dayOffset === 0
+  const active = activeHabits(habits, dateStr)
+  const score = computeScore(habits, doneMap, dateStr)
+  const scorePct = score.total ? Math.round((score.done / score.total) * 100) : 0
+  const historyCount = historyDayCount(habits, today)
+  const showFirstDayNote = isTodayDate && historyCount <= 1
+
+  const daySub = isTodayDate ? 'Today' : dayOffset === -1 ? 'Yesterday' : `${Math.abs(dayOffset)} days back`
+
+  return (
+    <>
+      <header className="border-b border-ink/14 px-4 pt-2 pb-3">
+        <div className="flex items-center justify-between">
+          <button
+            type="button"
+            disabled={dayOffset <= -6}
+            onClick={() => setDayOffset((o) => Math.max(-6, o - 1))}
+            className={`h-11 w-11 border-0 bg-transparent font-heading text-[22px] ${
+              dayOffset > -6 ? 'cursor-pointer text-gold' : 'text-ink/18'
+            }`}
+          >
+            ‹
+          </button>
+          <div className="text-center">
+            <div className="font-heading text-[18px] tracking-[0.01em]">{formatDayTitle(dateStr)}</div>
+            <div className="mt-0.5 text-[10.5px] tracking-[0.12em] text-ink/45 uppercase">{daySub}</div>
+          </div>
+          <button
+            type="button"
+            disabled={dayOffset >= 0}
+            onClick={() => setDayOffset((o) => Math.min(0, o + 1))}
+            className={`h-11 w-11 border-0 bg-transparent font-heading text-[22px] ${
+              dayOffset < 0 ? 'cursor-pointer text-gold' : 'text-ink/18'
+            }`}
+          >
+            ›
+          </button>
+        </div>
+        <div className="mt-1.5 flex items-baseline gap-2">
+          <span className="tnum font-heading text-[36px] leading-none">
+            {score.done}/{score.total}
+          </span>
+          <span className="text-[11.5px] text-ink/50">{isTodayDate ? 'so far' : 'recorded'}</span>
+        </div>
+        <div className="mt-2.5 h-0.5 bg-ink/12">
+          <div className="h-0.5 bg-gold" style={{ width: `${scorePct}%` }} />
+        </div>
+      </header>
+
+      <div className="min-h-0 flex-1 overflow-auto">
+        {showFirstDayNote && (
+          <div className="border-b border-ink/14 px-4 py-3 text-[11.5px] leading-normal text-ink/50">
+            First day logged. Nothing to compare against yet — Insights unlocks as history accumulates.
+          </div>
+        )}
+        {active.map((habit) => {
+          const done = isDone(doneMap, habit.id!, dateStr)
+          const pending = isTodayDate && !done
+          const stateLabel = done
+            ? habit.polarity === 'abstain'
+              ? 'held'
+              : 'done'
+            : pending
+              ? 'pending'
+              : habit.polarity === 'abstain'
+                ? 'broken'
+                : 'missed'
+          return (
+            <div
+              key={habit.id}
+              role="button"
+              tabIndex={0}
+              onClick={() => toggleEntry(habit.id!, dateStr)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') toggleEntry(habit.id!, dateStr)
+              }}
+              className={`flex min-h-[46px] cursor-pointer items-center gap-3 border-b border-ink/9 px-4 ${
+                done ? 'bg-gold/6' : ''
+              }`}
+            >
+              <div
+                className={`flex h-5 w-5 flex-none items-center justify-center rounded-[2px] border ${
+                  done ? 'border-gold bg-gold' : 'border-ink/32 bg-transparent'
+                }`}
+              >
+                {done && <Check size={12} strokeWidth={3.2} className="text-ground" />}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div
+                  className={`overflow-hidden text-ellipsis whitespace-nowrap text-[14px] leading-[1.25] ${
+                    done ? 'text-ink' : 'text-ink/72'
+                  }`}
+                >
+                  {habit.name}
+                </div>
+              </div>
+              <div
+                className={`flex-none text-[9.5px] tracking-[0.1em] uppercase ${
+                  done ? 'text-gold/85' : pending ? 'text-ink/30' : 'text-ink/50'
+                }`}
+              >
+                {stateLabel}
+              </div>
+            </div>
+          )
+        })}
+        <div className="h-3" />
+      </div>
+    </>
+  )
+}
