@@ -4,8 +4,10 @@ import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } 
 import { CSS } from '@dnd-kit/utilities'
 import { GripVertical } from 'lucide-react'
 import { addHabit, renameHabit, reorderHabits, restoreHabit, retireHabit } from '../lib/mutations'
+import { exportAllData } from '../lib/exportData'
 import { useHabits } from '../lib/hooks'
 import type { Habit } from '../lib/types'
+import { ThemeToggle } from '../components/ThemeToggle'
 
 const inputClass =
   'min-h-[42px] w-full rounded-[4px] border border-ink/20 bg-transparent px-2.5 py-1.5 font-body text-[14px] text-ink'
@@ -108,16 +110,19 @@ export function HabitsScreen() {
             {activeCount} active · {retiredCount} retired
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => {
-            setAddOpen((o) => !o)
-            setAddName('')
-          }}
-          className="min-h-[36px] cursor-pointer rounded-[4px] border border-gold bg-transparent px-3 py-1.5 font-heading text-[13px] text-gold"
-        >
-          {addOpen ? 'Close' : '+ New'}
-        </button>
+        <div className="flex flex-none items-center gap-2">
+          <ThemeToggle />
+          <button
+            type="button"
+            onClick={() => {
+              setAddOpen((o) => !o)
+              setAddName('')
+            }}
+            className="min-h-[36px] cursor-pointer rounded-[4px] border border-gold bg-transparent px-3 py-1.5 font-heading text-[13px] text-gold"
+          >
+            {addOpen ? 'Close' : '+ New'}
+          </button>
+        </div>
       </header>
 
       <div className="min-h-0 flex-1 overflow-auto">
@@ -197,9 +202,18 @@ export function HabitsScreen() {
           </SortableContext>
         </DndContext>
 
-        <div className="px-4 pt-3.5 pb-5 text-[11px] leading-[1.55] text-ink/40">
+        <div className="px-4 pt-3.5 text-[11px] leading-[1.55] text-ink/40">
           Habits are never deleted. Retiring stops a habit appearing from today forward and removes it from the
           daily denominator; every past entry stays as recorded.
+        </div>
+        <div className="px-4 pt-3 pb-5">
+          <button
+            type="button"
+            onClick={() => exportAllData()}
+            className="cursor-pointer border-0 bg-transparent p-0 font-heading text-[12px] text-ink/50 underline decoration-ink/25 underline-offset-2"
+          >
+            Export data
+          </button>
         </div>
       </div>
     </>

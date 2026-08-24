@@ -50,14 +50,16 @@ export async function setWeeklyRecord(
   weekMonday: string,
   patch: Partial<{ weight_kg: number | null; notes: string }>,
 ): Promise<void> {
-  const existing = await db.weekly_records.where('week_monday').equals(weekMonday).first()
-  if (existing) {
-    await db.weekly_records.update(existing.id!, patch)
-  } else {
-    await db.weekly_records.add({
-      week_monday: weekMonday,
-      weight_kg: patch.weight_kg ?? null,
-      notes: patch.notes ?? '',
-    })
-  }
+  await db.transaction('rw', db.weekly_records, async () => {
+    const existing = await db.weekly_records.where('week_monday').equals(weekMonday).first()
+    if (existing) {
+      await db.weekly_records.update(existing.id!, patch)
+    } else {
+      await db.weekly_records.add({
+        week_monday: weekMonday,
+        weight_kg: patch.weight_kg ?? null,
+        notes: patch.notes ?? '',
+      })
+    }
+  })
 }

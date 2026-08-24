@@ -91,7 +91,7 @@ export function WeekScreen() {
                     done ? 'border-gold bg-gold' : future ? 'border-ink/8' : 'border-ink/18'
                   } ${tappable ? 'cursor-pointer' : 'cursor-default'}`}
                 >
-                  {done && <Check size={11} strokeWidth={3.4} className="text-ground" />}
+                  {done && <Check size={11} strokeWidth={3.4} className="text-on-gold" />}
                 </div>
               )
             })}

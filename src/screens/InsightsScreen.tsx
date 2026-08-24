@@ -17,12 +17,19 @@ import {
   WEEKDAY_INITIALS_MON_FIRST,
 } from '../lib/dates'
 import { useDoneMap, useHabits } from '../lib/hooks'
+import { useTheme } from '../lib/theme'
 
 const RAMP = ['#4b3208', '#7d5411', '#a06f24', '#c28d41', '#e1ad66']
-const NO_DATA_FILL = 'rgba(243,242,242,0.03)'
 
-function fillForRate(v: number | null): string {
-  if (v === null) return NO_DATA_FILL
+// Raw JS color strings for Chart.js and the heatmap no-data fill — these don't route through
+// Tailwind's ink/gold tokens, so they need their own light/dark variants.
+const CHART_COLORS = {
+  dark: { raw: 'rgba(243,242,242,0.3)', avg: '#e1ad66', noData: 'rgba(243,242,242,0.03)' },
+  light: { raw: 'rgba(32,31,29,0.35)', avg: '#b68235', noData: 'rgba(32,31,29,0.04)' },
+}
+
+function fillForRate(v: number | null, noDataFill: string): string {
+  if (v === null) return noDataFill
   const step = Math.min(5, Math.max(1, Math.ceil(v * 5)))
   return RAMP[step - 1]
 }
@@ -48,6 +55,8 @@ export function InsightsScreen() {
   const habits = useHabits()
   const doneMap = useDoneMap()
   const today = todayLocalStr()
+  const { effective } = useTheme()
+  const chartColors = CHART_COLORS[effective]
 
   const start = historyStartDate(habits)
   const n = historyDayCount(habits, today)
@@ -90,14 +99,14 @@ export function InsightsScreen() {
     datasets: [
       {
         data: pcts.map((v) => v * 100),
-        borderColor: 'rgba(243,242,242,0.3)',
+        borderColor: chartColors.raw,
         borderWidth: 1,
         pointRadius: 0,
         tension: 0,
       },
       {
         data: roll.map((v) => v * 100),
-        borderColor: '#e1ad66',
+        borderColor: chartColors.avg,
         borderWidth: 2,
         borderDash: [7, 4],
         pointRadius: 0,
@@ -163,7 +172,7 @@ export function InsightsScreen() {
                     key={wd}
                     title={`${habit.short_name} · ${v === null ? 'no data' : Math.round(v * 100) + '%'}`}
                     className="h-[18px] rounded-[2px]"
-                    style={{ background: fillForRate(v) }}
+                    style={{ background: fillForRate(v, chartColors.noData) }}
                   />
                 ))}
               </div>

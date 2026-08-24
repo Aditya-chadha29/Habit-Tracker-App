@@ -3,7 +3,75 @@ import { Check } from 'lucide-react'
 import { activeHabits, computeScore, historyDayCount, isDone } from '../lib/derive'
 import { addDays, formatDayTitle, todayLocalStr } from '../lib/dates'
 import { toggleEntry } from '../lib/mutations'
-import { useDoneMap, useHabits } from '../lib/hooks'
+import { useDoneMap, useFlashOnTrue, useHabits } from '../lib/hooks'
+import type { Habit } from '../lib/types'
+
+function TodayRow({
+  habit,
+  dateStr,
+  done,
+  pending,
+}: {
+  habit: Habit
+  dateStr: string
+  done: boolean
+  pending: boolean
+}) {
+  const flashing = useFlashOnTrue(done)
+  const stateLabel = done
+    ? habit.polarity === 'abstain'
+      ? 'held'
+      : 'done'
+    : pending
+      ? 'pending'
+      : habit.polarity === 'abstain'
+        ? 'broken'
+        : 'missed'
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => toggleEntry(habit.id!, dateStr)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') toggleEntry(habit.id!, dateStr)
+      }}
+      className={`flex min-h-[46px] cursor-pointer items-center gap-3 border-b border-ink/9 px-4 transition-colors duration-200 ${
+        done ? 'bg-gold/6' : ''
+      }`}
+    >
+      <div
+        className={`flex h-5 w-5 flex-none items-center justify-center rounded-[2px] border ${
+          done ? 'border-gold bg-gold' : 'border-ink/32 bg-transparent'
+        } ${flashing ? 'animate-tick-pop' : ''}`}
+      >
+        {done && (
+          <Check
+            size={12}
+            strokeWidth={3.2}
+            className={`text-on-gold ${flashing ? 'animate-tick-check' : ''}`}
+          />
+        )}
+      </div>
+      <div className="min-w-0 flex-1">
+        <div
+          className={`overflow-hidden text-ellipsis whitespace-nowrap text-[14px] leading-[1.25] ${
+            done ? 'text-ink' : 'text-ink/72'
+          }`}
+        >
+          {habit.name}
+        </div>
+      </div>
+      <div
+        className={`flex-none text-[9.5px] tracking-[0.1em] uppercase ${
+          done ? 'text-gold/85' : pending ? 'text-ink/30' : 'text-ink/50'
+        }`}
+      >
+        {stateLabel}
+      </div>
+    </div>
+  )
+}
 
 export function TodayScreen() {
   const [dayOffset, setDayOffset] = useState(0)
@@ -57,7 +125,7 @@ export function TodayScreen() {
           <span className="text-[11.5px] text-ink/50">{isTodayDate ? 'so far' : 'recorded'}</span>
         </div>
         <div className="mt-2.5 h-0.5 bg-ink/12">
-          <div className="h-0.5 bg-gold" style={{ width: `${scorePct}%` }} />
+          <div className="h-0.5 bg-gold transition-[width] duration-300 ease-out" style={{ width: `${scorePct}%` }} />
         </div>
       </header>
 
@@ -70,53 +138,7 @@ export function TodayScreen() {
         {active.map((habit) => {
           const done = isDone(doneMap, habit.id!, dateStr)
           const pending = isTodayDate && !done
-          const stateLabel = done
-            ? habit.polarity === 'abstain'
-              ? 'held'
-              : 'done'
-            : pending
-              ? 'pending'
-              : habit.polarity === 'abstain'
-                ? 'broken'
-                : 'missed'
-          return (
-            <div
-              key={habit.id}
-              role="button"
-              tabIndex={0}
-              onClick={() => toggleEntry(habit.id!, dateStr)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') toggleEntry(habit.id!, dateStr)
-              }}
-              className={`flex min-h-[46px] cursor-pointer items-center gap-3 border-b border-ink/9 px-4 ${
-                done ? 'bg-gold/6' : ''
-              }`}
-            >
-              <div
-                className={`flex h-5 w-5 flex-none items-center justify-center rounded-[2px] border ${
-                  done ? 'border-gold bg-gold' : 'border-ink/32 bg-transparent'
-                }`}
-              >
-                {done && <Check size={12} strokeWidth={3.2} className="text-ground" />}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div
-                  className={`overflow-hidden text-ellipsis whitespace-nowrap text-[14px] leading-[1.25] ${
-                    done ? 'text-ink' : 'text-ink/72'
-                  }`}
-                >
-                  {habit.name}
-                </div>
-              </div>
-              <div
-                className={`flex-none text-[9.5px] tracking-[0.1em] uppercase ${
-                  done ? 'text-gold/85' : pending ? 'text-ink/30' : 'text-ink/50'
-                }`}
-              >
-                {stateLabel}
-              </div>
-            </div>
-          )
+          return <TodayRow key={habit.id} habit={habit} dateStr={dateStr} done={done} pending={pending} />
         })}
         <div className="h-3" />
       </div>

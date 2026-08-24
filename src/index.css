@@ -1,14 +1,45 @@
 @import 'tailwindcss';
 
 @theme {
+  /* Dark is the bare default (matches the original "opens in the dark" design intent). */
   --color-ground: #181716;
   --color-tabbar: #1c1b19;
   --color-ink: #f3f2f2;
   --color-gold: #e1ad66;
   --color-gold-pressed: #c28d41;
+  /* Stays dark in both themes — used for content sitting on a gold-filled surface (tick checks),
+     which needs to stay legible regardless of which way `ground` is currently flipped. */
+  --color-on-gold: #201f1d;
 
   --font-heading: 'Cormorant Garamond', serif;
   --font-body: 'Lora', serif;
+}
+
+/* System prefers light, and no explicit override to dark is set. */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) {
+    --color-ground: #f3f2f2;
+    --color-tabbar: #eae9e9;
+    --color-ink: #201f1d;
+    --color-gold: #b68235;
+    --color-gold-pressed: #a06f24;
+  }
+}
+
+/* Explicit overrides always win over system preference. */
+:root[data-theme='light'] {
+  --color-ground: #f3f2f2;
+  --color-tabbar: #eae9e9;
+  --color-ink: #201f1d;
+  --color-gold: #b68235;
+  --color-gold-pressed: #a06f24;
+}
+:root[data-theme='dark'] {
+  --color-ground: #181716;
+  --color-tabbar: #1c1b19;
+  --color-ink: #f3f2f2;
+  --color-gold: #e1ad66;
+  --color-gold-pressed: #c28d41;
 }
 
 @layer base {
@@ -35,4 +66,35 @@
 
 @utility tnum {
   font-feature-settings: 'tnum';
+}
+
+@keyframes tick-pop {
+  0% {
+    transform: scale(0.85);
+  }
+  55% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes tick-check-draw {
+  from {
+    stroke-dashoffset: 20;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .animate-tick-pop {
+    animation: tick-pop 220ms ease-out;
+  }
+  .animate-tick-check {
+    stroke-dasharray: 20;
+    animation: tick-check-draw 220ms ease-out;
+  }
 }
