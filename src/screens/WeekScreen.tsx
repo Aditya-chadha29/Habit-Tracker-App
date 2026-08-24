@@ -3,7 +3,7 @@ import { Check } from 'lucide-react'
 import { computeScore, isDone, isEditable, isHabitActive } from '../lib/derive'
 import { addDays, formatWeekTitle, mondayOf, todayLocalStr, WEEKDAY_LABELS_MON_FIRST } from '../lib/dates'
 import { setWeeklyRecord, toggleEntry } from '../lib/mutations'
-import { useDoneMap, useHabits, useWeeklyRecord } from '../lib/hooks'
+import { useDoneMap, useHabits, useWeeklyRecordForWeek } from '../lib/hooks'
 
 export function WeekScreen() {
   const [weekOffset, setWeekOffset] = useState(0)
@@ -20,7 +20,7 @@ export function WeekScreen() {
     (h) => h.created_on <= weekEnd && (!h.retired_on || h.retired_on > monday),
   )
 
-  const record = useWeeklyRecord(monday)
+  const { record, loaded } = useWeeklyRecordForWeek(monday)
 
   const weekSub = weekOffset === 0 ? 'This week' : `${Math.abs(weekOffset)} weeks back`
 
@@ -125,25 +125,27 @@ export function WeekScreen() {
           <div className="w-[132px]">
             <div className="mb-1 text-[10.5px] tracking-[0.1em] text-ink/45 uppercase">Weight (kg)</div>
             <input
-              key={monday}
+              key={`${monday}-${loaded}`}
               type="text"
               inputMode="decimal"
+              disabled={!loaded}
               defaultValue={record?.weight_kg != null ? String(record.weight_kg) : ''}
               placeholder="—"
               onBlur={(e) => {
                 const v = e.target.value.trim()
+                const current = record?.weight_kg ?? null
                 if (!v) {
-                  setWeeklyRecord(monday, { weight_kg: null })
+                  if (current !== null) setWeeklyRecord(monday, { weight_kg: null })
                   return
                 }
                 const num = Number.parseFloat(v)
                 if (!Number.isNaN(num)) {
                   const rounded = Math.round(num * 10) / 10
                   e.target.value = String(rounded)
-                  setWeeklyRecord(monday, { weight_kg: rounded })
+                  if (rounded !== current) setWeeklyRecord(monday, { weight_kg: rounded })
                 }
               }}
-              className="tnum min-h-[40px] w-full rounded-[4px] border border-ink/20 bg-transparent px-2.5 py-1 font-heading text-[20px] text-ink"
+              className="tnum min-h-[40px] w-full rounded-[4px] border border-ink/20 bg-transparent px-2.5 py-1 font-heading text-[20px] text-ink disabled:opacity-60"
             />
           </div>
           <div className="flex-1 pb-1.5 text-[10.5px] leading-[1.45] text-ink/40">
@@ -154,11 +156,14 @@ export function WeekScreen() {
         <div className="mt-3">
           <div className="mb-1 text-[10.5px] tracking-[0.1em] text-ink/45 uppercase">Notes</div>
           <textarea
-            key={monday}
+            key={`${monday}-${loaded}`}
+            disabled={!loaded}
             defaultValue={record?.notes ?? ''}
             placeholder="What changed this week."
-            onBlur={(e) => setWeeklyRecord(monday, { notes: e.target.value })}
-            className="min-h-[74px] w-full resize-none rounded-[4px] border border-ink/20 bg-transparent px-2.5 py-2 font-body text-[12.5px] leading-[1.5] text-ink"
+            onBlur={(e) => {
+              if (e.target.value !== (record?.notes ?? '')) setWeeklyRecord(monday, { notes: e.target.value })
+            }}
+            className="min-h-[74px] w-full resize-none rounded-[4px] border border-ink/20 bg-transparent px-2.5 py-2 font-body text-[12.5px] leading-[1.5] text-ink disabled:opacity-60"
           />
         </div>
       </div>
