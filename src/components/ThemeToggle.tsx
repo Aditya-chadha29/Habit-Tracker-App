@@ -19,7 +19,7 @@ export function ThemeToggle() {
       onClick={() => setPreference(ORDER[(ORDER.indexOf(preference) + 1) % ORDER.length])}
       aria-label={LABELS[preference]}
       title={LABELS[preference]}
-      className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-[4px] border border-ink/20 bg-transparent text-ink/60"
+      className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-[4px] border border-ink/20 bg-transparent text-ink/60 transition-transform duration-100 active:scale-[0.97] active:bg-gold/12"
     >
       <Icon size={16} strokeWidth={1.5} />
     </button>

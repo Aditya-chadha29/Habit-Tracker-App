@@ -36,13 +36,13 @@ function TodayRow({
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') toggleEntry(habit.id!, dateStr)
       }}
-      className={`flex min-h-[46px] cursor-pointer items-center gap-3 border-b border-ink/9 px-4 transition-colors duration-200 ${
+      className={`flex min-h-[46px] cursor-pointer items-center gap-3 border-b border-ink/9 px-4 transition-colors duration-100 active:bg-gold/12 ${
         done ? 'bg-gold/6' : ''
       }`}
     >
       <div
-        className={`flex h-5 w-5 flex-none items-center justify-center rounded-[2px] border ${
-          done ? 'border-gold bg-gold' : 'border-ink/32 bg-transparent'
+        className={`flex h-5 w-5 flex-none items-center justify-center rounded-[2px] border transition-colors duration-100 ${
+          done ? 'border-gold bg-gold active:bg-gold-pressed' : 'border-ink/32 bg-transparent active:bg-gold/12'
         } ${flashing ? 'animate-tick-pop' : ''}`}
       >
         {done && (
@@ -97,8 +97,8 @@ export function TodayScreen() {
             type="button"
             disabled={dayOffset <= -6}
             onClick={() => setDayOffset((o) => Math.max(-6, o - 1))}
-            className={`h-11 w-11 border-0 bg-transparent font-heading text-[22px] ${
-              dayOffset > -6 ? 'cursor-pointer text-gold' : 'text-ink/18'
+            className={`h-11 w-11 border-0 bg-transparent font-heading text-[22px] transition-colors duration-100 ${
+              dayOffset > -6 ? 'cursor-pointer text-gold active:text-gold-pressed' : 'text-ink/18'
             }`}
           >
             ‹
@@ -111,8 +111,8 @@ export function TodayScreen() {
             type="button"
             disabled={dayOffset >= 0}
             onClick={() => setDayOffset((o) => Math.min(0, o + 1))}
-            className={`h-11 w-11 border-0 bg-transparent font-heading text-[22px] ${
-              dayOffset < 0 ? 'cursor-pointer text-gold' : 'text-ink/18'
+            className={`h-11 w-11 border-0 bg-transparent font-heading text-[22px] transition-colors duration-100 ${
+              dayOffset < 0 ? 'cursor-pointer text-gold active:text-gold-pressed' : 'text-ink/18'
             }`}
           >
             ›

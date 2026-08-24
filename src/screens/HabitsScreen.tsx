@@ -10,7 +10,7 @@ import type { Habit } from '../lib/types'
 import { ThemeToggle } from '../components/ThemeToggle'
 
 const inputClass =
-  'min-h-[42px] w-full rounded-[4px] border border-ink/20 bg-transparent px-2.5 py-1.5 font-body text-[14px] text-ink'
+  'min-h-[42px] w-full rounded-[4px] border border-ink/20 bg-transparent px-2.5 py-1.5 font-body text-[16px] text-ink'
 
 function HabitRow({ habit, onEdit }: { habit: Habit; onEdit: () => void }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -40,7 +40,7 @@ function HabitRow({ habit, onEdit }: { habit: Habit; onEdit: () => void }) {
       <button
         type="button"
         onClick={onEdit}
-        className="min-w-0 flex-1 cursor-pointer border-0 bg-transparent p-0 text-left"
+        className="min-w-0 flex-1 cursor-pointer border-0 bg-transparent p-0 text-left transition-colors duration-100 active:bg-gold/12"
       >
         <div className="overflow-hidden text-ellipsis whitespace-nowrap text-[14px] leading-[1.25] text-ink">
           {habit.name}
@@ -50,7 +50,7 @@ function HabitRow({ habit, onEdit }: { habit: Habit; onEdit: () => void }) {
       <button
         type="button"
         onClick={() => (habit.retired_on ? restoreHabit(habit.id!) : retireHabit(habit.id!))}
-        className={`min-h-[36px] flex-none cursor-pointer rounded-[4px] border px-2.5 py-1 font-heading text-[12px] ${
+        className={`min-h-[36px] flex-none cursor-pointer rounded-[4px] border px-2.5 py-1 font-heading text-[12px] transition-[color,background-color,transform] duration-100 active:scale-[0.97] active:bg-gold/12 ${
           habit.retired_on ? 'border-gold text-gold' : 'border-ink/20 text-ink/60'
         }`}
       >
@@ -118,7 +118,7 @@ export function HabitsScreen() {
               setAddOpen((o) => !o)
               setAddName('')
             }}
-            className="min-h-[36px] cursor-pointer rounded-[4px] border border-gold bg-transparent px-3 py-1.5 font-heading text-[13px] text-gold"
+            className="min-h-[36px] cursor-pointer rounded-[4px] border border-gold bg-transparent px-3 py-1.5 font-heading text-[13px] text-gold transition-transform duration-100 active:scale-[0.97] active:bg-gold/12"
           >
             {addOpen ? 'Close' : '+ New'}
           </button>
@@ -139,7 +139,7 @@ export function HabitsScreen() {
               <button
                 type="button"
                 onClick={saveAdd}
-                className="min-h-[42px] flex-1 cursor-pointer rounded-[4px] border border-gold bg-transparent font-heading text-[14px] text-gold"
+                className="min-h-[42px] flex-1 cursor-pointer rounded-[4px] border border-gold bg-transparent font-heading text-[14px] text-gold transition-transform duration-100 active:scale-[0.97] active:bg-gold/12"
               >
                 Add habit
               </button>
@@ -149,7 +149,7 @@ export function HabitsScreen() {
                   setAddOpen(false)
                   setAddName('')
                 }}
-                className="min-h-[42px] cursor-pointer rounded-[4px] border border-ink/20 bg-transparent px-3.5 font-heading text-[14px] text-ink/60"
+                className="min-h-[42px] cursor-pointer rounded-[4px] border border-ink/20 bg-transparent px-3.5 font-heading text-[14px] text-ink/60 transition-transform duration-100 active:scale-[0.97] active:bg-gold/12"
               >
                 Cancel
               </button>
@@ -182,14 +182,14 @@ export function HabitsScreen() {
                     <button
                       type="button"
                       onClick={saveEdit}
-                      className="min-h-[42px] flex-1 cursor-pointer rounded-[4px] border border-gold bg-transparent font-heading text-[14px] text-gold"
+                      className="min-h-[42px] flex-1 cursor-pointer rounded-[4px] border border-gold bg-transparent font-heading text-[14px] text-gold transition-transform duration-100 active:scale-[0.97] active:bg-gold/12"
                     >
                       Save
                     </button>
                     <button
                       type="button"
                       onClick={() => setEditingId(null)}
-                      className="min-h-[42px] cursor-pointer rounded-[4px] border border-ink/20 bg-transparent px-3.5 font-heading text-[14px] text-ink/60"
+                      className="min-h-[42px] cursor-pointer rounded-[4px] border border-ink/20 bg-transparent px-3.5 font-heading text-[14px] text-ink/60 transition-transform duration-100 active:scale-[0.97] active:bg-gold/12"
                     >
                       Cancel
                     </button>
@@ -210,7 +210,7 @@ export function HabitsScreen() {
           <button
             type="button"
             onClick={() => exportAllData()}
-            className="cursor-pointer border-0 bg-transparent p-0 font-heading text-[12px] text-ink/50 underline decoration-ink/25 underline-offset-2"
+            className="cursor-pointer border-0 bg-transparent p-0 font-heading text-[12px] text-ink/50 underline decoration-ink/25 underline-offset-2 transition-opacity duration-100 active:opacity-60"
           >
             Export data
           </button>

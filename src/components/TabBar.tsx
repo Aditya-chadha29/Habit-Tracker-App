@@ -20,7 +20,7 @@ export function TabBar({ tab, onChange }: { tab: TabKey; onChange: (t: TabKey) =
             key={key}
             type="button"
             onClick={() => onChange(key)}
-            className={`flex min-h-[56px] flex-1 cursor-pointer flex-col items-center justify-center gap-1 border-0 bg-transparent py-2 ${
+            className={`flex min-h-[56px] flex-1 cursor-pointer flex-col items-center justify-center gap-1 border-0 bg-transparent py-2 transition-[color,background-color,transform] duration-100 active:scale-[0.97] active:bg-gold/12 ${
               active ? 'text-gold' : 'text-ink/42'
             }`}
           >

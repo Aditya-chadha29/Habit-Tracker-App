@@ -13,7 +13,7 @@ function App() {
   const [tab, setTab] = useState<TabKey>('today')
 
   return (
-    <div className="mx-auto flex h-dvh w-full max-w-[390px] flex-col overflow-hidden bg-ground text-ink pt-[env(safe-area-inset-top)]">
+    <div className="mx-auto flex h-dvh w-full max-w-[390px] flex-col overflow-hidden bg-grain text-ink pt-[env(safe-area-inset-top)]">
       <Panel active={tab === 'today'}>
         <TodayScreen />
       </Panel>

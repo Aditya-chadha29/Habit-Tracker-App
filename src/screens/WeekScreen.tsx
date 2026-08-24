@@ -30,7 +30,7 @@ export function WeekScreen() {
         <button
           type="button"
           onClick={() => setWeekOffset((o) => o - 1)}
-          className="h-11 w-11 cursor-pointer border-0 bg-transparent font-heading text-[22px] text-gold"
+          className="h-11 w-11 cursor-pointer border-0 bg-transparent font-heading text-[22px] text-gold transition-colors duration-100 active:text-gold-pressed"
         >
           ‹
         </button>
@@ -42,8 +42,8 @@ export function WeekScreen() {
           type="button"
           disabled={weekOffset >= 0}
           onClick={() => setWeekOffset((o) => Math.min(0, o + 1))}
-          className={`h-11 w-11 border-0 bg-transparent font-heading text-[22px] ${
-            weekOffset < 0 ? 'cursor-pointer text-gold' : 'text-ink/18'
+          className={`h-11 w-11 border-0 bg-transparent font-heading text-[22px] transition-colors duration-100 ${
+            weekOffset < 0 ? 'cursor-pointer text-gold active:text-gold-pressed' : 'text-ink/18'
           }`}
         >
           ›
@@ -87,9 +87,9 @@ export function WeekScreen() {
                         }
                       : undefined
                   }
-                  className={`flex h-[26px] items-center justify-center rounded-[2px] border ${
+                  className={`flex h-[26px] items-center justify-center rounded-[2px] border transition-colors duration-100 ${
                     done ? 'border-gold bg-gold' : future ? 'border-ink/8' : 'border-ink/18'
-                  } ${tappable ? 'cursor-pointer' : 'cursor-default'}`}
+                  } ${tappable ? (done ? 'cursor-pointer active:bg-gold-pressed' : 'cursor-pointer active:bg-gold/12') : 'cursor-default'}`}
                 >
                   {done && <Check size={11} strokeWidth={3.4} className="text-on-gold" />}
                 </div>
@@ -163,7 +163,7 @@ export function WeekScreen() {
             onBlur={(e) => {
               if (e.target.value !== (record?.notes ?? '')) setWeeklyRecord(monday, { notes: e.target.value })
             }}
-            className="min-h-[74px] w-full resize-none rounded-[4px] border border-ink/20 bg-transparent px-2.5 py-2 font-body text-[12.5px] leading-[1.5] text-ink disabled:opacity-60"
+            className="min-h-[74px] w-full resize-none rounded-[4px] border border-ink/20 bg-transparent px-2.5 py-2 font-body text-[16px] leading-[1.5] text-ink disabled:opacity-60"
           />
         </div>
       </div>
