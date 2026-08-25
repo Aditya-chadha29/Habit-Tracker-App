@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Check } from 'lucide-react'
 import { computeScore, isDone, isEditable, isHabitActive } from '../lib/derive'
 import { addDays, formatWeekTitle, mondayOf, todayLocalStr, WEEKDAY_LABELS_MON_FIRST } from '../lib/dates'
@@ -9,6 +9,13 @@ export function WeekScreen() {
   const [weekOffset, setWeekOffset] = useState(0)
   const habits = useHabits()
   const doneMap = useDoneMap()
+  const scrollRef = useRef<HTMLDivElement>(null)
+
+  // See TodayScreen for why: resetting scroll on navigation avoids leaving an overflow:auto
+  // region in whatever mid-scroll state can make iOS Safari's touch scrolling get stuck.
+  useEffect(() => {
+    scrollRef.current?.scrollTo(0, 0)
+  }, [weekOffset])
 
   const today = todayLocalStr()
   const mondayThisWeek = mondayOf(today)
@@ -50,7 +57,7 @@ export function WeekScreen() {
         </button>
       </header>
 
-      <div className="min-h-0 flex-1 overflow-auto px-3 pt-2.5 pb-4">
+      <div ref={scrollRef} className="min-h-0 flex-1 overflow-auto px-3 pt-2.5 pb-4">
         <div className="mb-1.5 grid grid-cols-[104px_repeat(7,1fr)] items-center gap-[3px]">
           <div />
           {WEEKDAY_LABELS_MON_FIRST.map((label, i) => (

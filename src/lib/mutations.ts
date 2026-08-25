@@ -30,7 +30,13 @@ export async function retireHabit(id: number): Promise<void> {
 }
 
 export async function restoreHabit(id: number): Promise<void> {
-  await db.habits.update(id, { retired_on: null })
+  // Land at the end of the active list rather than reviving a stale sort_order that might now
+  // sit in the middle of habits reordered since this one retired.
+  await db.transaction('rw', db.habits, async () => {
+    const active = await db.habits.filter((h) => !h.retired_on).toArray()
+    const nextSortOrder = active.reduce((max, h) => Math.max(max, h.sort_order), -1) + 1
+    await db.habits.update(id, { retired_on: null, sort_order: nextSortOrder })
+  })
 }
 
 export async function renameHabit(id: number, name: string, shortName: string): Promise<void> {
@@ -38,6 +44,22 @@ export async function renameHabit(id: number, name: string, shortName: string): 
   const trimmedShort = shortName.trim()
   if (!trimmedName || !trimmedShort) return
   await db.habits.update(id, { name: trimmedName, short_name: trimmedShort })
+}
+
+/**
+ * True deletion — the one exception to "habits are never deleted" (CLAUDE.md). Only ever call
+ * this for a habit whose created_on is today: such a habit has never been part of a completed
+ * day's score (today's is still "so far", not settled history — see CLAUDE.md's scoring rules),
+ * so removing it can't retroactively change any daily score a user has already seen. A habit even
+ * one day older than today WOULD have already contributed a miss/done to a locked-in past day's
+ * denominator — deleting that turns history into fiction, which is exactly what retire/restore
+ * exists to avoid. Callers must check eligibility themselves; this function trusts the caller.
+ */
+export async function deleteHabit(id: number): Promise<void> {
+  await db.transaction('rw', db.habits, db.entries, async () => {
+    await db.entries.where('habit_id').equals(id).delete()
+    await db.habits.delete(id)
+  })
 }
 
 export async function reorderHabits(orderedIds: number[]): Promise<void> {

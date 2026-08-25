@@ -1,18 +1,25 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { closestCenter, DndContext, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
 import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { GripVertical } from 'lucide-react'
-import { addHabit, renameHabit, reorderHabits, restoreHabit, retireHabit } from '../lib/mutations'
+import { ChevronDown, GripVertical } from 'lucide-react'
+import { addHabit, deleteHabit, renameHabit, reorderHabits, restoreHabit, retireHabit } from '../lib/mutations'
 import { exportAllData } from '../lib/exportData'
+import { todayLocalStr } from '../lib/dates'
 import { useHabits } from '../lib/hooks'
 import type { Habit } from '../lib/types'
 import { ThemeToggle } from '../components/ThemeToggle'
 
 const inputClass =
   'min-h-[42px] w-full rounded-[4px] border border-ink/20 bg-transparent px-2.5 py-1.5 font-body text-[16px] text-ink'
+const buttonPress = 'transition-transform duration-100 active:scale-[0.97] active:bg-gold/12'
+const DELETE_ARM_MS = 3000
 
-function HabitRow({ habit, onEdit }: { habit: Habit; onEdit: () => void }) {
+function habitMeta(habit: Habit): string {
+  return `${habit.retired_on ? 'Retired' : habit.polarity === 'abstain' ? 'Abstain' : 'Do'} · ${habit.short_name}`
+}
+
+function SortableHabitRow({ habit, onEdit }: { habit: Habit; onEdit: () => void }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: habit.id!,
   })
@@ -21,7 +28,6 @@ function HabitRow({ habit, onEdit }: { habit: Habit; onEdit: () => void }) {
     transition,
     opacity: isDragging ? 0.5 : 1,
   }
-  const meta = `${habit.retired_on ? 'Retired' : habit.polarity === 'abstain' ? 'Abstain' : 'Do'} · ${habit.short_name}`
 
   return (
     <div
@@ -45,17 +51,96 @@ function HabitRow({ habit, onEdit }: { habit: Habit; onEdit: () => void }) {
         <div className="overflow-hidden text-ellipsis whitespace-nowrap text-[14px] leading-[1.25] text-ink">
           {habit.name}
         </div>
-        <div className="mt-0.5 text-[10.5px] text-ink/42">{meta}</div>
+        <div className="mt-0.5 text-[10.5px] text-ink/42">{habitMeta(habit)}</div>
       </button>
       <button
         type="button"
-        onClick={() => (habit.retired_on ? restoreHabit(habit.id!) : retireHabit(habit.id!))}
-        className={`min-h-[36px] flex-none cursor-pointer rounded-[4px] border px-2.5 py-1 font-heading text-[12px] transition-[color,background-color,transform] duration-100 active:scale-[0.97] active:bg-gold/12 ${
-          habit.retired_on ? 'border-gold text-gold' : 'border-ink/20 text-ink/60'
-        }`}
+        onClick={() => retireHabit(habit.id!)}
+        className={`min-h-[36px] flex-none cursor-pointer rounded-[4px] border border-ink/20 px-2.5 py-1 font-heading text-[12px] text-ink/60 transition-colors duration-100 ${buttonPress}`}
       >
-        {habit.retired_on ? 'Restore' : 'Retire'}
+        Retire
       </button>
+    </div>
+  )
+}
+
+function StaticHabitRow({ habit, onEdit }: { habit: Habit; onEdit: () => void }) {
+  return (
+    <div className="flex min-h-[52px] items-center gap-2.5 border-b border-ink/9 px-4 py-1.5 pl-[34px]">
+      <button
+        type="button"
+        onClick={onEdit}
+        className="min-w-0 flex-1 cursor-pointer border-0 bg-transparent p-0 text-left transition-colors duration-100 active:bg-gold/12"
+      >
+        <div className="overflow-hidden text-ellipsis whitespace-nowrap text-[14px] leading-[1.25] text-ink">
+          {habit.name}
+        </div>
+        <div className="mt-0.5 text-[10.5px] text-ink/42">{habitMeta(habit)}</div>
+      </button>
+      <button
+        type="button"
+        onClick={() => restoreHabit(habit.id!)}
+        className={`min-h-[36px] flex-none cursor-pointer rounded-[4px] border border-gold px-2.5 py-1 font-heading text-[12px] text-gold transition-colors duration-100 ${buttonPress}`}
+      >
+        Restore
+      </button>
+    </div>
+  )
+}
+
+function EditPanel({
+  name,
+  short,
+  onNameChange,
+  onShortChange,
+  onSave,
+  onCancel,
+  canDelete,
+  deleteArmed,
+  onDeleteTap,
+}: {
+  name: string
+  short: string
+  onNameChange: (v: string) => void
+  onShortChange: (v: string) => void
+  onSave: () => void
+  onCancel: () => void
+  canDelete: boolean
+  deleteArmed: boolean
+  onDeleteTap: () => void
+}) {
+  return (
+    <div className="border-b border-ink/9 bg-ink/3 px-4 py-3">
+      <input autoFocus value={name} onChange={(e) => onNameChange(e.target.value)} placeholder="Habit name" className={inputClass} />
+      <input value={short} onChange={(e) => onShortChange(e.target.value)} placeholder="Short name" className={`mt-2 ${inputClass}`} />
+      <div className="mt-2 flex gap-2">
+        <button
+          type="button"
+          onClick={onSave}
+          className={`min-h-[42px] flex-1 cursor-pointer rounded-[4px] border border-gold bg-transparent font-heading text-[14px] text-gold ${buttonPress}`}
+        >
+          Save
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className={`min-h-[42px] cursor-pointer rounded-[4px] border border-ink/20 bg-transparent px-3.5 font-heading text-[14px] text-ink/60 ${buttonPress}`}
+        >
+          Cancel
+        </button>
+      </div>
+      {canDelete && (
+        <div className="mt-3 border-t border-ink/9 pt-3">
+          <button
+            type="button"
+            onClick={onDeleteTap}
+            className="cursor-pointer border-0 bg-transparent p-0 font-heading text-[12px] transition-colors duration-100"
+            style={{ color: 'var(--color-danger)' }}
+          >
+            {deleteArmed ? 'Tap again to delete permanently' : 'Delete — added today, no history to lose'}
+          </button>
+        </div>
+      )}
     </div>
   )
 }
@@ -67,38 +152,83 @@ export function HabitsScreen() {
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editName, setEditName] = useState('')
   const [editShort, setEditShort] = useState('')
+  const [deleteArmed, setDeleteArmed] = useState(false)
+  const [retiredOpen, setRetiredOpen] = useState(false)
+  const deleteArmTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }))
 
-  const activeCount = habits.filter((h) => !h.retired_on).length
-  const retiredCount = habits.length - activeCount
+  const today = todayLocalStr()
+  const activeHabits = habits.filter((h) => !h.retired_on)
+  const retiredHabits = habits
+    .filter((h) => h.retired_on)
+    .sort((a, b) => (b.retired_on! < a.retired_on! ? -1 : b.retired_on! > a.retired_on! ? 1 : 0))
+
+  function clearDeleteArm() {
+    if (deleteArmTimeout.current) clearTimeout(deleteArmTimeout.current)
+    setDeleteArmed(false)
+  }
 
   function startEdit(h: Habit) {
     setEditingId(h.id!)
     setEditName(h.name)
     setEditShort(h.short_name)
+    clearDeleteArm()
+  }
+
+  function closeEdit() {
+    setEditingId(null)
+    clearDeleteArm()
   }
 
   function saveEdit() {
     if (editingId != null) renameHabit(editingId, editName, editShort)
-    setEditingId(null)
+    closeEdit()
+  }
+
+  function handleDeleteTap(id: number) {
+    if (deleteArmed) {
+      clearDeleteArm()
+      setEditingId(null)
+      deleteHabit(id)
+    } else {
+      setDeleteArmed(true)
+      deleteArmTimeout.current = setTimeout(() => setDeleteArmed(false), DELETE_ARM_MS)
+    }
   }
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event
     if (!over || active.id === over.id) return
-    const oldIndex = habits.findIndex((h) => h.id === active.id)
-    const newIndex = habits.findIndex((h) => h.id === over.id)
+    const oldIndex = activeHabits.findIndex((h) => h.id === active.id)
+    const newIndex = activeHabits.findIndex((h) => h.id === over.id)
     if (oldIndex === -1 || newIndex === -1) return
-    const reordered = arrayMove(habits, oldIndex, newIndex)
+    const reordered = arrayMove(activeHabits, oldIndex, newIndex)
     reorderHabits(reordered.map((h) => h.id!))
   }
 
   async function saveAdd() {
     if (!addName.trim()) return
-    await addHabit(addName, habits.length)
+    await addHabit(addName, activeHabits.length)
     setAddOpen(false)
     setAddName('')
+  }
+
+  function renderEditPanel(h: Habit) {
+    return (
+      <EditPanel
+        key={h.id}
+        name={editName}
+        short={editShort}
+        onNameChange={setEditName}
+        onShortChange={setEditShort}
+        onSave={saveEdit}
+        onCancel={closeEdit}
+        canDelete={h.created_on === today}
+        deleteArmed={deleteArmed}
+        onDeleteTap={() => handleDeleteTap(h.id!)}
+      />
+    )
   }
 
   return (
@@ -107,7 +237,7 @@ export function HabitsScreen() {
         <div>
           <div className="font-heading text-[22px]">Habits</div>
           <div className="mt-0.5 text-[10.5px] tracking-[0.1em] text-ink/45 uppercase">
-            {activeCount} active · {retiredCount} retired
+            {activeHabits.length} active · {retiredHabits.length} retired
           </div>
         </div>
         <div className="flex flex-none items-center gap-2">
@@ -118,7 +248,7 @@ export function HabitsScreen() {
               setAddOpen((o) => !o)
               setAddName('')
             }}
-            className="min-h-[36px] cursor-pointer rounded-[4px] border border-gold bg-transparent px-3 py-1.5 font-heading text-[13px] text-gold transition-transform duration-100 active:scale-[0.97] active:bg-gold/12"
+            className={`min-h-[36px] cursor-pointer rounded-[4px] border border-gold bg-transparent px-3 py-1.5 font-heading text-[13px] text-gold ${buttonPress}`}
           >
             {addOpen ? 'Close' : '+ New'}
           </button>
@@ -139,7 +269,7 @@ export function HabitsScreen() {
               <button
                 type="button"
                 onClick={saveAdd}
-                className="min-h-[42px] flex-1 cursor-pointer rounded-[4px] border border-gold bg-transparent font-heading text-[14px] text-gold transition-transform duration-100 active:scale-[0.97] active:bg-gold/12"
+                className={`min-h-[42px] flex-1 cursor-pointer rounded-[4px] border border-gold bg-transparent font-heading text-[14px] text-gold ${buttonPress}`}
               >
                 Add habit
               </button>
@@ -149,7 +279,7 @@ export function HabitsScreen() {
                   setAddOpen(false)
                   setAddName('')
                 }}
-                className="min-h-[42px] cursor-pointer rounded-[4px] border border-ink/20 bg-transparent px-3.5 font-heading text-[14px] text-ink/60 transition-transform duration-100 active:scale-[0.97] active:bg-gold/12"
+                className={`min-h-[42px] cursor-pointer rounded-[4px] border border-ink/20 bg-transparent px-3.5 font-heading text-[14px] text-ink/60 ${buttonPress}`}
               >
                 Cancel
               </button>
@@ -161,50 +291,39 @@ export function HabitsScreen() {
         )}
 
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={habits.map((h) => h.id!)} strategy={verticalListSortingStrategy}>
-            {habits.map((h) =>
-              editingId === h.id ? (
-                <div key={h.id} className="border-b border-ink/9 bg-ink/3 px-4 py-3">
-                  <input
-                    autoFocus
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    placeholder="Habit name"
-                    className={inputClass}
-                  />
-                  <input
-                    value={editShort}
-                    onChange={(e) => setEditShort(e.target.value)}
-                    placeholder="Short name"
-                    className={`mt-2 ${inputClass}`}
-                  />
-                  <div className="mt-2 flex gap-2">
-                    <button
-                      type="button"
-                      onClick={saveEdit}
-                      className="min-h-[42px] flex-1 cursor-pointer rounded-[4px] border border-gold bg-transparent font-heading text-[14px] text-gold transition-transform duration-100 active:scale-[0.97] active:bg-gold/12"
-                    >
-                      Save
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setEditingId(null)}
-                      className="min-h-[42px] cursor-pointer rounded-[4px] border border-ink/20 bg-transparent px-3.5 font-heading text-[14px] text-ink/60 transition-transform duration-100 active:scale-[0.97] active:bg-gold/12"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <HabitRow key={h.id} habit={h} onEdit={() => startEdit(h)} />
-              ),
+          <SortableContext items={activeHabits.map((h) => h.id!)} strategy={verticalListSortingStrategy}>
+            {activeHabits.map((h) =>
+              editingId === h.id ? renderEditPanel(h) : <SortableHabitRow key={h.id} habit={h} onEdit={() => startEdit(h)} />,
             )}
           </SortableContext>
         </DndContext>
 
+        {retiredHabits.length > 0 && (
+          <>
+            <button
+              type="button"
+              onClick={() => setRetiredOpen((o) => !o)}
+              className="flex min-h-[42px] w-full cursor-pointer items-center justify-between border-b border-ink/9 bg-transparent px-4 font-heading text-[12px] tracking-[0.06em] text-ink/45 uppercase transition-colors duration-100 active:bg-gold/12"
+            >
+              <span>Retired · {retiredHabits.length}</span>
+              <ChevronDown
+                size={15}
+                strokeWidth={1.5}
+                className={`transition-transform duration-150 ${retiredOpen ? 'rotate-180' : ''}`}
+              />
+            </button>
+            {retiredOpen &&
+              retiredHabits.map((h) =>
+                editingId === h.id ? renderEditPanel(h) : <StaticHabitRow key={h.id} habit={h} onEdit={() => startEdit(h)} />,
+              )}
+          </>
+        )}
+
         <div className="px-4 pt-3.5 text-[11px] leading-[1.55] text-ink/40">
-          Habits are never deleted. Retiring stops a habit appearing from today forward and removes it from the
-          daily denominator; every past entry stays as recorded.
+          Habits are never deleted once they've seen a day pass — retiring stops one appearing
+          from today forward and removes it from the daily denominator; every past entry stays as
+          recorded. A habit added by mistake today can still be deleted outright, since it hasn't
+          become history yet.
         </div>
         <div className="px-4 pt-3 pb-5">
           <button

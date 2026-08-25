@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Check } from 'lucide-react'
 import { activeHabits, computeScore, historyDayCount, isDone } from '../lib/derive'
 import { addDays, formatDayTitle, todayLocalStr } from '../lib/dates'
@@ -77,6 +77,16 @@ export function TodayScreen() {
   const [dayOffset, setDayOffset] = useState(0)
   const habits = useHabits()
   const doneMap = useDoneMap()
+  const scrollRef = useRef<HTMLDivElement>(null)
+
+  // iOS Safari can get an inner overflow:auto region "stuck" — the container's internal scroll
+  // state gets confused when its content set changes size while scrolled, and the whole app frame
+  // starts panning instead of just this list. Resetting scroll position on date navigation is
+  // both better UX (view a new day from the top) and avoids leaving the container in whatever
+  // mid-scroll state triggers it.
+  useEffect(() => {
+    scrollRef.current?.scrollTo(0, 0)
+  }, [dayOffset])
 
   const today = todayLocalStr()
   const dateStr = addDays(today, dayOffset)
@@ -129,7 +139,7 @@ export function TodayScreen() {
         </div>
       </header>
 
-      <div className="min-h-0 flex-1 overflow-auto">
+      <div ref={scrollRef} className="min-h-0 flex-1 overflow-auto">
         {showFirstDayNote && (
           <div className="border-b border-ink/14 px-4 py-3 text-[11.5px] leading-normal text-ink/50">
             First day logged. Nothing to compare against yet — Insights unlocks as history accumulates.

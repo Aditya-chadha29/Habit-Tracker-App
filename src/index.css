@@ -10,6 +10,10 @@
   /* Stays dark in both themes — used for content sitting on a gold-filled surface (tick checks),
      which needs to stay legible regardless of which way `ground` is currently flipped. */
   --color-on-gold: #201f1d;
+  /* Muted terracotta, not a bright alarm red — reserved for the one destructive, irreversible
+     action in the app (deleting a same-day, no-history habit). Kept warm so it still reads as
+     part of this palette rather than a jarring system-red. */
+  --color-danger: #c0503a;
 
   --font-heading: 'Cormorant Garamond', serif;
   --font-body: 'Lora', serif;
@@ -23,6 +27,7 @@
     --color-ink: #201f1d;
     --color-gold: #b68235;
     --color-gold-pressed: #a06f24;
+    --color-danger: #a83f2b;
   }
 }
 
@@ -33,6 +38,7 @@
   --color-ink: #201f1d;
   --color-gold: #b68235;
   --color-gold-pressed: #a06f24;
+  --color-danger: #a83f2b;
 }
 :root[data-theme='dark'] {
   --color-ground: #181716;
@@ -40,6 +46,7 @@
   --color-ink: #f3f2f2;
   --color-gold: #e1ad66;
   --color-gold-pressed: #c28d41;
+  --color-danger: #c0503a;
 }
 
 @layer base {
