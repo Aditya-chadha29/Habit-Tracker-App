@@ -78,6 +78,13 @@
   select {
     font-size: 16px;
   }
+
+  /* Momentum scrolling for every nested overflow:auto region. Defensive: WebKit can otherwise
+     leave an inner scroll container's touch-scroll state confused after its content changes size
+     while scrolled, and the outer app frame starts panning instead of just that list. */
+  .overflow-auto {
+    -webkit-overflow-scrolling: touch;
+  }
 }
 
 @utility tnum {
@@ -114,6 +121,27 @@
   }
 }
 
+@keyframes number-pulse {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.06);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .animate-tick-pop {
     animation: tick-pop 220ms ease-out;
@@ -121,5 +149,11 @@
   .animate-tick-check {
     stroke-dasharray: 20;
     animation: tick-check-draw 220ms ease-out;
+  }
+  .animate-number-pulse {
+    animation: number-pulse 200ms ease-out;
+  }
+  .animate-fade-in {
+    animation: fade-in 250ms ease-out;
   }
 }

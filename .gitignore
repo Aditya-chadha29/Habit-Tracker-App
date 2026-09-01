@@ -26,3 +26,6 @@ dev-dist
 
 .vercel
 .env*
+
+# Personal exported habit data — never belongs in version control
+Exported Data/

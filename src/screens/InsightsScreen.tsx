@@ -8,6 +8,7 @@ import {
   rollingAverage,
   streak,
   weekdayRateGrid,
+  type DoneMap,
 } from '../lib/derive'
 import {
   dateRange,
@@ -16,8 +17,8 @@ import {
   WEEKDAY_FULL_MON_FIRST,
   WEEKDAY_INITIALS_MON_FIRST,
 } from '../lib/dates'
-import { useDoneMap, useHabits } from '../lib/hooks'
 import { useTheme } from '../lib/theme'
+import type { Habit } from '../lib/types'
 
 const RAMP = ['#4b3208', '#7d5411', '#a06f24', '#c28d41', '#e1ad66']
 
@@ -51,12 +52,25 @@ function SectionHeading({ kicker, headline }: { kicker: string; headline: string
   )
 }
 
-export function InsightsScreen() {
-  const habits = useHabits()
-  const doneMap = useDoneMap()
+export function InsightsScreen({
+  habits,
+  doneMap,
+  active,
+}: {
+  habits: Habit[]
+  doneMap: DoneMap
+  active: boolean
+}) {
   const today = todayLocalStr()
   const { effective } = useTheme()
   const chartColors = CHART_COLORS[effective]
+
+  // This screen's derivations (weekday rates, streaks, the daily score series feeding Chart.js)
+  // scale with total history length, and Chart.js re-rendering its canvas is real work — none of
+  // it should run while this tab is hidden. All four screens stay mounted for scroll/nav-state
+  // continuity, but unlike Today/Week (cheap, single-day/week math) Insights has no per-visit
+  // state worth preserving while hidden, so skipping its body entirely when inactive is free.
+  if (!active) return null
 
   const start = historyStartDate(habits)
   const n = historyDayCount(habits, today)
@@ -150,7 +164,7 @@ export function InsightsScreen() {
         <div className="mt-0.5 text-[10.5px] tracking-[0.1em] text-ink/45 uppercase">{historyLabel}</div>
       </header>
 
-      <div className="min-h-0 flex-1 overflow-auto px-4 pt-3.5 pb-5">
+      <div className="animate-fade-in min-h-0 flex-1 overflow-auto px-4 pt-3.5 pb-5">
         <SectionHeading kicker="A · Habit × weekday" headline="Which habits fail, and when" />
         {heatOk ? (
           <div className="mt-2.5">
@@ -262,7 +276,7 @@ export function InsightsScreen() {
               <div className="overflow-hidden text-ellipsis whitespace-nowrap text-[12px] text-ink/80">
                 {habit.short_name}
               </div>
-              <div className={`tnum text-right font-heading text-[15px] ${cur >= 5 ? 'text-gold' : 'text-ink/80'}`}>
+              <div className={`tnum text-right font-heading text-[15px] transition-colors duration-300 ${cur >= 5 ? 'text-gold' : 'text-ink/80'}`}>
                 {cur}
               </div>
               <div className="tnum text-right font-heading text-[15px] text-ink/42">{best}</div>

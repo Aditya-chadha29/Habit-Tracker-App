@@ -1,14 +1,52 @@
-import { useEffect, useRef, useState } from 'react'
+import { memo, useEffect, useRef, useState } from 'react'
 import { Check } from 'lucide-react'
-import { computeScore, isDone, isEditable, isHabitActive } from '../lib/derive'
+import { computeScore, isDone, isEditable, isHabitActive, type DoneMap } from '../lib/derive'
 import { addDays, formatWeekTitle, mondayOf, todayLocalStr, WEEKDAY_LABELS_MON_FIRST } from '../lib/dates'
 import { setWeeklyRecord, toggleEntry } from '../lib/mutations'
-import { useDoneMap, useHabits, useWeeklyRecordForWeek } from '../lib/hooks'
+import { useFlashOnTrue, useWeeklyRecordForWeek } from '../lib/hooks'
+import type { Habit } from '../lib/types'
 
-export function WeekScreen() {
+const WeekCell = memo(function WeekCell({
+  habitId,
+  iso,
+  done,
+  tappable,
+}: {
+  habitId: number
+  iso: string
+  done: boolean
+  tappable: boolean
+}) {
+  const flashing = useFlashOnTrue(done)
+  return (
+    <div
+      role={tappable ? 'button' : undefined}
+      tabIndex={tappable ? 0 : undefined}
+      onClick={tappable ? () => toggleEntry(habitId, iso) : undefined}
+      onKeyDown={
+        tappable
+          ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') toggleEntry(habitId, iso)
+            }
+          : undefined
+      }
+      className={`flex h-[26px] items-center justify-center rounded-[2px] border transition-colors duration-100 ${
+        done ? 'border-gold bg-gold' : 'border-ink/18'
+      } ${tappable ? (done ? 'cursor-pointer active:bg-gold-pressed' : 'cursor-pointer active:bg-gold/12') : 'cursor-default'} ${flashing ? 'animate-tick-pop' : ''}`}
+    >
+      {done && (
+        <Check size={11} strokeWidth={3.4} className={`text-on-gold ${flashing ? 'animate-tick-check' : ''}`} />
+      )}
+    </div>
+  )
+})
+
+function FutureCell() {
+  return <div className="flex h-[26px] items-center justify-center rounded-[2px] border border-ink/8" />
+}
+
+export function WeekScreen({ habits, doneMap }: { habits: Habit[]; doneMap: DoneMap }) {
   const [weekOffset, setWeekOffset] = useState(0)
-  const habits = useHabits()
-  const doneMap = useDoneMap()
   const scrollRef = useRef<HTMLDivElement>(null)
 
   // See TodayScreen for why: resetting scroll on navigation avoids leaving an overflow:auto
@@ -79,28 +117,10 @@ export function WeekScreen() {
             </div>
             {weekDates.map((iso) => {
               const future = iso > today
-              const done = !future && isDone(doneMap, habit.id!, iso)
-              const tappable = !future && isEditable(iso, today) && isHabitActive(habit, iso)
-              return (
-                <div
-                  key={iso}
-                  role={tappable ? 'button' : undefined}
-                  tabIndex={tappable ? 0 : undefined}
-                  onClick={tappable ? () => toggleEntry(habit.id!, iso) : undefined}
-                  onKeyDown={
-                    tappable
-                      ? (e) => {
-                          if (e.key === 'Enter' || e.key === ' ') toggleEntry(habit.id!, iso)
-                        }
-                      : undefined
-                  }
-                  className={`flex h-[26px] items-center justify-center rounded-[2px] border transition-colors duration-100 ${
-                    done ? 'border-gold bg-gold' : future ? 'border-ink/8' : 'border-ink/18'
-                  } ${tappable ? (done ? 'cursor-pointer active:bg-gold-pressed' : 'cursor-pointer active:bg-gold/12') : 'cursor-default'}`}
-                >
-                  {done && <Check size={11} strokeWidth={3.4} className="text-on-gold" />}
-                </div>
-              )
+              if (future) return <FutureCell key={iso} />
+              const done = isDone(doneMap, habit.id!, iso)
+              const tappable = isEditable(iso, today) && isHabitActive(habit, iso)
+              return <WeekCell key={iso} habitId={habit.id!} iso={iso} done={done} tappable={tappable} />
             })}
           </div>
         ))}

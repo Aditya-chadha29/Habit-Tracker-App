@@ -1,12 +1,12 @@
-import { useEffect, useRef, useState } from 'react'
+import { memo, useEffect, useRef, useState } from 'react'
 import { Check } from 'lucide-react'
-import { activeHabits, computeScore, historyDayCount, isDone } from '../lib/derive'
+import { activeHabits, computeScore, historyDayCount, isDone, type DoneMap } from '../lib/derive'
 import { addDays, formatDayTitle, todayLocalStr } from '../lib/dates'
 import { toggleEntry } from '../lib/mutations'
-import { useDoneMap, useFlashOnTrue, useHabits } from '../lib/hooks'
+import { useFlashOnTrue, usePulseOnChange } from '../lib/hooks'
 import type { Habit } from '../lib/types'
 
-function TodayRow({
+const TodayRow = memo(function TodayRow({
   habit,
   dateStr,
   done,
@@ -71,12 +71,10 @@ function TodayRow({
       </div>
     </div>
   )
-}
+})
 
-export function TodayScreen() {
+export function TodayScreen({ habits, doneMap }: { habits: Habit[]; doneMap: DoneMap }) {
   const [dayOffset, setDayOffset] = useState(0)
-  const habits = useHabits()
-  const doneMap = useDoneMap()
   const scrollRef = useRef<HTMLDivElement>(null)
 
   // iOS Safari can get an inner overflow:auto region "stuck" — the container's internal scroll
@@ -96,6 +94,7 @@ export function TodayScreen() {
   const scorePct = score.total ? Math.round((score.done / score.total) * 100) : 0
   const historyCount = historyDayCount(habits, today)
   const showFirstDayNote = isTodayDate && historyCount <= 1
+  const scorePulse = usePulseOnChange(score.done)
 
   const daySub = isTodayDate ? 'Today' : dayOffset === -1 ? 'Yesterday' : `${Math.abs(dayOffset)} days back`
 
@@ -129,7 +128,9 @@ export function TodayScreen() {
           </button>
         </div>
         <div className="mt-1.5 flex items-baseline gap-2">
-          <span className="tnum font-heading text-[36px] leading-none">
+          <span
+            className={`tnum inline-block font-heading text-[36px] leading-none ${scorePulse ? 'animate-number-pulse' : ''}`}
+          >
             {score.done}/{score.total}
           </span>
           <span className="text-[11.5px] text-ink/50">{isTodayDate ? 'so far' : 'recorded'}</span>

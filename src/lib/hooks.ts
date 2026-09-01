@@ -65,3 +65,21 @@ export function useFlashOnTrue(value: boolean, durationMs = 250): boolean {
 
   return flashing
 }
+
+/** True for ~durationMs whenever `value` changes at all (not just false→true). Used for a quiet
+ * acknowledgment pulse on a number that just moved, in either direction. */
+export function usePulseOnChange<T>(value: T, durationMs = 200): boolean {
+  const [pulsing, setPulsing] = useState(false)
+  const prev = useRef(value)
+
+  useEffect(() => {
+    if (value !== prev.current) {
+      setPulsing(true)
+      const t = setTimeout(() => setPulsing(false), durationMs)
+      prev.current = value
+      return () => clearTimeout(t)
+    }
+  }, [value, durationMs])
+
+  return pulsing
+}

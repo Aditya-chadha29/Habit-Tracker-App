@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { closestCenter, DndContext, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
 import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -6,7 +6,6 @@ import { ChevronDown, GripVertical } from 'lucide-react'
 import { addHabit, deleteHabit, renameHabit, reorderHabits, restoreHabit, retireHabit } from '../lib/mutations'
 import { exportAllData } from '../lib/exportData'
 import { todayLocalStr } from '../lib/dates'
-import { useHabits } from '../lib/hooks'
 import type { Habit } from '../lib/types'
 import { ThemeToggle } from '../components/ThemeToggle'
 
@@ -145,8 +144,7 @@ function EditPanel({
   )
 }
 
-export function HabitsScreen() {
-  const habits = useHabits()
+export function HabitsScreen({ habits }: { habits: Habit[] }) {
   const [addOpen, setAddOpen] = useState(false)
   const [addName, setAddName] = useState('')
   const [editingId, setEditingId] = useState<number | null>(null)
@@ -155,6 +153,13 @@ export function HabitsScreen() {
   const [deleteArmed, setDeleteArmed] = useState(false)
   const [retiredOpen, setRetiredOpen] = useState(false)
   const deleteArmTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const addNameInputRef = useRef<HTMLInputElement>(null)
+
+  // The add-form no longer unmounts when closed (it animates open/shut instead), so autoFocus
+  // only firing on first mount isn't enough to refocus it each time it reopens.
+  useEffect(() => {
+    if (addOpen) addNameInputRef.current?.focus()
+  }, [addOpen])
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }))
 
@@ -256,39 +261,41 @@ export function HabitsScreen() {
       </header>
 
       <div className="min-h-0 flex-1 overflow-auto">
-        {addOpen && (
-          <div className="border-b border-ink/14 bg-ink/3 px-4 py-3">
-            <input
-              autoFocus
-              value={addName}
-              onChange={(e) => setAddName(e.target.value)}
-              placeholder="Habit name"
-              className={inputClass}
-            />
-            <div className="mt-2 flex gap-2">
-              <button
-                type="button"
-                onClick={saveAdd}
-                className={`min-h-[42px] flex-1 cursor-pointer rounded-[4px] border border-gold bg-transparent font-heading text-[14px] text-gold ${buttonPress}`}
-              >
-                Add habit
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setAddOpen(false)
-                  setAddName('')
-                }}
-                className={`min-h-[42px] cursor-pointer rounded-[4px] border border-ink/20 bg-transparent px-3.5 font-heading text-[14px] text-ink/60 ${buttonPress}`}
-              >
-                Cancel
-              </button>
-            </div>
-            <div className="mt-2 text-[10.5px] leading-[1.5] text-ink/40">
-              Starts counting from today. Earlier days are never counted as misses.
+        <div className={`grid transition-[grid-template-rows] duration-200 ease-out ${addOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
+          <div className="min-h-0 overflow-hidden">
+            <div className="border-b border-ink/14 bg-ink/3 px-4 py-3">
+              <input
+                ref={addNameInputRef}
+                value={addName}
+                onChange={(e) => setAddName(e.target.value)}
+                placeholder="Habit name"
+                className={inputClass}
+              />
+              <div className="mt-2 flex gap-2">
+                <button
+                  type="button"
+                  onClick={saveAdd}
+                  className={`min-h-[42px] flex-1 cursor-pointer rounded-[4px] border border-gold bg-transparent font-heading text-[14px] text-gold ${buttonPress}`}
+                >
+                  Add habit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAddOpen(false)
+                    setAddName('')
+                  }}
+                  className={`min-h-[42px] cursor-pointer rounded-[4px] border border-ink/20 bg-transparent px-3.5 font-heading text-[14px] text-ink/60 ${buttonPress}`}
+                >
+                  Cancel
+                </button>
+              </div>
+              <div className="mt-2 text-[10.5px] leading-[1.5] text-ink/40">
+                Starts counting from today. Earlier days are never counted as misses.
+              </div>
             </div>
           </div>
-        )}
+        </div>
 
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={activeHabits.map((h) => h.id!)} strategy={verticalListSortingStrategy}>
@@ -312,10 +319,15 @@ export function HabitsScreen() {
                 className={`transition-transform duration-150 ${retiredOpen ? 'rotate-180' : ''}`}
               />
             </button>
-            {retiredOpen &&
-              retiredHabits.map((h) =>
-                editingId === h.id ? renderEditPanel(h) : <StaticHabitRow key={h.id} habit={h} onEdit={() => startEdit(h)} />,
-              )}
+            <div
+              className={`grid transition-[grid-template-rows] duration-200 ease-out ${retiredOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}
+            >
+              <div className="min-h-0 overflow-hidden">
+                {retiredHabits.map((h) =>
+                  editingId === h.id ? renderEditPanel(h) : <StaticHabitRow key={h.id} habit={h} onEdit={() => startEdit(h)} />,
+                )}
+              </div>
+            </div>
           </>
         )}
 
