@@ -19,7 +19,7 @@ const TodayRow = memo(function TodayRow({
   pending: boolean
   onTap: (habit: Habit, rowEl: HTMLElement) => void
 }) {
-  const flashing = useFlashOnTrue(done, 430)
+  const flashing = useFlashOnTrue(done, 500)
   const stateLabel = done
     ? habit.polarity === 'abstain'
       ? 'held'
@@ -87,6 +87,7 @@ export function TodayScreen({ habits, doneMap }: { habits: Habit[]; doneMap: Don
   const [listRef] = useAutoAnimate<HTMLDivElement>({ duration: 320, easing: 'ease-out' })
   const [flying, setFlying] = useState<FlyItem[]>([])
   const flyIdRef = useRef(0)
+  const [animatingIds, setAnimatingIds] = useState<Set<number>>(new Set())
 
   // iOS Safari can get an inner overflow:auto region "stuck" — the container's internal scroll
   // state gets confused when its content set changes size while scrolled, and the whole app frame
@@ -108,34 +109,59 @@ export function TodayScreen({ habits, doneMap }: { habits: Habit[]; doneMap: Don
   const scorePulse = usePulseOnChange(score.done)
   const quote = quoteForDate(today)
 
+  // While a row is mid tap-animation (sweep, then fly), it holds its position at the top of the
+  // pending group even though the underlying entry is already marked done — otherwise it would
+  // jump to the bottom before the user has seen the sweep/fly play out.
   const ordered = isTodayDate
     ? [...active].sort((a, b) => {
-        const aPending = !isDone(doneMap, a.id!, dateStr)
-        const bPending = !isDone(doneMap, b.id!, dateStr)
+        const aPending = animatingIds.has(a.id!) || !isDone(doneMap, a.id!, dateStr)
+        const bPending = animatingIds.has(b.id!) || !isDone(doneMap, b.id!, dateStr)
         if (aPending === bPending) return 0
         return aPending ? -1 : 1
       })
     : active
 
+  const SWEEP_MS = 500
+  const FLY_MS = 700
+
   function handleTap(habit: Habit, rowEl: HTMLElement) {
     const wasDone = isDone(doneMap, habit.id!, dateStr)
-    if (!wasDone && counterRef.current && window.matchMedia('(prefers-reduced-motion: no-preference)').matches) {
-      const from = rowEl.getBoundingClientRect()
-      const to = counterRef.current.getBoundingClientRect()
-      const id = ++flyIdRef.current
-      setFlying((f) => [
-        ...f,
-        {
-          id,
-          x0: from.left + 16,
-          y0: from.top + from.height / 2,
-          x1: to.left + to.width / 2,
-          y1: to.top + to.height / 2,
-        },
-      ])
-      setTimeout(() => setFlying((f) => f.filter((it) => it.id !== id)), 910)
-    }
-    toggleEntry(habit.id!, dateStr)
+    const id = habit.id!
+    toggleEntry(id, dateStr)
+
+    if (wasDone) return
+    const reduceMotion = !window.matchMedia('(prefers-reduced-motion: no-preference)').matches
+    if (reduceMotion) return
+
+    setAnimatingIds((prev) => new Set(prev).add(id))
+
+    // Sequence: row-sweep plays first (row stays put), then the +1 flies to the counter, then
+    // the row is released to sink to the bottom of the list.
+    setTimeout(() => {
+      if (counterRef.current && rowEl.isConnected) {
+        const from = rowEl.getBoundingClientRect()
+        const to = counterRef.current.getBoundingClientRect()
+        const flyId = ++flyIdRef.current
+        setFlying((f) => [
+          ...f,
+          {
+            id: flyId,
+            x0: from.left + 16,
+            y0: from.top + from.height / 2,
+            x1: to.left + to.width / 2,
+            y1: to.top + to.height / 2,
+          },
+        ])
+        setTimeout(() => setFlying((f) => f.filter((it) => it.id !== flyId)), FLY_MS + 50)
+      }
+      setTimeout(() => {
+        setAnimatingIds((prev) => {
+          const next = new Set(prev)
+          next.delete(id)
+          return next
+        })
+      }, FLY_MS)
+    }, SWEEP_MS)
   }
 
   const daySub = isTodayDate ? 'Today' : dayOffset === -1 ? 'Yesterday' : `${Math.abs(dayOffset)} days back`
