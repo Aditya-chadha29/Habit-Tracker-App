@@ -2,8 +2,9 @@ import { memo, useEffect, useRef, useState } from 'react'
 import { Check } from 'lucide-react'
 import { activeHabits, computeScore, historyDayCount, isDone, type DoneMap } from '../lib/derive'
 import { addDays, formatDayTitle, todayLocalStr } from '../lib/dates'
-import { toggleEntry } from '../lib/mutations'
-import { useFlashOnTrue, usePulseOnChange } from '../lib/hooks'
+import { setDailyNote, toggleEntry } from '../lib/mutations'
+import { useDailyNoteForDate, useFlashOnTrue, usePulseOnChange } from '../lib/hooks'
+import { quoteForDate } from '../lib/quotes'
 import type { Habit } from '../lib/types'
 
 const TodayRow = memo(function TodayRow({
@@ -95,6 +96,8 @@ export function TodayScreen({ habits, doneMap }: { habits: Habit[]; doneMap: Don
   const historyCount = historyDayCount(habits, today)
   const showFirstDayNote = isTodayDate && historyCount <= 1
   const scorePulse = usePulseOnChange(score.done)
+  const quote = quoteForDate(today)
+  const { note, loaded: noteLoaded } = useDailyNoteForDate(dateStr)
 
   const daySub = isTodayDate ? 'Today' : dayOffset === -1 ? 'Yesterday' : `${Math.abs(dayOffset)} days back`
 
@@ -138,6 +141,11 @@ export function TodayScreen({ habits, doneMap }: { habits: Habit[]; doneMap: Don
         <div className="mt-2.5 h-0.5 bg-ink/12">
           <div className="h-0.5 bg-gold transition-[width] duration-300 ease-out" style={{ width: `${scorePct}%` }} />
         </div>
+        {isTodayDate && (
+          <p className="mt-2.5 font-heading text-[12.5px] leading-[1.4] text-ink/50 italic">
+            “{quote.text}” <span className="not-italic text-ink/35">— {quote.attribution}</span>
+          </p>
+        )}
       </header>
 
       <div ref={scrollRef} className="min-h-0 flex-1 overflow-auto">
@@ -151,7 +159,20 @@ export function TodayScreen({ habits, doneMap }: { habits: Habit[]; doneMap: Don
           const pending = isTodayDate && !done
           return <TodayRow key={habit.id} habit={habit} dateStr={dateStr} done={done} pending={pending} />
         })}
-        <div className="h-3" />
+
+        <div className="px-4 pt-4 pb-5">
+          <div className="mb-1 text-[10.5px] tracking-[0.1em] text-ink/45 uppercase">Notes</div>
+          <textarea
+            key={`${dateStr}-${noteLoaded}`}
+            disabled={!noteLoaded}
+            defaultValue={note?.text ?? ''}
+            placeholder="What happened today — complaints, reasoning, anything worth remembering."
+            onBlur={(e) => {
+              if (e.target.value !== (note?.text ?? '')) setDailyNote(dateStr, e.target.value)
+            }}
+            className="min-h-[200px] w-full resize-y rounded-[4px] border border-ink/20 bg-transparent px-2.5 py-2 font-body text-[16px] leading-[1.5] text-ink disabled:opacity-60"
+          />
+        </div>
       </div>
     </>
   )

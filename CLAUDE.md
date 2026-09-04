@@ -37,4 +37,20 @@ copy reads correctly: for `abstain`, `done: true` means "successfully abstained"
 ## Design
 Implement from `design_handoff_habit_tracker/README.md` and the HTML prototype it lists. Dark,
 mobile-first at 390 × 844, navigation at the bottom, 44px minimum tap targets, single sequential
-chart ramp. No confetti, no streak flames, no motivational copy.
+chart ramp. No confetti, no streak flames.
+
+**Motivational copy** was originally banned outright here too. As of 2026-09-04, the user
+deliberately asked for a "quote of the day" on the Today screen (`src/lib/quotes.ts`) — a real,
+intentional exception, not scope creep. Keep it to that one place: a single quiet line, not
+banners, toasts, or copy scattered through the rest of the UI. The rest of the app's tone (no
+confetti, no streak flames, scores reported neutrally) still stands.
+
+## Notes: daily vs weekly
+Two separate concepts, don't conflate them:
+- **Daily notes** (`daily_notes` table, `date` primary key) — free-form journaling tied to a
+  specific day, edited on the Today screen (same 7-day-back navigation window as ticking habits).
+  Added 2026-09-04 for exactly this: "even if it is me just complaining or giving reasoning for
+  some habit not being followed."
+- **Weekly notes** (`weekly_records.notes`) — the original end-of-week reflection field on the
+  Week screen, alongside that week's weight entry. Predates daily notes; still there, still
+  weekly, not replaced by it.

@@ -2,7 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { db } from './db'
 import { buildDoneMap } from './derive'
-import type { Habit, WeeklyRecord } from './types'
+import type { DailyNote, Habit, WeeklyRecord } from './types'
 
 export function useHabits(): Habit[] {
   return useLiveQuery(() => db.habits.orderBy('sort_order').toArray(), [], [] as Habit[]) ?? []
@@ -45,6 +45,36 @@ export function useWeeklyRecordForWeek(weekMonday: string): {
 
   const loaded = resolved?.monday === weekMonday
   return { record: loaded ? resolved.record : undefined, loaded }
+}
+
+/**
+ * Same reasoning as useWeeklyRecordForWeek: a plain one-shot fetch per `date`, not a
+ * useLiveQuery, so navigating between days can never briefly show a different day's note.
+ * daily_notes uses `date` as its primary key, so this is a direct db.get() rather than a
+ * where().first() query.
+ */
+export function useDailyNoteForDate(date: string): { note: DailyNote | undefined; loaded: boolean } {
+  const [resolved, setResolved] = useState<{ date: string; note: DailyNote | undefined } | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    db.daily_notes.get(date).then((note) => {
+      if (!cancelled) setResolved({ date, note })
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [date])
+
+  const loaded = resolved?.date === date
+  return { note: loaded ? resolved.note : undefined, loaded }
+}
+
+/** The whole weekly_records table, live. Safe as a live query (unlike a single week's record)
+ * because every consumer here reads the full history, not one key that changes with navigation —
+ * there's no "previous key's value" to leak. */
+export function useAllWeeklyRecords(): WeeklyRecord[] {
+  return useLiveQuery(() => db.weekly_records.toArray(), [], [] as WeeklyRecord[]) ?? []
 }
 
 /** True for ~durationMs whenever `value` flips from false to true. Used for a one-shot "just

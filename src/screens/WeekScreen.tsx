@@ -1,10 +1,16 @@
 import { memo, useEffect, useRef, useState } from 'react'
+import { Line } from 'react-chartjs-2'
 import { Check } from 'lucide-react'
+import '../lib/chartSetup'
 import { computeScore, isDone, isEditable, isHabitActive, type DoneMap } from '../lib/derive'
 import { addDays, formatWeekTitle, mondayOf, todayLocalStr, WEEKDAY_LABELS_MON_FIRST } from '../lib/dates'
 import { setWeeklyRecord, toggleEntry } from '../lib/mutations'
-import { useFlashOnTrue, useWeeklyRecordForWeek } from '../lib/hooks'
+import { useAllWeeklyRecords, useFlashOnTrue, useWeeklyRecordForWeek } from '../lib/hooks'
+import { useTheme } from '../lib/theme'
 import type { Habit } from '../lib/types'
+
+const WEIGHT_CHART_COLOR = { dark: '#e1ad66', light: '#b68235' }
+const MIN_WEIGHT_POINTS = 6
 
 const WeekCell = memo(function WeekCell({
   habitId,
@@ -68,6 +74,42 @@ export function WeekScreen({ habits, doneMap }: { habits: Habit[]; doneMap: Done
   const { record, loaded } = useWeeklyRecordForWeek(monday)
 
   const weekSub = weekOffset === 0 ? 'This week' : `${Math.abs(weekOffset)} weeks back`
+
+  const { effective } = useTheme()
+  const allWeeklyRecords = useAllWeeklyRecords()
+  const weightPoints = allWeeklyRecords
+    .filter((r): r is typeof r & { weight_kg: number } => r.weight_kg != null)
+    .sort((a, b) => a.week_monday.localeCompare(b.week_monday))
+  const weightTrendOk = weightPoints.length >= MIN_WEIGHT_POINTS
+  const weightNeed = MIN_WEIGHT_POINTS - weightPoints.length
+  const weightChartData = {
+    labels: weightPoints.map((p) => p.week_monday),
+    datasets: [
+      {
+        data: weightPoints.map((p) => p.weight_kg),
+        borderColor: WEIGHT_CHART_COLOR[effective],
+        borderWidth: 2,
+        pointRadius: 2.5,
+        pointBackgroundColor: WEIGHT_CHART_COLOR[effective],
+        tension: 0,
+      },
+    ],
+  }
+  const weightChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    layout: { padding: { top: 8, bottom: 8, left: 0, right: 0 } },
+    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+    scales: { x: { display: false }, y: { display: false } },
+  }
+  const weightChange = weightTrendOk
+    ? Math.round((weightPoints[weightPoints.length - 1].weight_kg - weightPoints[0].weight_kg) * 10) / 10
+    : 0
+  const weightReading = !weightTrendOk
+    ? ''
+    : weightChange === 0
+      ? `Steady across ${weightPoints.length} weigh-ins.`
+      : `${weightChange > 0 ? 'Up' : 'Down'} ${Math.abs(weightChange)} kg across ${weightPoints.length} weigh-ins.`
 
   return (
     <>
@@ -175,9 +217,24 @@ export function WeekScreen({ habits, doneMap }: { habits: Habit[]; doneMap: Done
               className="tnum min-h-[40px] w-full rounded-[4px] border border-ink/20 bg-transparent px-2.5 py-1 font-heading text-[20px] text-ink disabled:opacity-60"
             />
           </div>
-          <div className="flex-1 pb-1.5 text-[10.5px] leading-[1.45] text-ink/40">
-            End of week. One decimal. Trend chart needs six weeks.
-          </div>
+          <div className="flex-1 pb-1.5 text-[10.5px] leading-[1.45] text-ink/40">End of week. One decimal.</div>
+        </div>
+
+        <div className="mt-3">
+          <div className="mb-1 text-[10.5px] tracking-[0.1em] text-ink/45 uppercase">Weight trend</div>
+          {weightTrendOk ? (
+            <div>
+              <div style={{ height: 64 }}>
+                <Line data={weightChartData} options={weightChartOptions} />
+              </div>
+              <p className="mt-1.5 text-[11px] leading-[1.4] text-ink/55">{weightReading}</p>
+            </div>
+          ) : (
+            <div className="rounded-[4px] border border-ink/16 p-3 text-[11px] leading-[1.5] text-ink/55">
+              {weightNeed} more {weightNeed === 1 ? 'weigh-in' : 'weigh-ins'} before a trend line means
+              anything. Needs {MIN_WEIGHT_POINTS}; {weightPoints.length} recorded.
+            </div>
+          )}
         </div>
 
         <div className="mt-3">

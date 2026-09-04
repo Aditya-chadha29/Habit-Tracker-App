@@ -23,3 +23,8 @@ export interface WeeklyRecord {
   weight_kg: number | null
   notes: string
 }
+
+export interface DailyNote {
+  date: string
+  text: string
+}

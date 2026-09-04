@@ -68,6 +68,13 @@ export async function reorderHabits(orderedIds: number[]): Promise<void> {
   })
 }
 
+export async function setDailyNote(date: string, text: string): Promise<void> {
+  // `date` is the primary key, so this is a single atomic upsert — no read-then-write race
+  // possible, unlike setWeeklyRecord below (which predates giving weekly_records a proper
+  // primary key and still needs the transaction wrapper).
+  await db.daily_notes.put({ date, text })
+}
+
 export async function setWeeklyRecord(
   weekMonday: string,
   patch: Partial<{ weight_kg: number | null; notes: string }>,
