@@ -19,7 +19,7 @@ const TodayRow = memo(function TodayRow({
   pending: boolean
   onTap: (habit: Habit, rowEl: HTMLElement) => void
 }) {
-  const flashing = useFlashOnTrue(done, 500)
+  const flashing = useFlashOnTrue(done, 2000)
   const stateLabel = done
     ? habit.polarity === 'abstain'
       ? 'held'
@@ -121,8 +121,8 @@ export function TodayScreen({ habits, doneMap }: { habits: Habit[]; doneMap: Don
       })
     : active
 
-  const SWEEP_MS = 500
-  const FLY_MS = 700
+  const SWEEP_MS = 2000
+  const FLY_MS = 3000
 
   function handleTap(habit: Habit, rowEl: HTMLElement) {
     const wasDone = isDone(doneMap, habit.id!, dateStr)
