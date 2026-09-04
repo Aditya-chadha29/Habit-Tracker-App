@@ -1,5 +1,5 @@
 import type { Entry, Habit } from './types'
-import { addDays, compareDateStr, dateRange, mondayIndex } from './dates'
+import { addDays, compareDateStr, dateRange, mondayIndex, parseLocalDateStr } from './dates'
 
 export type DoneMap = Map<string, boolean>
 
@@ -98,8 +98,8 @@ export function allTimeRate(habit: Habit, doneMap: DoneMap, todayStr: string): n
 
 export function daysCountInclusive(startStr: string, endStr: string): number {
   if (compareDateStr(startStr, endStr) > 0) return 0
-  const start = new Date(startStr)
-  const end = new Date(endStr)
+  const start = parseLocalDateStr(startStr)
+  const end = parseLocalDateStr(endStr)
   return Math.round((end.getTime() - start.getTime()) / 86400000) + 1
 }
 

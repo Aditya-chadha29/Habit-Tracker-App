@@ -1,22 +1,23 @@
-import { memo, useEffect, useRef, useState } from 'react'
+import { memo, useEffect, useRef, useState, type CSSProperties } from 'react'
+import { useAutoAnimate } from '@formkit/auto-animate/react'
 import { Check } from 'lucide-react'
 import { activeHabits, computeScore, historyDayCount, isDone, type DoneMap } from '../lib/derive'
 import { addDays, formatDayTitle, todayLocalStr } from '../lib/dates'
-import { setDailyNote, toggleEntry } from '../lib/mutations'
-import { useDailyNoteForDate, useFlashOnTrue, usePulseOnChange } from '../lib/hooks'
+import { toggleEntry } from '../lib/mutations'
+import { useFlashOnTrue, usePulseOnChange } from '../lib/hooks'
 import { quoteForDate } from '../lib/quotes'
 import type { Habit } from '../lib/types'
 
 const TodayRow = memo(function TodayRow({
   habit,
-  dateStr,
   done,
   pending,
+  onTap,
 }: {
   habit: Habit
-  dateStr: string
   done: boolean
   pending: boolean
+  onTap: (habit: Habit, rowEl: HTMLElement) => void
 }) {
   const flashing = useFlashOnTrue(done)
   const stateLabel = done
@@ -33,16 +34,19 @@ const TodayRow = memo(function TodayRow({
     <div
       role="button"
       tabIndex={0}
-      onClick={() => toggleEntry(habit.id!, dateStr)}
+      onClick={(e) => onTap(habit, e.currentTarget)}
       onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') toggleEntry(habit.id!, dateStr)
+        if (e.key === 'Enter' || e.key === ' ') onTap(habit, e.currentTarget)
       }}
-      className={`flex min-h-[46px] cursor-pointer items-center gap-3 border-b border-ink/9 px-4 transition-colors duration-100 active:bg-gold/12 ${
+      className={`relative flex min-h-[46px] cursor-pointer items-center gap-3 overflow-hidden border-b border-ink/9 px-4 transition-colors duration-100 active:bg-gold/12 ${
         done ? 'bg-gold/6' : ''
       }`}
     >
+      {flashing && (
+        <div className="animate-row-sweep pointer-events-none absolute inset-y-0 left-0 bg-gold/14" />
+      )}
       <div
-        className={`flex h-5 w-5 flex-none items-center justify-center rounded-[2px] border transition-colors duration-100 ${
+        className={`relative flex h-5 w-5 flex-none items-center justify-center rounded-[2px] border transition-colors duration-100 ${
           done ? 'border-gold bg-gold active:bg-gold-pressed' : 'border-ink/32 bg-transparent active:bg-gold/12'
         } ${flashing ? 'animate-tick-pop' : ''}`}
       >
@@ -54,7 +58,7 @@ const TodayRow = memo(function TodayRow({
           />
         )}
       </div>
-      <div className="min-w-0 flex-1">
+      <div className="relative min-w-0 flex-1">
         <div
           className={`overflow-hidden text-ellipsis whitespace-nowrap text-[14px] leading-[1.25] ${
             done ? 'text-ink' : 'text-ink/72'
@@ -64,7 +68,7 @@ const TodayRow = memo(function TodayRow({
         </div>
       </div>
       <div
-        className={`flex-none text-[9.5px] tracking-[0.1em] uppercase ${
+        className={`relative flex-none text-[9.5px] tracking-[0.1em] uppercase ${
           done ? 'text-gold/85' : pending ? 'text-ink/30' : 'text-ink/50'
         }`}
       >
@@ -74,9 +78,15 @@ const TodayRow = memo(function TodayRow({
   )
 })
 
+type FlyItem = { id: number; x0: number; y0: number; x1: number; y1: number }
+
 export function TodayScreen({ habits, doneMap }: { habits: Habit[]; doneMap: DoneMap }) {
   const [dayOffset, setDayOffset] = useState(0)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const counterRef = useRef<HTMLSpanElement>(null)
+  const [listRef] = useAutoAnimate<HTMLDivElement>({ duration: 220, easing: 'ease-out' })
+  const [flying, setFlying] = useState<FlyItem[]>([])
+  const flyIdRef = useRef(0)
 
   // iOS Safari can get an inner overflow:auto region "stuck" — the container's internal scroll
   // state gets confused when its content set changes size while scrolled, and the whole app frame
@@ -97,7 +107,36 @@ export function TodayScreen({ habits, doneMap }: { habits: Habit[]; doneMap: Don
   const showFirstDayNote = isTodayDate && historyCount <= 1
   const scorePulse = usePulseOnChange(score.done)
   const quote = quoteForDate(today)
-  const { note, loaded: noteLoaded } = useDailyNoteForDate(dateStr)
+
+  const ordered = isTodayDate
+    ? [...active].sort((a, b) => {
+        const aPending = !isDone(doneMap, a.id!, dateStr)
+        const bPending = !isDone(doneMap, b.id!, dateStr)
+        if (aPending === bPending) return 0
+        return aPending ? -1 : 1
+      })
+    : active
+
+  function handleTap(habit: Habit, rowEl: HTMLElement) {
+    const wasDone = isDone(doneMap, habit.id!, dateStr)
+    if (!wasDone && counterRef.current && window.matchMedia('(prefers-reduced-motion: no-preference)').matches) {
+      const from = rowEl.getBoundingClientRect()
+      const to = counterRef.current.getBoundingClientRect()
+      const id = ++flyIdRef.current
+      setFlying((f) => [
+        ...f,
+        {
+          id,
+          x0: from.left + 16,
+          y0: from.top + from.height / 2,
+          x1: to.left + to.width / 2,
+          y1: to.top + to.height / 2,
+        },
+      ])
+      setTimeout(() => setFlying((f) => f.filter((it) => it.id !== id)), 460)
+    }
+    toggleEntry(habit.id!, dateStr)
+  }
 
   const daySub = isTodayDate ? 'Today' : dayOffset === -1 ? 'Yesterday' : `${Math.abs(dayOffset)} days back`
 
@@ -132,6 +171,7 @@ export function TodayScreen({ habits, doneMap }: { habits: Habit[]; doneMap: Don
         </div>
         <div className="mt-1.5 flex items-baseline gap-2">
           <span
+            ref={counterRef}
             className={`tnum inline-block font-heading text-[36px] leading-none ${scorePulse ? 'animate-number-pulse' : ''}`}
           >
             {score.done}/{score.total}
@@ -154,26 +194,41 @@ export function TodayScreen({ habits, doneMap }: { habits: Habit[]; doneMap: Don
             First day logged. Nothing to compare against yet — Insights unlocks as history accumulates.
           </div>
         )}
-        {active.map((habit) => {
-          const done = isDone(doneMap, habit.id!, dateStr)
-          const pending = isTodayDate && !done
-          return <TodayRow key={habit.id} habit={habit} dateStr={dateStr} done={done} pending={pending} />
-        })}
-
-        <div className="px-4 pt-4 pb-5">
-          <div className="mb-1 text-[10.5px] tracking-[0.1em] text-ink/45 uppercase">Notes</div>
-          <textarea
-            key={`${dateStr}-${noteLoaded}`}
-            disabled={!noteLoaded}
-            defaultValue={note?.text ?? ''}
-            placeholder="What happened today — complaints, reasoning, anything worth remembering."
-            onBlur={(e) => {
-              if (e.target.value !== (note?.text ?? '')) setDailyNote(dateStr, e.target.value)
-            }}
-            className="min-h-[200px] w-full resize-y rounded-[4px] border border-ink/20 bg-transparent px-2.5 py-2 font-body text-[16px] leading-[1.5] text-ink disabled:opacity-60"
-          />
+        <div ref={listRef}>
+          {ordered.map((habit) => {
+            const done = isDone(doneMap, habit.id!, dateStr)
+            const pending = isTodayDate && !done
+            return (
+              <TodayRow
+                key={habit.id}
+                habit={habit}
+                done={done}
+                pending={pending}
+                onTap={handleTap}
+              />
+            )
+          })}
         </div>
       </div>
+
+      {flying.map((f) => (
+        <div
+          key={f.id}
+          className="animate-fly-xp pointer-events-none fixed z-50 font-heading text-[13px] text-gold"
+          style={
+            {
+              left: 0,
+              top: 0,
+              '--fly-x0': `${f.x0}px`,
+              '--fly-y0': `${f.y0}px`,
+              '--fly-x1': `${f.x1}px`,
+              '--fly-y1': `${f.y1}px`,
+            } as CSSProperties
+          }
+        >
+          +1
+        </div>
+      ))}
     </>
   )
 }

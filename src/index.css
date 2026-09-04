@@ -142,6 +142,34 @@
   }
 }
 
+@keyframes row-sweep {
+  from {
+    width: 0%;
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  to {
+    width: 100%;
+    opacity: 0;
+  }
+}
+
+@keyframes fly-to-counter {
+  0% {
+    opacity: 0;
+    transform: translate(var(--fly-x0), var(--fly-y0)) scale(0.9);
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--fly-x1), var(--fly-y1)) scale(0.7);
+  }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .animate-tick-pop {
     animation: tick-pop 220ms ease-out;
@@ -155,5 +183,11 @@
   }
   .animate-fade-in {
     animation: fade-in 250ms ease-out;
+  }
+  .animate-row-sweep {
+    animation: row-sweep 180ms ease-out;
+  }
+  .animate-fly-xp {
+    animation: fly-to-counter 450ms ease-in forwards;
   }
 }

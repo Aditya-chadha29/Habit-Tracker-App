@@ -45,12 +45,16 @@ intentional exception, not scope creep. Keep it to that one place: a single quie
 banners, toasts, or copy scattered through the rest of the UI. The rest of the app's tone (no
 confetti, no streak flames, scores reported neutrally) still stands.
 
-## Notes: daily vs weekly
-Two separate concepts, don't conflate them:
-- **Daily notes** (`daily_notes` table, `date` primary key) — free-form journaling tied to a
-  specific day, edited on the Today screen (same 7-day-back navigation window as ticking habits).
-  Added 2026-09-04 for exactly this: "even if it is me just complaining or giving reasoning for
-  some habit not being followed."
-- **Weekly notes** (`weekly_records.notes`) — the original end-of-week reflection field on the
-  Week screen, alongside that week's weight entry. Predates daily notes; still there, still
-  weekly, not replaced by it.
+**Gamification** is banned per the top line — with one named, scoped exception. On the Today
+screen, ticking a habit plays a small "+1" fly-to-counter animation into the daily score, on top
+of the existing tick-pop/checkmark-draw. Approved 2026-09-04 after the user asked for it directly.
+Keep it to exactly that one micro-animation: no points total, no levels, no badges, nothing
+persistent — it's a single tap acknowledgment, not a game layer. Fires only on tick (false→true),
+never on untick, matching the app's existing "no reverse punishment" pattern.
+
+## Notes: weekly only
+A daily-notes field (`daily_notes` table) was added 2026-09-04 then reverted the same day — the
+user tried it and preferred a single notes field. The table and its helpers
+(`setDailyNote`/`useDailyNoteForDate`) are left in place unused rather than migrated out, since
+nothing was ever written to it. **Weekly notes** (`weekly_records.notes`) is the one notes field:
+end-of-week reflection on the Week screen, alongside that week's weight entry.

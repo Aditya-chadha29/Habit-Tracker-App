@@ -10,7 +10,7 @@ import { useTheme } from '../lib/theme'
 import type { Habit } from '../lib/types'
 
 const WEIGHT_CHART_COLOR = { dark: '#e1ad66', light: '#b68235' }
-const MIN_WEIGHT_POINTS = 6
+const MIN_WEIGHT_POINTS = 2
 
 const WeekCell = memo(function WeekCell({
   habitId,
@@ -247,7 +247,7 @@ export function WeekScreen({ habits, doneMap }: { habits: Habit[]; doneMap: Done
             onBlur={(e) => {
               if (e.target.value !== (record?.notes ?? '')) setWeeklyRecord(monday, { notes: e.target.value })
             }}
-            className="min-h-[74px] w-full resize-none rounded-[4px] border border-ink/20 bg-transparent px-2.5 py-2 font-body text-[16px] leading-[1.5] text-ink disabled:opacity-60"
+            className="min-h-[140px] w-full resize-y rounded-[4px] border border-ink/20 bg-transparent px-2.5 py-2 font-body text-[16px] leading-[1.5] text-ink disabled:opacity-60"
           />
         </div>
       </div>
