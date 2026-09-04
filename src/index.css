@@ -185,9 +185,9 @@
     animation: fade-in 250ms ease-out;
   }
   .animate-row-sweep {
-    animation: row-sweep 180ms ease-out;
+    animation: row-sweep 420ms ease-out;
   }
   .animate-fly-xp {
-    animation: fly-to-counter 450ms ease-in forwards;
+    animation: fly-to-counter 900ms ease-in forwards;
   }
 }

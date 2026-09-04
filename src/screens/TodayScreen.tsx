@@ -19,7 +19,7 @@ const TodayRow = memo(function TodayRow({
   pending: boolean
   onTap: (habit: Habit, rowEl: HTMLElement) => void
 }) {
-  const flashing = useFlashOnTrue(done)
+  const flashing = useFlashOnTrue(done, 430)
   const stateLabel = done
     ? habit.polarity === 'abstain'
       ? 'held'
@@ -84,7 +84,7 @@ export function TodayScreen({ habits, doneMap }: { habits: Habit[]; doneMap: Don
   const [dayOffset, setDayOffset] = useState(0)
   const scrollRef = useRef<HTMLDivElement>(null)
   const counterRef = useRef<HTMLSpanElement>(null)
-  const [listRef] = useAutoAnimate<HTMLDivElement>({ duration: 220, easing: 'ease-out' })
+  const [listRef] = useAutoAnimate<HTMLDivElement>({ duration: 320, easing: 'ease-out' })
   const [flying, setFlying] = useState<FlyItem[]>([])
   const flyIdRef = useRef(0)
 
@@ -133,7 +133,7 @@ export function TodayScreen({ habits, doneMap }: { habits: Habit[]; doneMap: Don
           y1: to.top + to.height / 2,
         },
       ])
-      setTimeout(() => setFlying((f) => f.filter((it) => it.id !== id)), 460)
+      setTimeout(() => setFlying((f) => f.filter((it) => it.id !== id)), 910)
     }
     toggleEntry(habit.id!, dateStr)
   }
