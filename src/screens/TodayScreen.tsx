@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef, useState, type CSSProperties } from 'react'
+import { memo, useEffect, useRef, useState } from 'react'
 import { useAutoAnimate } from '@formkit/auto-animate/react'
 import { Check } from 'lucide-react'
 import { activeHabits, computeScore, historyDayCount, isDone, type DoneMap } from '../lib/derive'
@@ -10,16 +10,16 @@ import type { Habit } from '../lib/types'
 
 const TodayRow = memo(function TodayRow({
   habit,
+  dateStr,
   done,
   pending,
-  onTap,
 }: {
   habit: Habit
+  dateStr: string
   done: boolean
   pending: boolean
-  onTap: (habit: Habit, rowEl: HTMLElement) => void
 }) {
-  const flashing = useFlashOnTrue(done, 500)
+  const flashing = useFlashOnTrue(done)
   const stateLabel = done
     ? habit.polarity === 'abstain'
       ? 'held'
@@ -34,19 +34,16 @@ const TodayRow = memo(function TodayRow({
     <div
       role="button"
       tabIndex={0}
-      onClick={(e) => onTap(habit, e.currentTarget)}
+      onClick={() => toggleEntry(habit.id!, dateStr)}
       onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') onTap(habit, e.currentTarget)
+        if (e.key === 'Enter' || e.key === ' ') toggleEntry(habit.id!, dateStr)
       }}
-      className={`relative flex min-h-[46px] cursor-pointer items-center gap-3 overflow-hidden border-b border-ink/9 px-4 transition-colors duration-100 active:bg-gold/12 ${
+      className={`flex min-h-[46px] cursor-pointer items-center gap-3 border-b border-ink/9 px-4 transition-colors duration-100 active:bg-gold/12 ${
         done ? 'bg-gold/6' : ''
       }`}
     >
-      {flashing && (
-        <div className="animate-row-sweep pointer-events-none absolute inset-y-0 left-0 bg-gold/14" />
-      )}
       <div
-        className={`relative flex h-5 w-5 flex-none items-center justify-center rounded-[2px] border transition-colors duration-100 ${
+        className={`flex h-5 w-5 flex-none items-center justify-center rounded-[2px] border transition-colors duration-100 ${
           done ? 'border-gold bg-gold active:bg-gold-pressed' : 'border-ink/32 bg-transparent active:bg-gold/12'
         } ${flashing ? 'animate-tick-pop' : ''}`}
       >
@@ -58,7 +55,7 @@ const TodayRow = memo(function TodayRow({
           />
         )}
       </div>
-      <div className="relative min-w-0 flex-1">
+      <div className="min-w-0 flex-1">
         <div
           className={`overflow-hidden text-ellipsis whitespace-nowrap text-[14px] leading-[1.25] ${
             done ? 'text-ink' : 'text-ink/72'
@@ -68,7 +65,7 @@ const TodayRow = memo(function TodayRow({
         </div>
       </div>
       <div
-        className={`relative flex-none text-[9.5px] tracking-[0.1em] uppercase ${
+        className={`flex-none text-[9.5px] tracking-[0.1em] uppercase ${
           done ? 'text-gold/85' : pending ? 'text-ink/30' : 'text-ink/50'
         }`}
       >
@@ -78,16 +75,10 @@ const TodayRow = memo(function TodayRow({
   )
 })
 
-type FlyItem = { id: number; x0: number; y0: number; x1: number; y1: number }
-
 export function TodayScreen({ habits, doneMap }: { habits: Habit[]; doneMap: DoneMap }) {
   const [dayOffset, setDayOffset] = useState(0)
   const scrollRef = useRef<HTMLDivElement>(null)
-  const counterRef = useRef<HTMLSpanElement>(null)
-  const [listRef] = useAutoAnimate<HTMLDivElement>({ duration: 320, easing: 'ease-out' })
-  const [flying, setFlying] = useState<FlyItem[]>([])
-  const flyIdRef = useRef(0)
-  const [animatingIds, setAnimatingIds] = useState<Set<number>>(new Set())
+  const [listRef] = useAutoAnimate<HTMLDivElement>({ duration: 220, easing: 'ease-out' })
 
   // iOS Safari can get an inner overflow:auto region "stuck" — the container's internal scroll
   // state gets confused when its content set changes size while scrolled, and the whole app frame
@@ -109,60 +100,15 @@ export function TodayScreen({ habits, doneMap }: { habits: Habit[]; doneMap: Don
   const scorePulse = usePulseOnChange(score.done)
   const quote = quoteForDate(today)
 
-  // While a row is mid tap-animation (sweep, then fly), it holds its position at the top of the
-  // pending group even though the underlying entry is already marked done — otherwise it would
-  // jump to the bottom before the user has seen the sweep/fly play out.
+  // Pending habits stay at the top; ticked ones sink to the bottom, animated by auto-animate.
   const ordered = isTodayDate
     ? [...active].sort((a, b) => {
-        const aPending = animatingIds.has(a.id!) || !isDone(doneMap, a.id!, dateStr)
-        const bPending = animatingIds.has(b.id!) || !isDone(doneMap, b.id!, dateStr)
+        const aPending = !isDone(doneMap, a.id!, dateStr)
+        const bPending = !isDone(doneMap, b.id!, dateStr)
         if (aPending === bPending) return 0
         return aPending ? -1 : 1
       })
     : active
-
-  const SWEEP_MS = 500
-  const FLY_MS = 700
-
-  function handleTap(habit: Habit, rowEl: HTMLElement) {
-    const wasDone = isDone(doneMap, habit.id!, dateStr)
-    const id = habit.id!
-    toggleEntry(id, dateStr)
-
-    if (wasDone) return
-    const reduceMotion = !window.matchMedia('(prefers-reduced-motion: no-preference)').matches
-    if (reduceMotion) return
-
-    setAnimatingIds((prev) => new Set(prev).add(id))
-
-    // Sequence: row-sweep plays first (row stays put), then the +1 flies to the counter, then
-    // the row is released to sink to the bottom of the list.
-    setTimeout(() => {
-      if (counterRef.current && rowEl.isConnected) {
-        const from = rowEl.getBoundingClientRect()
-        const to = counterRef.current.getBoundingClientRect()
-        const flyId = ++flyIdRef.current
-        setFlying((f) => [
-          ...f,
-          {
-            id: flyId,
-            x0: from.left + 16,
-            y0: from.top + from.height / 2,
-            x1: to.left + to.width / 2,
-            y1: to.top + to.height / 2,
-          },
-        ])
-        setTimeout(() => setFlying((f) => f.filter((it) => it.id !== flyId)), FLY_MS + 50)
-      }
-      setTimeout(() => {
-        setAnimatingIds((prev) => {
-          const next = new Set(prev)
-          next.delete(id)
-          return next
-        })
-      }, FLY_MS)
-    }, SWEEP_MS)
-  }
 
   const daySub = isTodayDate ? 'Today' : dayOffset === -1 ? 'Yesterday' : `${Math.abs(dayOffset)} days back`
 
@@ -197,7 +143,6 @@ export function TodayScreen({ habits, doneMap }: { habits: Habit[]; doneMap: Don
         </div>
         <div className="mt-1.5 flex items-baseline gap-2">
           <span
-            ref={counterRef}
             className={`tnum inline-block font-heading text-[36px] leading-none ${scorePulse ? 'animate-number-pulse' : ''}`}
           >
             {score.done}/{score.total}
@@ -224,37 +169,10 @@ export function TodayScreen({ habits, doneMap }: { habits: Habit[]; doneMap: Don
           {ordered.map((habit) => {
             const done = isDone(doneMap, habit.id!, dateStr)
             const pending = isTodayDate && !done
-            return (
-              <TodayRow
-                key={habit.id}
-                habit={habit}
-                done={done}
-                pending={pending}
-                onTap={handleTap}
-              />
-            )
+            return <TodayRow key={habit.id} habit={habit} dateStr={dateStr} done={done} pending={pending} />
           })}
         </div>
       </div>
-
-      {flying.map((f) => (
-        <div
-          key={f.id}
-          className="animate-fly-xp pointer-events-none fixed z-50 font-heading text-[13px] text-gold"
-          style={
-            {
-              left: 0,
-              top: 0,
-              '--fly-x0': `${f.x0}px`,
-              '--fly-y0': `${f.y0}px`,
-              '--fly-x1': `${f.x1}px`,
-              '--fly-y1': `${f.y1}px`,
-            } as CSSProperties
-          }
-        >
-          +1
-        </div>
-      ))}
     </>
   )
 }

@@ -45,12 +45,10 @@ intentional exception, not scope creep. Keep it to that one place: a single quie
 banners, toasts, or copy scattered through the rest of the UI. The rest of the app's tone (no
 confetti, no streak flames, scores reported neutrally) still stands.
 
-**Gamification** is banned per the top line — with one named, scoped exception. On the Today
-screen, ticking a habit plays a small "+1" fly-to-counter animation into the daily score, on top
-of the existing tick-pop/checkmark-draw. Approved 2026-09-04 after the user asked for it directly.
-Keep it to exactly that one micro-animation: no points total, no levels, no badges, nothing
-persistent — it's a single tap acknowledgment, not a game layer. Fires only on tick (false→true),
-never on untick, matching the app's existing "no reverse punishment" pattern.
+**Gamification** stays fully banned per the top line. A "+1 fly-to-counter" tap animation was
+tried on 2026-09-04 and reverted the same day — the user preferred the app without it. Just the
+existing tick-pop/checkmark-draw acknowledgment remains; don't reintroduce a flying/XP-style
+effect without the user asking again.
 
 ## Notes: weekly only
 A daily-notes field (`daily_notes` table) was added 2026-09-04 then reverted the same day — the
