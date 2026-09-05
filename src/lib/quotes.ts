@@ -37,6 +37,52 @@ const QUOTES: { text: string; attribution: string }[] = [
   { text: 'One small crack does not mean that you are broken, it means that you were put to the test.', attribution: 'Linda Poindexter' },
   { text: 'Habits are first cobwebs, then cables.', attribution: 'Spanish Proverb' },
   { text: 'Discipline is the bridge between goals and accomplishment.', attribution: 'Jim Rohn' },
+  { text: 'Physical fitness is the first requisite of happiness.', attribution: 'Joseph Pilates' },
+  { text: 'Discipline equals freedom.', attribution: 'Jocko Willink' },
+  { text: 'Your body hears everything your mind says.', attribution: 'Naomi Judd' },
+  { text: 'Fatigue makes cowards of us all.', attribution: 'Vince Lombardi' },
+  { text: 'Don’t count the days, make the days count.', attribution: 'Muhammad Ali' },
+  {
+    text: 'The only way to keep your health is to eat what you don’t want, drink what you don’t like, and do what you’d rather not.',
+    attribution: 'Mark Twain',
+  },
+  { text: 'A year from now you may wish you had started today.', attribution: 'Karen Lamb' },
+  { text: 'Motivation gets you going, but discipline keeps you growing.', attribution: 'John C. Maxwell' },
+  { text: 'Health is not valued until sickness comes.', attribution: 'Thomas Fuller' },
+  { text: 'An early-morning walk is a blessing for the whole day.', attribution: 'Henry David Thoreau' },
+  { text: 'It does not matter how slowly you go as long as you do not stop.', attribution: 'Confucius' },
+  { text: 'We first make our habits, and then our habits make us.', attribution: 'John Dryden' },
+  {
+    text: 'Amateurs sit and wait for inspiration, the rest of us just get up and go to work.',
+    attribution: 'Stephen King',
+  },
+  { text: 'Once you learn to quit, it becomes a habit.', attribution: 'Vince Lombardi' },
+  {
+    text: 'The chains of habit are too weak to be felt until they are too strong to be broken.',
+    attribution: 'Samuel Johnson',
+  },
+  {
+    text: 'A man too busy to take care of his health is like a mechanic too busy to take care of his tools.',
+    attribution: 'Spanish Proverb',
+  },
+  { text: 'You don’t have to be extreme, just consistent.', attribution: 'Unknown' },
+  {
+    text: 'You do not rise to the level of your goals; you fall to the level of your systems.',
+    attribution: 'James Clear',
+  },
+  { text: 'Fall seven times, stand up eight.', attribution: 'Japanese Proverb' },
+  {
+    text: 'The best time to plant a tree was 20 years ago. The second best time is now.',
+    attribution: 'Chinese Proverb',
+  },
+  { text: 'Health is a state of complete harmony of the body, mind and spirit.', attribution: 'B.K.S. Iyengar' },
+  { text: 'Discipline is remembering what you want.', attribution: 'David Campbell' },
+  { text: 'Discipline is doing what needs to be done, even if you don’t want to do it.', attribution: 'Unknown' },
+  { text: 'The path to health is paved with ordinary days done well.', attribution: 'Unknown' },
+  {
+    text: 'He who is not courageous enough to take risks will accomplish nothing in life.',
+    attribution: 'Muhammad Ali',
+  },
 ]
 
 function hashCode(s: string): number {
