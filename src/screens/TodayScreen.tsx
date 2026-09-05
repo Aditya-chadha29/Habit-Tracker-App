@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef, useState } from 'react'
+import { memo, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useAutoAnimate } from '@formkit/auto-animate/react'
 import { Check } from 'lucide-react'
 import { activeHabits, computeScore, historyDayCount, isDone, type DoneMap } from '../lib/derive'
@@ -78,7 +78,8 @@ const TodayRow = memo(function TodayRow({
 export function TodayScreen({ habits, doneMap }: { habits: Habit[]; doneMap: DoneMap }) {
   const [dayOffset, setDayOffset] = useState(0)
   const scrollRef = useRef<HTMLDivElement>(null)
-  const [listRef] = useAutoAnimate<HTMLDivElement>({ duration: 220, easing: 'ease-out' })
+  const [listRef, setListAnimationsEnabled] = useAutoAnimate<HTMLDivElement>({ duration: 220, easing: 'ease-out' })
+  const hasLoadedRowsRef = useRef(false)
 
   // iOS Safari can get an inner overflow:auto region "stuck" — the container's internal scroll
   // state gets confused when its content set changes size while scrolled, and the whole app frame
@@ -109,6 +110,26 @@ export function TodayScreen({ habits, doneMap }: { habits: Habit[]; doneMap: Don
         return aPending ? -1 : 1
       })
     : active
+
+  // Dexie's live query for habits/doneMap resolves via a microtask, which can beat a plain
+  // useEffect's disable call — auto-animate then sees the empty-to-populated jump as a batch of
+  // "add" transitions and plays it as a visible flicker on every cold open. A layout effect runs
+  // synchronously right after the first (empty) commit, before that microtask gets a chance to
+  // fire, so it reliably wins the race and disables animation before any rows exist.
+  useLayoutEffect(() => {
+    if (!hasLoadedRowsRef.current) setListAnimationsEnabled(false)
+  }, [setListAnimationsEnabled])
+
+  // Once the real rows have been committed, wait a frame for that mutation to be observed (and
+  // ignored, since animations are still off) before re-enabling — re-enabling in the same tick as
+  // the population would let auto-animate's observer catch it after all.
+  useEffect(() => {
+    if (!hasLoadedRowsRef.current && active.length > 0) {
+      hasLoadedRowsRef.current = true
+      const raf = requestAnimationFrame(() => setListAnimationsEnabled(true))
+      return () => cancelAnimationFrame(raf)
+    }
+  }, [active.length, setListAnimationsEnabled])
 
   const daySub = isTodayDate ? 'Today' : dayOffset === -1 ? 'Yesterday' : `${Math.abs(dayOffset)} days back`
 
