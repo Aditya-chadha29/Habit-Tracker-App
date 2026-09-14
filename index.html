@@ -6,7 +6,9 @@
       (function () {
         try {
           var t = localStorage.getItem('habit-tracker-theme')
-          if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t)
+          // Same key and values as src/lib/theme.tsx.
+          if (['light', 'dark', 'cybercore', 'scrapbook', 'glass', 'wabi-sabi'].indexOf(t) > -1)
+            document.documentElement.setAttribute('data-theme', t)
         } catch {}
       })()
     </script>
@@ -21,7 +23,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Lora:wght@400;500&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Lora:wght@400;500&family=Chakra+Petch:wght@500;700&family=IBM+Plex+Mono:wght@400;500&family=Caveat:wght@500;700&family=Courier+Prime:wght@400;700&family=Sora:wght@400;600&family=DM+Sans:wght@400;500&family=Shippori+Mincho:wght@500;600&family=Zen+Kaku+Gothic+New:wght@400;500&display=swap"
       rel="stylesheet"
     />
     <title>Habit Tracker</title>

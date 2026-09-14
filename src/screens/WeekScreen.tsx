@@ -7,9 +7,9 @@ import { addDays, formatWeekTitle, mondayOf, todayLocalStr, WEEKDAY_LABELS_MON_F
 import { setWeeklyRecord, toggleEntry } from '../lib/mutations'
 import { useAllWeeklyRecords, useFlashOnTrue, useWeeklyRecordForWeek } from '../lib/hooks'
 import { useTheme } from '../lib/theme'
+import { CHART_PALETTE } from '../lib/themeOptions'
 import type { Habit } from '../lib/types'
 
-const WEIGHT_CHART_COLOR = { dark: '#e1ad66', light: '#b68235' }
 const MIN_WEIGHT_POINTS = 2
 
 const WeekCell = memo(function WeekCell({
@@ -87,10 +87,10 @@ export function WeekScreen({ habits, doneMap }: { habits: Habit[]; doneMap: Done
     datasets: [
       {
         data: weightPoints.map((p) => p.weight_kg),
-        borderColor: WEIGHT_CHART_COLOR[effective],
+        borderColor: CHART_PALETTE[effective].avg,
         borderWidth: 2,
         pointRadius: 2.5,
-        pointBackgroundColor: WEIGHT_CHART_COLOR[effective],
+        pointBackgroundColor: CHART_PALETTE[effective].avg,
         tension: 0,
       },
     ],

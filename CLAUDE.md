@@ -39,6 +39,12 @@ Implement from `design_handoff_habit_tracker/README.md` and the HTML prototype i
 mobile-first at 390 × 844, navigation at the bottom, 44px minimum tap targets, single sequential
 chart ramp. No confetti, no streak flames.
 
+**Style themes** (2026-09-14, user request): besides System/Light/Dark, the Habits-screen theme
+picker offers Cybercore, Scrapbook, Glassmorphism and Wabi-sabi. They re-point the same CSS tokens
+(`ground`, `tabbar`, `ink`, `gold` = accent, `on-gold`, `danger`, `--font-heading`, `--font-body`)
+in `src/index.css`, with per-theme chart colours in `CHART_PALETTE` (`src/lib/theme.tsx`). Draw new
+UI with those tokens only, and add a `CHART_PALETTE` entry for any new theme. Dark stays the default.
+
 **Motivational copy** was originally banned outright here too. As of 2026-09-04, the user
 deliberately asked for a "quote of the day" on the Today screen (`src/lib/quotes.ts`) — a real,
 intentional exception, not scope creep. Keep it to that one place: a single quiet line, not

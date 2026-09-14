@@ -1,14 +1,17 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
+import { GROUND_BY_THEME, isThemePreference, type EffectiveTheme, type ThemePreference } from './themeOptions'
 
-export type ThemePreference = 'system' | 'light' | 'dark'
-export type EffectiveTheme = 'light' | 'dark'
-
+// index.html's boot script reads the same key and accepts the same values — keep them in step.
 const STORAGE_KEY = 'habit-tracker-theme'
 const DARK_MEDIA = '(prefers-color-scheme: dark)'
 
 function readStoredPreference(): ThemePreference {
-  const v = localStorage.getItem(STORAGE_KEY)
-  return v === 'light' || v === 'dark' ? v : 'system'
+  try {
+    const v = localStorage.getItem(STORAGE_KEY)
+    return isThemePreference(v) ? v : 'system'
+  } catch {
+    return 'system'
+  }
 }
 
 function applyDataTheme(pref: ThemePreference): void {
@@ -16,8 +19,6 @@ function applyDataTheme(pref: ThemePreference): void {
   if (pref === 'system') root.removeAttribute('data-theme')
   else root.setAttribute('data-theme', pref)
 }
-
-const GROUND_BY_THEME: Record<EffectiveTheme, string> = { dark: '#181716', light: '#f3f2f2' }
 
 function applyMetaThemeColor(effective: EffectiveTheme): void {
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', GROUND_BY_THEME[effective])
@@ -48,8 +49,12 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   const setPreference = useCallback((pref: ThemePreference) => {
     setPreferenceState(pref)
-    if (pref === 'system') localStorage.removeItem(STORAGE_KEY)
-    else localStorage.setItem(STORAGE_KEY, pref)
+    try {
+      if (pref === 'system') localStorage.removeItem(STORAGE_KEY)
+      else localStorage.setItem(STORAGE_KEY, pref)
+    } catch {
+      // Storage blocked: the theme still applies for this visit.
+    }
   }, [])
 
   const effective: EffectiveTheme = preference === 'system' ? (systemDark ? 'dark' : 'light') : preference

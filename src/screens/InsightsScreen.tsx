@@ -18,21 +18,13 @@ import {
   WEEKDAY_INITIALS_MON_FIRST,
 } from '../lib/dates'
 import { useTheme } from '../lib/theme'
+import { CHART_PALETTE, type ChartPalette } from '../lib/themeOptions'
 import type { Habit } from '../lib/types'
 
-const RAMP = ['#4b3208', '#7d5411', '#a06f24', '#c28d41', '#e1ad66']
-
-// Raw JS color strings for Chart.js and the heatmap no-data fill — these don't route through
-// Tailwind's ink/gold tokens, so they need their own light/dark variants.
-const CHART_COLORS = {
-  dark: { raw: 'rgba(243,242,242,0.3)', avg: '#e1ad66', noData: 'rgba(243,242,242,0.03)' },
-  light: { raw: 'rgba(32,31,29,0.35)', avg: '#b68235', noData: 'rgba(32,31,29,0.04)' },
-}
-
-function fillForRate(v: number | null, noDataFill: string): string {
-  if (v === null) return noDataFill
+function fillForRate(v: number | null, palette: ChartPalette): string {
+  if (v === null) return palette.noData
   const step = Math.min(5, Math.max(1, Math.ceil(v * 5)))
-  return RAMP[step - 1]
+  return palette.ramp[step - 1]
 }
 
 function GuardBlock({ text }: { text: string }) {
@@ -63,7 +55,7 @@ export function InsightsScreen({
 }) {
   const today = todayLocalStr()
   const { effective } = useTheme()
-  const chartColors = CHART_COLORS[effective]
+  const chartColors = CHART_PALETTE[effective]
 
   // This screen's derivations (weekday rates, streaks, the daily score series feeding Chart.js)
   // scale with total history length, and Chart.js re-rendering its canvas is real work — none of
@@ -186,14 +178,14 @@ export function InsightsScreen({
                     key={wd}
                     title={`${habit.short_name} · ${v === null ? 'no data' : Math.round(v * 100) + '%'}`}
                     className="h-[18px] rounded-[2px]"
-                    style={{ background: fillForRate(v, chartColors.noData) }}
+                    style={{ background: fillForRate(v, chartColors) }}
                   />
                 ))}
               </div>
             ))}
             <div className="mt-2 flex items-center gap-1.5 text-[9.5px] text-ink/40">
               <span>0%</span>
-              {RAMP.map((c, i) => (
+              {chartColors.ramp.map((c, i) => (
                 <div key={i} className="h-2 w-[22px] rounded-[1px]" style={{ background: c }} />
               ))}
               <span>100%</span>
@@ -243,7 +235,7 @@ export function InsightsScreen({
           <div className="mt-2.5">
             {rankedRows.map(({ habit, rate }) => {
               const pct = Math.round(rate * 100)
-              const fill = rate < 0.5 ? RAMP[1] : rate < 0.75 ? RAMP[3] : RAMP[4]
+              const fill = rate < 0.5 ? chartColors.ramp[1] : rate < 0.75 ? chartColors.ramp[3] : chartColors.ramp[4]
               return (
                 <div key={habit.id} className="mb-1.5 grid grid-cols-[96px_1fr_34px] items-center gap-2">
                   <div className="overflow-hidden text-ellipsis whitespace-nowrap text-[10.5px] leading-[1.2] text-ink/72">
