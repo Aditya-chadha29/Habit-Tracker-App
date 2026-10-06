@@ -1,55 +1,110 @@
 @import 'tailwindcss';
 
+/*
+ * Design tokens. Every colour in the app comes from here: screens use the Tailwind utilities
+ * these generate (bg-surface, text-ink-2, border-line, text-ok …) and never a literal colour.
+ * Dark is the bare default; light re-points the same tokens, so the two themes are one design.
+ *
+ *   ground      the page behind everything
+ *   surface     cards            surface-2  insets, inputs, hovered rows     surface-3  pressed
+ *   line        hairlines        line-strong  input borders, dividers that must be seen
+ *   ink         primary text     ink-2  secondary     ink-3  muted (still AA on surface)
+ *   accent      filled controls (white text sits on it)     accent-ink  accent-coloured TEXT
+ *   ok / warn / risk   status. Never the only signal: always paired with a word or an icon.
+ *   mind / body / learning / exercise   the four pillars
+ */
 @theme {
-  /* Dark is the bare default (matches the original "opens in the dark" design intent). */
-  --color-ground: #0e131c;
-  --color-tabbar: #141b26;
-  --color-ink: #eaf0f7;
-  --color-accent: #5fa8e8;
-  --color-accent-pressed: #3f87c6;
-  /* Stays dark in both themes — used for content sitting on a accent-filled surface (tick checks),
-     which needs to stay legible regardless of which way `ground` is currently flipped. */
-  --color-on-accent: #0b1017;
-  /* Muted terracotta, not a bright alarm red — reserved for the one destructive, irreversible
-     action in the app (deleting a same-day, no-history habit). Kept warm so it still reads as
-     part of this palette rather than a jarring system-red. */
-  --color-danger: #d4685c;
+  --color-ground: #0a0f1a;
+  --color-surface: #111a2b;
+  --color-surface-2: #172236;
+  --color-surface-3: #1e2b43;
+  --color-line: #1f2b41;
+  --color-line-strong: #2d3d59;
+  --color-ink: #e9eef7;
+  --color-ink-2: #a9b5c9;
+  --color-ink-3: #7d8ca7;
+  --color-accent: #2f6feb;
+  --color-accent-pressed: #2459c4;
+  --color-accent-ink: #7fb0ff;
+  --color-on-accent: #ffffff;
+  --color-ok: #3ecf8e;
+  --color-warn: #f2b84b;
+  --color-risk: #f47c73;
+  --color-danger: #f47c73;
+  --color-mind: #a98bfa;
+  --color-body: #f2a94b;
+  --color-learning: #5aa9ff;
+  --color-exercise: #3ecf8e;
 
-  --font-heading: 'Cormorant Garamond', serif;
-  --font-body: 'Lora', serif;
+  --font-sans: 'Geist Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  --radius-card: 14px;
+  --radius-control: 10px;
+
+  --shadow-card: 0 0 0 1px var(--color-line);
+  --shadow-pop: 0 18px 50px -12px rgb(0 0 0 / 0.6), 0 0 0 1px var(--color-line-strong);
 }
 
-/* System prefers light, and no explicit override to dark is set. */
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme='dark']) {
-    --color-ground: #f2f5f9;
-    --color-tabbar: #e5ebf3;
-    --color-ink: #16202c;
-    --color-accent: #2d6ea8;
-    --color-accent-pressed: #255c8c;
-    --color-danger: #b0463b;
-  }
-}
-
-/* Explicit overrides always win over system preference. */
-:root[data-theme='light'] {
-  --color-ground: #f2f5f9;
-  --color-tabbar: #e5ebf3;
-  --color-ink: #16202c;
-  --color-accent: #2d6ea8;
-  --color-accent-pressed: #255c8c;
-  --color-danger: #b0463b;
-}
-:root[data-theme='dark'] {
-  --color-ground: #0e131c;
-  --color-tabbar: #141b26;
-  --color-ink: #eaf0f7;
-  --color-accent: #5fa8e8;
-  --color-accent-pressed: #3f87c6;
-  --color-danger: #d4685c;
-}
-
+/* The light values, written once and applied by either route below. */
 @layer base {
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme='dark']) {
+      --color-ground: #f3f5f9;
+      --color-surface: #ffffff;
+      --color-surface-2: #eef1f6;
+      --color-surface-3: #e3e8f0;
+      --color-line: #e1e6ee;
+      --color-line-strong: #c8d0dd;
+      --color-ink: #101828;
+      --color-ink-2: #475467;
+      --color-ink-3: #667085;
+      --color-accent: #2563eb;
+      --color-accent-pressed: #1d4fc4;
+      --color-accent-ink: #1d4ed8;
+      --color-ok: #0f7f55;
+      --color-warn: #9a5a07;
+      --color-risk: #c0392f;
+      --color-danger: #c0392f;
+      --color-mind: #6d3fe0;
+      --color-body: #a85b07;
+      --color-learning: #1d5fd0;
+      --color-exercise: #0b7a53;
+      --shadow-card: 0 1px 2px rgb(16 24 40 / 0.05), 0 0 0 1px var(--color-line);
+      --shadow-pop: 0 18px 50px -12px rgb(16 24 40 / 0.25), 0 0 0 1px var(--color-line-strong);
+      color-scheme: light;
+    }
+  }
+
+  :root[data-theme='light'] {
+    --color-ground: #f3f5f9;
+    --color-surface: #ffffff;
+    --color-surface-2: #eef1f6;
+    --color-surface-3: #e3e8f0;
+    --color-line: #e1e6ee;
+    --color-line-strong: #c8d0dd;
+    --color-ink: #101828;
+    --color-ink-2: #475467;
+    --color-ink-3: #667085;
+    --color-accent: #2563eb;
+    --color-accent-pressed: #1d4fc4;
+    --color-accent-ink: #1d4ed8;
+    --color-ok: #0f7f55;
+    --color-warn: #9a5a07;
+    --color-risk: #c0392f;
+    --color-danger: #c0392f;
+    --color-mind: #6d3fe0;
+    --color-body: #a85b07;
+    --color-learning: #1d5fd0;
+    --color-exercise: #0b7a53;
+    --shadow-card: 0 1px 2px rgb(16 24 40 / 0.05), 0 0 0 1px var(--color-line);
+    --shadow-pop: 0 18px 50px -12px rgb(16 24 40 / 0.25), 0 0 0 1px var(--color-line-strong);
+    color-scheme: light;
+  }
+
+  :root {
+    color-scheme: dark;
+  }
+
   html,
   body,
   #root {
@@ -60,44 +115,72 @@
     margin: 0;
     background: var(--color-ground);
     color: var(--color-ink);
-    font-family: var(--font-body);
-    font-size: 14px;
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.45;
     -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior-y: none;
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
   }
 
   :focus-visible {
-    outline: 2px solid var(--color-accent);
+    outline: 2px solid var(--color-accent-ink);
     outline-offset: 2px;
+    border-radius: 6px;
   }
 
-  /* iOS Safari auto-zooms the viewport on focus for any text field under 16px. This is a
-     baseline safety net; fields that set their own smaller text size (Tailwind utility classes
-     win over @layer base) still need that override changed directly — see WeekScreen/HabitsScreen. */
+  /* iOS Safari zooms the page when a focused field's text is under 16px. */
   input,
   textarea,
   select {
     font-size: 16px;
+    font-family: inherit;
   }
 
-  /* Momentum scrolling for every nested overflow:auto region. Defensive: WebKit can otherwise
-     leave an inner scroll container's touch-scroll state confused after its content changes size
-     while scrolled, and the outer app frame starts panning instead of just that list. */
-  .overflow-auto {
+  button {
+    font-family: inherit;
+    touch-action: manipulation;
+  }
+
+  ::placeholder {
+    color: var(--color-ink-3);
+    opacity: 1;
+  }
+
+  /* Momentum scrolling for every nested scroll region; WebKit can otherwise leave an inner
+     container's touch-scroll state confused after its content changes size. */
+  .overflow-auto,
+  .overflow-y-auto {
     -webkit-overflow-scrolling: touch;
   }
 }
 
+/* Digits that line up in columns: scores, weights, timers. */
 @utility tnum {
-  font-feature-settings: 'tnum';
+  font-variant-numeric: tabular-nums;
 }
 
-/* Procedural paper grain — no image asset, just an inline SVG noise filter at very low opacity.
-   Reads as a faint texture on the flat ground colour in both themes without violating the
-   design's "no images" rule (design_handoff_habit_tracker/README.md, Assets section). */
-@utility bg-grain {
-  background-color: var(--color-ground);
-  background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter%20id='n'%3E%3CfeTurbulence%20type='fractalNoise'%20baseFrequency='0.85'%20numOctaves='3'%20stitchTiles='stitch'/%3E%3CfeColorMatrix%20type='saturate'%20values='0'/%3E%3C/filter%3E%3Crect%20width='100%25'%20height='100%25'%20filter='url(%23n)'%20opacity='0.05'/%3E%3C/svg%3E");
-  background-repeat: repeat;
+/* The small uppercase label above a group of things. */
+@utility eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-ink-3);
+}
+
+/* Bottom padding that clears the phone's home indicator. */
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@utility pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
 }
 
 @keyframes tick-pop {
@@ -106,27 +189,6 @@
   }
   55% {
     transform: scale(1.08);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-@keyframes tick-check-draw {
-  from {
-    stroke-dashoffset: 20;
-  }
-  to {
-    stroke-dashoffset: 0;
-  }
-}
-
-@keyframes number-pulse {
-  0% {
-    transform: scale(1);
-  }
-  40% {
-    transform: scale(1.06);
   }
   100% {
     transform: scale(1);
@@ -142,18 +204,39 @@
   }
 }
 
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* Motion is acknowledgement, never decoration: a tick settles, a sheet arrives. Nothing loops,
+   nothing celebrates, and all of it is off for anyone who has asked for reduced motion. */
 @media (prefers-reduced-motion: no-preference) {
   .animate-tick-pop {
-    animation: tick-pop 220ms ease-out;
-  }
-  .animate-tick-check {
-    stroke-dasharray: 20;
-    animation: tick-check-draw 220ms ease-out;
-  }
-  .animate-number-pulse {
-    animation: number-pulse 200ms ease-out;
+    animation: tick-pop 200ms ease-out;
   }
   .animate-fade-in {
-    animation: fade-in 250ms ease-out;
+    animation: fade-in 180ms ease-out;
+  }
+  .animate-rise-in {
+    animation: rise-in 220ms ease-out;
+  }
+  .animate-sheet-up {
+    animation: sheet-up 240ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 }

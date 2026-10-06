@@ -29,3 +29,8 @@ dev-dist
 
 # Personal exported habit data — never belongs in version control
 Exported Data/
+
+# Screenshots and test output
+shots/
+test-results/
+playwright-report/

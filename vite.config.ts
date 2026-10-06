@@ -12,13 +12,12 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
-        name: 'Habit Tracker',
-        short_name: 'Habits',
-        description: 'A single-user habit tracking PWA.',
-        theme_color: '#0e131c',
-        background_color: '#0e131c',
+        name: 'Personal OS',
+        short_name: 'Personal OS',
+        description: 'A private personal operating system: routine, learning, training, review.',
+        theme_color: '#0a0f1a',
+        background_color: '#0a0f1a',
         display: 'standalone',
-        orientation: 'portrait',
         start_url: '/',
         scope: '/',
         icons: [
@@ -33,6 +32,7 @@ export default defineConfig({
         ],
       },
       workbox: {
+        // Everything the app needs is precached, fonts included, so it opens with no network.
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
       },
     }),
