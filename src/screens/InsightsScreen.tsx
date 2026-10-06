@@ -18,14 +18,8 @@ import {
   WEEKDAY_INITIALS_MON_FIRST,
 } from '../lib/dates'
 import { useTheme } from '../lib/theme'
-import { CHART_PALETTE, type ChartPalette } from '../lib/themeOptions'
+import { CHART_PALETTE, rampStep, rampTextColor } from '../lib/themeOptions'
 import type { Habit } from '../lib/types'
-
-function fillForRate(v: number | null, palette: ChartPalette): string {
-  if (v === null) return palette.noData
-  const step = Math.min(5, Math.max(1, Math.ceil(v * 5)))
-  return palette.ramp[step - 1]
-}
 
 function GuardBlock({ text }: { text: string }) {
   return (
@@ -38,7 +32,7 @@ function GuardBlock({ text }: { text: string }) {
 function SectionHeading({ kicker, headline }: { kicker: string; headline: string }) {
   return (
     <>
-      <div className="text-[10.5px] tracking-[0.12em] text-gold uppercase">{kicker}</div>
+      <div className="text-[10.5px] tracking-[0.12em] text-accent uppercase">{kicker}</div>
       <div className="mt-0.5 font-heading text-[16px]">{headline}</div>
     </>
   )
@@ -173,22 +167,43 @@ export function InsightsScreen({
                 <div className="overflow-hidden text-ellipsis whitespace-nowrap text-[10.5px] leading-[1.2] text-ink/72">
                   {habit.short_name}
                 </div>
-                {cells.map((v, wd) => (
-                  <div
-                    key={wd}
-                    title={`${habit.short_name} · ${v === null ? 'no data' : Math.round(v * 100) + '%'}`}
-                    className="h-[18px] rounded-[2px]"
-                    style={{ background: fillForRate(v, chartColors) }}
-                  />
-                ))}
+                {/* The number is in the cell. Five shades alone were too close to read across a
+                    row, and a shade can only ever be compared, never read. */}
+                {cells.map((v, wd) => {
+                  const step = v === null ? null : rampStep(v)
+                  return (
+                    <div
+                      key={wd}
+                      title={`${habit.short_name} · ${v === null ? 'no data' : Math.round(v * 100) + '%'}`}
+                      className="tnum flex h-[22px] items-center justify-center rounded-[2px] text-[9.5px]"
+                      style={
+                        step === null
+                          ? { border: '1px dashed', borderColor: 'currentcolor', color: 'rgba(128,128,128,0.45)' }
+                          : {
+                              background: chartColors.ramp[step],
+                              color: rampTextColor(effective, step),
+                            }
+                      }
+                    >
+                      {v === null ? '·' : Math.round(v * 100)}
+                    </div>
+                  )
+                })}
               </div>
             ))}
             <div className="mt-2 flex items-center gap-1.5 text-[9.5px] text-ink/40">
               <span>0%</span>
               {chartColors.ramp.map((c, i) => (
-                <div key={i} className="h-2 w-[22px] rounded-[1px]" style={{ background: c }} />
+                <div key={i} className="h-2 w-[18px] rounded-[1px]" style={{ background: c }} />
               ))}
               <span>100%</span>
+              <span className="ml-auto flex items-center gap-1">
+                <span
+                  className="inline-block h-2.5 w-2.5 rounded-[1px] border border-dashed"
+                  style={{ borderColor: 'currentcolor' }}
+                />
+                no data
+              </span>
             </div>
             <p className="mt-2.5 text-[12px] leading-[1.5] text-ink/62">{heatReading}</p>
           </div>
@@ -218,7 +233,7 @@ export function InsightsScreen({
                 Daily
               </span>
               <span className="flex items-center gap-1.5">
-                <span className="inline-block h-0.5 w-4 bg-gold" />
+                <span className="inline-block h-0.5 w-4 bg-accent" />
                 7-day average
               </span>
             </div>
@@ -268,7 +283,7 @@ export function InsightsScreen({
               <div className="overflow-hidden text-ellipsis whitespace-nowrap text-[12px] text-ink/80">
                 {habit.short_name}
               </div>
-              <div className={`tnum text-right font-heading text-[15px] transition-colors duration-300 ${cur >= 5 ? 'text-gold' : 'text-ink/80'}`}>
+              <div className={`tnum text-right font-heading text-[15px] transition-colors duration-300 ${cur >= 5 ? 'text-accent' : 'text-ink/80'}`}>
                 {cur}
               </div>
               <div className="tnum text-right font-heading text-[15px] text-ink/42">{best}</div>

@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { registerSW } from 'virtual:pwa-register'
 import './index.css'
 import App from './App.tsx'
-import { seedIfEmpty } from './lib/seed.ts'
+import { seedGymAndFoodIfEmpty, seedIfEmpty } from './lib/seed.ts'
 import { ThemeProvider } from './lib/theme.tsx'
 
 // autoUpdate mode (skipWaiting + clientsClaim, set in vite.config.ts) only auto-reloads once the
@@ -23,6 +23,9 @@ document.addEventListener('visibilitychange', () => {
 })
 
 await seedIfEmpty()
+// Separate from the habit seed on purpose: an existing install already has habits, and would
+// otherwise never receive the exercise and supplement libraries added in schema v3.
+await seedGymAndFoodIfEmpty()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

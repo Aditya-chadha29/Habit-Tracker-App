@@ -38,20 +38,20 @@ const TodayRow = memo(function TodayRow({
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') toggleEntry(habit.id!, dateStr)
       }}
-      className={`flex min-h-[46px] cursor-pointer items-center gap-3 border-b border-ink/9 px-4 transition-colors duration-100 active:bg-gold/12 ${
-        done ? 'bg-gold/6' : ''
+      className={`flex min-h-[46px] cursor-pointer items-center gap-3 border-b border-ink/9 px-4 transition-colors duration-100 active:bg-accent/12 ${
+        done ? 'bg-accent/6' : ''
       }`}
     >
       <div
         className={`flex h-5 w-5 flex-none items-center justify-center rounded-[2px] border transition-colors duration-100 ${
-          done ? 'border-gold bg-gold active:bg-gold-pressed' : 'border-ink/32 bg-transparent active:bg-gold/12'
+          done ? 'border-accent bg-accent active:bg-accent-pressed' : 'border-ink/32 bg-transparent active:bg-accent/12'
         } ${flashing ? 'animate-tick-pop' : ''}`}
       >
         {done && (
           <Check
             size={12}
             strokeWidth={3.2}
-            className={`text-on-gold ${flashing ? 'animate-tick-check' : ''}`}
+            className={`text-on-accent ${flashing ? 'animate-tick-check' : ''}`}
           />
         )}
       </div>
@@ -66,7 +66,7 @@ const TodayRow = memo(function TodayRow({
       </div>
       <div
         className={`flex-none text-[9.5px] tracking-[0.1em] uppercase ${
-          done ? 'text-gold/85' : pending ? 'text-ink/30' : 'text-ink/50'
+          done ? 'text-accent/85' : pending ? 'text-ink/30' : 'text-ink/50'
         }`}
       >
         {stateLabel}
@@ -142,7 +142,7 @@ export function TodayScreen({ habits, doneMap }: { habits: Habit[]; doneMap: Don
             disabled={dayOffset <= -6}
             onClick={() => setDayOffset((o) => Math.max(-6, o - 1))}
             className={`h-11 w-11 border-0 bg-transparent font-heading text-[22px] transition-colors duration-100 ${
-              dayOffset > -6 ? 'cursor-pointer text-gold active:text-gold-pressed' : 'text-ink/18'
+              dayOffset > -6 ? 'cursor-pointer text-accent active:text-accent-pressed' : 'text-ink/18'
             }`}
           >
             ‹
@@ -156,7 +156,7 @@ export function TodayScreen({ habits, doneMap }: { habits: Habit[]; doneMap: Don
             disabled={dayOffset >= 0}
             onClick={() => setDayOffset((o) => Math.min(0, o + 1))}
             className={`h-11 w-11 border-0 bg-transparent font-heading text-[22px] transition-colors duration-100 ${
-              dayOffset < 0 ? 'cursor-pointer text-gold active:text-gold-pressed' : 'text-ink/18'
+              dayOffset < 0 ? 'cursor-pointer text-accent active:text-accent-pressed' : 'text-ink/18'
             }`}
           >
             ›
@@ -171,7 +171,7 @@ export function TodayScreen({ habits, doneMap }: { habits: Habit[]; doneMap: Don
           <span className="text-[11.5px] text-ink/50">{isTodayDate ? 'so far' : 'recorded'}</span>
         </div>
         <div className="mt-2.5 h-0.5 bg-ink/12">
-          <div className="h-0.5 bg-gold transition-[width] duration-300 ease-out" style={{ width: `${scorePct}%` }} />
+          <div className="h-0.5 bg-accent transition-[width] duration-300 ease-out" style={{ width: `${scorePct}%` }} />
         </div>
         {isTodayDate && (
           <p className="mt-2.5 font-heading text-[12.5px] leading-[1.4] text-ink/50 italic">

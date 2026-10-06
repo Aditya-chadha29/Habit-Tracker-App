@@ -1,12 +1,8 @@
-/** Order is the picker's order. Style themes are explicit choices only — never picked by the OS. */
+/** Order is the toggle's cycle order. */
 export const THEME_OPTIONS = [
   { id: 'system', label: 'System' },
   { id: 'light', label: 'Light' },
   { id: 'dark', label: 'Dark' },
-  { id: 'cybercore', label: 'Cybercore' },
-  { id: 'scrapbook', label: 'Scrapbook' },
-  { id: 'glass', label: 'Glassmorphism' },
-  { id: 'wabi-sabi', label: 'Wabi-sabi' },
 ] as const
 
 export type ThemePreference = (typeof THEME_OPTIONS)[number]['id']
@@ -18,18 +14,14 @@ export function isThemePreference(v: unknown): v is ThemePreference {
 
 /** Browser chrome colour (meta theme-color) per theme — the theme's ground. */
 export const GROUND_BY_THEME: Record<EffectiveTheme, string> = {
-  dark: '#181716',
-  light: '#f3f2f2',
-  cybercore: '#07060d',
-  scrapbook: '#e6d6ba',
-  glass: '#0f1230',
-  'wabi-sabi': '#ebe5da',
+  dark: '#0e131c',
+  light: '#f2f5f9',
 }
 
 export interface ChartPalette {
   /** Daily score line. */
   raw: string
-  /** Rolling average line, weight line — the theme's accent. */
+  /** Rolling average line, weight line — the accent. */
   avg: string
   /** Heatmap cell with no data. */
   noData: string
@@ -37,35 +29,37 @@ export interface ChartPalette {
   ramp: readonly [string, string, string, string, string]
 }
 
-const GOLD_RAMP = ['#4b3208', '#7d5411', '#a06f24', '#c28d41', '#e1ad66'] as const
+// Sequential blue ramps with a deliberately wide lightness spread: the previous five steps were
+// hard to tell apart on the weekday heatmap, which is the one place five shades have to be read
+// against each other. Dark theme climbs from deep navy to bright blue; light theme climbs the
+// other way, pale to deep, so "more" always reads as "stronger" against its own background.
+const RAMP_DARK = ['#17293d', '#1d4568', '#246a9e', '#4593cd', '#7fc0f2'] as const
+const RAMP_LIGHT = ['#dce8f4', '#a9c8e6', '#6fa3d2', '#3c7ab2', '#1d5285'] as const
 
 // Raw JS colour strings for Chart.js and the heatmap — these don't route through the CSS tokens
-// in src/index.css, so every theme needs its own set.
+// in src/index.css, so each theme needs its own set.
 export const CHART_PALETTE: Record<EffectiveTheme, ChartPalette> = {
-  dark: { raw: 'rgba(243,242,242,0.3)', avg: '#e1ad66', noData: 'rgba(243,242,242,0.03)', ramp: GOLD_RAMP },
-  light: { raw: 'rgba(32,31,29,0.35)', avg: '#b68235', noData: 'rgba(32,31,29,0.04)', ramp: GOLD_RAMP },
-  cybercore: {
-    raw: 'rgba(230,227,255,0.3)',
-    avg: '#3ff0e8',
-    noData: 'rgba(230,227,255,0.04)',
-    ramp: ['#0b3a3a', '#11605f', '#1a8f8c', '#2cc2bd', '#3ff0e8'],
+  dark: {
+    raw: 'rgba(234,240,247,0.3)',
+    avg: '#5fa8e8',
+    noData: 'rgba(234,240,247,0.04)',
+    ramp: RAMP_DARK,
   },
-  scrapbook: {
-    raw: 'rgba(58,47,38,0.35)',
-    avg: '#b8452f',
-    noData: 'rgba(58,47,38,0.05)',
-    ramp: ['#ecd3b0', '#dfb083', '#cf8a5c', '#bf653e', '#a3402a'],
+  light: {
+    raw: 'rgba(22,32,44,0.35)',
+    avg: '#2d6ea8',
+    noData: 'rgba(22,32,44,0.05)',
+    ramp: RAMP_LIGHT,
   },
-  glass: {
-    raw: 'rgba(255,255,255,0.35)',
-    avg: '#e7a6ff',
-    noData: 'rgba(255,255,255,0.05)',
-    ramp: ['#2c2f6e', '#4d4196', '#7b54ba', '#b06cd8', '#e7a6ff'],
-  },
-  'wabi-sabi': {
-    raw: 'rgba(45,42,38,0.32)',
-    avg: '#9b6f56',
-    noData: 'rgba(45,42,38,0.04)',
-    ramp: ['#e2d7c7', '#cfb9a0', '#b99a7e', '#a37d63', '#7e5b46'],
-  },
+}
+
+/** Which ramp step a rate falls in, 0–4. */
+export function rampStep(rate: number): number {
+  return Math.min(5, Math.max(1, Math.ceil(rate * 5))) - 1
+}
+
+/** Text colour that stays legible on a given ramp step, so the number can sit inside the cell. */
+export function rampTextColor(theme: EffectiveTheme, step: number): string {
+  if (theme === 'dark') return step <= 1 ? 'rgba(234,240,247,0.75)' : '#07101a'
+  return step >= 3 ? '#f2f5f9' : 'rgba(22,32,44,0.82)'
 }

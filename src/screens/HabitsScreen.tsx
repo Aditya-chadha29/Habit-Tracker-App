@@ -11,7 +11,7 @@ import { ThemeToggle } from '../components/ThemeToggle'
 
 const inputClass =
   'min-h-[42px] w-full rounded-[4px] border border-ink/20 bg-transparent px-2.5 py-1.5 font-body text-[16px] text-ink'
-const buttonPress = 'transition-transform duration-100 active:scale-[0.97] active:bg-gold/12'
+const buttonPress = 'transition-transform duration-100 active:scale-[0.97] active:bg-accent/12'
 const DELETE_ARM_MS = 3000
 
 function habitMeta(habit: Habit): string {
@@ -45,7 +45,7 @@ function SortableHabitRow({ habit, onEdit }: { habit: Habit; onEdit: () => void 
       <button
         type="button"
         onClick={onEdit}
-        className="min-w-0 flex-1 cursor-pointer border-0 bg-transparent p-0 text-left transition-colors duration-100 active:bg-gold/12"
+        className="min-w-0 flex-1 cursor-pointer border-0 bg-transparent p-0 text-left transition-colors duration-100 active:bg-accent/12"
       >
         <div className="overflow-hidden text-ellipsis whitespace-nowrap text-[14px] leading-[1.25] text-ink">
           {habit.name}
@@ -69,7 +69,7 @@ function StaticHabitRow({ habit, onEdit }: { habit: Habit; onEdit: () => void })
       <button
         type="button"
         onClick={onEdit}
-        className="min-w-0 flex-1 cursor-pointer border-0 bg-transparent p-0 text-left transition-colors duration-100 active:bg-gold/12"
+        className="min-w-0 flex-1 cursor-pointer border-0 bg-transparent p-0 text-left transition-colors duration-100 active:bg-accent/12"
       >
         <div className="overflow-hidden text-ellipsis whitespace-nowrap text-[14px] leading-[1.25] text-ink">
           {habit.name}
@@ -79,7 +79,7 @@ function StaticHabitRow({ habit, onEdit }: { habit: Habit; onEdit: () => void })
       <button
         type="button"
         onClick={() => restoreHabit(habit.id!)}
-        className={`min-h-[36px] flex-none cursor-pointer rounded-[4px] border border-gold px-2.5 py-1 font-heading text-[12px] text-gold transition-colors duration-100 ${buttonPress}`}
+        className={`min-h-[36px] flex-none cursor-pointer rounded-[4px] border border-accent px-2.5 py-1 font-heading text-[12px] text-accent transition-colors duration-100 ${buttonPress}`}
       >
         Restore
       </button>
@@ -116,7 +116,7 @@ function EditPanel({
         <button
           type="button"
           onClick={onSave}
-          className={`min-h-[42px] flex-1 cursor-pointer rounded-[4px] border border-gold bg-transparent font-heading text-[14px] text-gold ${buttonPress}`}
+          className={`min-h-[42px] flex-1 cursor-pointer rounded-[4px] border border-accent bg-transparent font-heading text-[14px] text-accent ${buttonPress}`}
         >
           Save
         </button>
@@ -253,7 +253,7 @@ export function HabitsScreen({ habits }: { habits: Habit[] }) {
               setAddOpen((o) => !o)
               setAddName('')
             }}
-            className={`min-h-[36px] cursor-pointer rounded-[4px] border border-gold bg-transparent px-3 py-1.5 font-heading text-[13px] text-gold ${buttonPress}`}
+            className={`min-h-[36px] cursor-pointer rounded-[4px] border border-accent bg-transparent px-3 py-1.5 font-heading text-[13px] text-accent ${buttonPress}`}
           >
             {addOpen ? 'Close' : '+ New'}
           </button>
@@ -275,7 +275,7 @@ export function HabitsScreen({ habits }: { habits: Habit[] }) {
                 <button
                   type="button"
                   onClick={saveAdd}
-                  className={`min-h-[42px] flex-1 cursor-pointer rounded-[4px] border border-gold bg-transparent font-heading text-[14px] text-gold ${buttonPress}`}
+                  className={`min-h-[42px] flex-1 cursor-pointer rounded-[4px] border border-accent bg-transparent font-heading text-[14px] text-accent ${buttonPress}`}
                 >
                   Add habit
                 </button>
@@ -310,7 +310,7 @@ export function HabitsScreen({ habits }: { habits: Habit[] }) {
             <button
               type="button"
               onClick={() => setRetiredOpen((o) => !o)}
-              className="flex min-h-[42px] w-full cursor-pointer items-center justify-between border-b border-ink/9 bg-transparent px-4 font-heading text-[12px] tracking-[0.06em] text-ink/45 uppercase transition-colors duration-100 active:bg-gold/12"
+              className="flex min-h-[42px] w-full cursor-pointer items-center justify-between border-b border-ink/9 bg-transparent px-4 font-heading text-[12px] tracking-[0.06em] text-ink/45 uppercase transition-colors duration-100 active:bg-accent/12"
             >
               <span>Retired · {retiredHabits.length}</span>
               <ChevronDown

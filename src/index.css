@@ -2,18 +2,18 @@
 
 @theme {
   /* Dark is the bare default (matches the original "opens in the dark" design intent). */
-  --color-ground: #181716;
-  --color-tabbar: #1c1b19;
-  --color-ink: #f3f2f2;
-  --color-gold: #e1ad66;
-  --color-gold-pressed: #c28d41;
-  /* Stays dark in both themes — used for content sitting on a gold-filled surface (tick checks),
+  --color-ground: #0e131c;
+  --color-tabbar: #141b26;
+  --color-ink: #eaf0f7;
+  --color-accent: #5fa8e8;
+  --color-accent-pressed: #3f87c6;
+  /* Stays dark in both themes — used for content sitting on a accent-filled surface (tick checks),
      which needs to stay legible regardless of which way `ground` is currently flipped. */
-  --color-on-gold: #201f1d;
+  --color-on-accent: #0b1017;
   /* Muted terracotta, not a bright alarm red — reserved for the one destructive, irreversible
      action in the app (deleting a same-day, no-history habit). Kept warm so it still reads as
      part of this palette rather than a jarring system-red. */
-  --color-danger: #c0503a;
+  --color-danger: #d4685c;
 
   --font-heading: 'Cormorant Garamond', serif;
   --font-body: 'Lora', serif;
@@ -22,172 +22,31 @@
 /* System prefers light, and no explicit override to dark is set. */
 @media (prefers-color-scheme: light) {
   :root:not([data-theme='dark']) {
-    --color-ground: #f3f2f2;
-    --color-tabbar: #eae9e9;
-    --color-ink: #201f1d;
-    --color-gold: #b68235;
-    --color-gold-pressed: #a06f24;
-    --color-danger: #a83f2b;
+    --color-ground: #f2f5f9;
+    --color-tabbar: #e5ebf3;
+    --color-ink: #16202c;
+    --color-accent: #2d6ea8;
+    --color-accent-pressed: #255c8c;
+    --color-danger: #b0463b;
   }
 }
 
 /* Explicit overrides always win over system preference. */
 :root[data-theme='light'] {
-  --color-ground: #f3f2f2;
-  --color-tabbar: #eae9e9;
-  --color-ink: #201f1d;
-  --color-gold: #b68235;
-  --color-gold-pressed: #a06f24;
-  --color-danger: #a83f2b;
+  --color-ground: #f2f5f9;
+  --color-tabbar: #e5ebf3;
+  --color-ink: #16202c;
+  --color-accent: #2d6ea8;
+  --color-accent-pressed: #255c8c;
+  --color-danger: #b0463b;
 }
 :root[data-theme='dark'] {
-  --color-ground: #181716;
-  --color-tabbar: #1c1b19;
-  --color-ink: #f3f2f2;
-  --color-gold: #e1ad66;
-  --color-gold-pressed: #c28d41;
-  --color-danger: #c0503a;
-}
-
-/* ── Style themes ──────────────────────────────────────────────────────────────────────────────
-   Explicit choices only (never from the OS). Each re-points the same tokens, so every screen
-   follows; "gold" is simply each theme's accent. Chart colours live in src/lib/theme.tsx. These
-   sit after the prefers-color-scheme block on purpose: equal specificity, so source order wins.
-   Components draw with `rounded-[4px]` / `rounded-[2px]`, so the radius overrides target those. */
-
-:root[data-theme='cybercore'] {
-  color-scheme: dark;
-  --color-ground: #07060d;
-  --color-tabbar: #0d0b18;
-  --color-ink: #e6e3ff;
-  --color-gold: #3ff0e8;
-  --color-gold-pressed: #22c9c2;
-  --color-on-gold: #07060d;
-  --color-danger: #ff4fd8;
-  --font-heading: 'Chakra Petch', 'Arial Narrow', sans-serif;
-  --font-body: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
-}
-[data-theme='cybercore'] .bg-grain {
-  position: relative;
-  background-image:
-    linear-gradient(rgba(63, 240, 232, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(63, 240, 232, 0.05) 1px, transparent 1px);
-  background-size: 26px 26px;
-}
-[data-theme='cybercore'] .bg-grain::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 50;
-  pointer-events: none;
-  background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.18) 0 1px, transparent 1px 3px);
-}
-[data-theme='cybercore'] .text-gold {
-  text-shadow: 0 0 8px rgba(63, 240, 232, 0.45);
-}
-[data-theme='cybercore'] .bg-gold {
-  box-shadow: 0 0 12px rgba(63, 240, 232, 0.45);
-}
-[data-theme='cybercore'] .rounded-\[4px\],
-[data-theme='cybercore'] .rounded-\[2px\] {
-  border-radius: 0;
-}
-
-:root[data-theme='scrapbook'] {
-  --color-ground: #e6d6ba;
-  --color-tabbar: #fcf8ee;
-  --color-ink: #3a2f26;
-  --color-gold: #b8452f;
-  --color-gold-pressed: #9c3a27;
-  --color-on-gold: #fcf8ee;
-  --color-danger: #8e2a22;
-  --font-heading: 'Caveat', 'Comic Sans MS', cursive;
-  --font-body: 'Courier Prime', 'Courier New', monospace;
-}
-[data-theme='scrapbook'] .bg-grain {
-  background-image: radial-gradient(rgba(90, 60, 30, 0.09) 1px, transparent 1.2px);
-  background-size: 7px 7px;
-}
-/* Caveat's small x-height reads tiny at the pixel sizes set for Cormorant; normalise it. */
-[data-theme='scrapbook'] .font-heading {
-  font-size-adjust: 0.52;
-  font-weight: 700;
-}
-[data-theme='scrapbook'] .rounded-\[4px\] {
-  border-radius: 255px 12px 225px 12px / 12px 225px 12px 255px;
-}
-[data-theme='scrapbook'] .border,
-[data-theme='scrapbook'] .border-b,
-[data-theme='scrapbook'] .border-t {
-  border-style: dashed;
-}
-[data-theme='scrapbook'] .bg-tabbar {
-  box-shadow: 0 -4px 14px rgba(60, 40, 20, 0.12);
-}
-
-:root[data-theme='glass'] {
-  color-scheme: dark;
-  --color-ground: #0f1230;
-  --color-tabbar: rgba(255, 255, 255, 0.08);
-  --color-ink: #ffffff;
-  --color-gold: #e7a6ff;
-  --color-gold-pressed: #c77fe6;
-  --color-on-gold: #1b1d4a;
-  --color-danger: #ff8fa3;
-  --font-heading: 'Sora', 'Trebuchet MS', sans-serif;
-  --font-body: 'DM Sans', 'Segoe UI', sans-serif;
-}
-[data-theme='glass'] .bg-grain {
-  background-image:
-    radial-gradient(circle at 8% 6%, oklch(0.62 0.2 330 / 0.75), transparent 42%),
-    radial-gradient(circle at 96% 48%, oklch(0.6 0.2 255 / 0.75), transparent 45%),
-    radial-gradient(circle at 12% 94%, oklch(0.62 0.18 175 / 0.6), transparent 42%);
-}
-[data-theme='glass'] header,
-[data-theme='glass'] .bg-tabbar {
-  background-color: rgba(255, 255, 255, 0.08);
-  -webkit-backdrop-filter: blur(24px) saturate(150%);
-  backdrop-filter: blur(24px) saturate(150%);
-}
-[data-theme='glass'] header {
-  margin: 10px 10px 4px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 20px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 12px 32px rgba(8, 10, 30, 0.35);
-}
-[data-theme='glass'] .rounded-\[4px\] {
-  border-radius: 14px;
-}
-[data-theme='glass'] .rounded-\[2px\] {
-  border-radius: 6px;
-}
-[data-theme='glass'] .bg-gold {
-  box-shadow: 0 0 14px rgba(231, 166, 255, 0.5);
-}
-
-:root[data-theme='wabi-sabi'] {
-  --color-ground: #ebe5da;
-  --color-tabbar: #e3dcd0;
-  --color-ink: #2d2a26;
-  --color-gold: #9b6f56;
-  --color-gold-pressed: #83593f;
-  --color-on-gold: #f4efe6;
-  --color-danger: #8e3b2b;
-  --font-heading: 'Shippori Mincho', Georgia, serif;
-  --font-body: 'Zen Kaku Gothic New', 'Helvetica Neue', sans-serif;
-}
-[data-theme='wabi-sabi'] .bg-grain {
-  background-image:
-    radial-gradient(rgba(120, 95, 70, 0.07) 0.8px, transparent 1px),
-    radial-gradient(rgba(120, 95, 70, 0.05) 0.8px, transparent 1px);
-  background-size: 9px 11px, 13px 7px;
-  background-position: 0 0, 4px 3px;
-}
-[data-theme='wabi-sabi'] .rounded-\[4px\] {
-  border-radius: 10px 14px 12px 16px;
-}
-[data-theme='wabi-sabi'] .rounded-\[2px\] {
-  border-radius: 52% 48% 55% 45% / 48% 55% 45% 52%;
+  --color-ground: #0e131c;
+  --color-tabbar: #141b26;
+  --color-ink: #eaf0f7;
+  --color-accent: #5fa8e8;
+  --color-accent-pressed: #3f87c6;
+  --color-danger: #d4685c;
 }
 
 @layer base {
@@ -207,7 +66,7 @@
   }
 
   :focus-visible {
-    outline: 2px solid var(--color-gold);
+    outline: 2px solid var(--color-accent);
     outline-offset: 2px;
   }
 

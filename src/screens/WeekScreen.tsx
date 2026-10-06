@@ -37,11 +37,11 @@ const WeekCell = memo(function WeekCell({
           : undefined
       }
       className={`flex h-[26px] items-center justify-center rounded-[2px] border transition-colors duration-100 ${
-        done ? 'border-gold bg-gold' : 'border-ink/18'
-      } ${tappable ? (done ? 'cursor-pointer active:bg-gold-pressed' : 'cursor-pointer active:bg-gold/12') : 'cursor-default'} ${flashing ? 'animate-tick-pop' : ''}`}
+        done ? 'border-accent bg-accent' : 'border-ink/18'
+      } ${tappable ? (done ? 'cursor-pointer active:bg-accent-pressed' : 'cursor-pointer active:bg-accent/12') : 'cursor-default'} ${flashing ? 'animate-tick-pop' : ''}`}
     >
       {done && (
-        <Check size={11} strokeWidth={3.4} className={`text-on-gold ${flashing ? 'animate-tick-check' : ''}`} />
+        <Check size={11} strokeWidth={3.4} className={`text-on-accent ${flashing ? 'animate-tick-check' : ''}`} />
       )}
     </div>
   )
@@ -117,7 +117,7 @@ export function WeekScreen({ habits, doneMap }: { habits: Habit[]; doneMap: Done
         <button
           type="button"
           onClick={() => setWeekOffset((o) => o - 1)}
-          className="h-11 w-11 cursor-pointer border-0 bg-transparent font-heading text-[22px] text-gold transition-colors duration-100 active:text-gold-pressed"
+          className="h-11 w-11 cursor-pointer border-0 bg-transparent font-heading text-[22px] text-accent transition-colors duration-100 active:text-accent-pressed"
         >
           ‹
         </button>
@@ -130,7 +130,7 @@ export function WeekScreen({ habits, doneMap }: { habits: Habit[]; doneMap: Done
           disabled={weekOffset >= 0}
           onClick={() => setWeekOffset((o) => Math.min(0, o + 1))}
           className={`h-11 w-11 border-0 bg-transparent font-heading text-[22px] transition-colors duration-100 ${
-            weekOffset < 0 ? 'cursor-pointer text-gold active:text-gold-pressed' : 'text-ink/18'
+            weekOffset < 0 ? 'cursor-pointer text-accent active:text-accent-pressed' : 'text-ink/18'
           }`}
         >
           ›
@@ -144,7 +144,7 @@ export function WeekScreen({ habits, doneMap }: { habits: Habit[]; doneMap: Done
             <div
               key={label + i}
               className={`text-center text-[9.5px] tracking-[0.06em] uppercase ${
-                weekDates[i] === today ? 'text-gold' : 'text-ink/45'
+                weekDates[i] === today ? 'text-accent' : 'text-ink/45'
               }`}
             >
               {label}
@@ -179,7 +179,7 @@ export function WeekScreen({ habits, doneMap }: { habits: Habit[]; doneMap: Done
               <div
                 key={iso}
                 className={`tnum text-center font-heading text-[12px] ${
-                  future ? 'text-ink/20' : iso === today ? 'text-gold' : 'text-ink/60'
+                  future ? 'text-ink/20' : iso === today ? 'text-accent' : 'text-ink/60'
                 }`}
               >
                 {label}

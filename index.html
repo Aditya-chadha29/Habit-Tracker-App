@@ -6,16 +6,14 @@
       (function () {
         try {
           var t = localStorage.getItem('habit-tracker-theme')
-          // Same key and values as src/lib/theme.tsx.
-          if (['light', 'dark', 'cybercore', 'scrapbook', 'glass', 'wabi-sabi'].indexOf(t) > -1)
-            document.documentElement.setAttribute('data-theme', t)
+          if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t)
         } catch {}
       })()
     </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#181716" />
+    <meta name="theme-color" content="#0e131c" />
     <meta name="description" content="A single-user habit tracking PWA." />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -23,7 +21,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Lora:wght@400;500&family=Chakra+Petch:wght@500;700&family=IBM+Plex+Mono:wght@400;500&family=Caveat:wght@500;700&family=Courier+Prime:wght@400;700&family=Sora:wght@400;600&family=DM+Sans:wght@400;500&family=Shippori+Mincho:wght@500;600&family=Zen+Kaku+Gothic+New:wght@400;500&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Lora:wght@400;500&display=swap"
       rel="stylesheet"
     />
     <title>Habit Tracker</title>

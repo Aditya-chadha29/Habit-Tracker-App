@@ -34,16 +34,39 @@ corrupts the 4 AM wake-up habit specifically. Week starts Monday.
 copy reads correctly: for `abstain`, `done: true` means "successfully abstained" — label these
 **held / broken**, never completed / missed.
 
-## Design
-Implement from `design_handoff_habit_tracker/README.md` and the HTML prototype it lists. Dark,
-mobile-first at 390 × 844, navigation at the bottom, 44px minimum tap targets, single sequential
-chart ramp. No confetti, no streak flames.
+## Sections and navigation (2026-10-06)
+Seven sections: **Home, Today, Gym, Food, Week, Insights, Habits**. There is **no tab bar** — Home
+is both the dashboard and the launcher (section cards + two charts), every other screen has a back
+chevron to Home and a grid button opening the section sheet (`src/components/SectionMenu.tsx`).
+Habits (add/retire/reorder + theme toggle) is reached from the gear on Home.
 
-**Style themes** (2026-09-14, user request): besides System/Light/Dark, the Habits-screen theme
-picker offers Cybercore, Scrapbook, Glassmorphism and Wabi-sabi. They re-point the same CSS tokens
-(`ground`, `tabbar`, `ink`, `gold` = accent, `on-gold`, `danger`, `--font-heading`, `--font-body`)
-in `src/index.css`, with per-theme chart colours in `CHART_PALETTE` (`src/lib/theme.tsx`). Draw new
-UI with those tokens only, and add a `CHART_PALETTE` entry for any new theme. Dark stays the default.
+**Gym** (`screens/GymScreen.tsx`, `components/gym/*`) logs sessions set by set: routines are
+templates that *copy* their rows into a session at start, each set is prefilled from the last time
+that exercise was actually performed, and one tap on the tick logs it. Finishing a session ticks
+the `Gym` habit for that date in the same transaction. The rest timer is timestamp-derived and
+foreground-only — an offline iOS PWA **cannot** notify with the screen locked, so never imply it
+can. `e1rm`/`volumeLoad`/`isHardSet`/`setsByMuscle` live in `derive.ts`; e1RM returns null above 12
+effective reps rather than printing a number the formula can't support.
+
+**Food** (`screens/FoodScreen.tsx`) is a plain meal log, by explicit choice: four free-text boxes a
+day (`meals`, keyed `[date+slot]`) with an "ate out" tick. No calories, no macros, no food library.
+Supplements sit below it with dose, schedule and optional stock; ticking one adjusts stock in the
+same transaction. The seeded `Creatine` habit is retired when supplements first seed, so one action
+is never recorded twice.
+
+## Design
+Implement from `design_handoff_habit_tracker/README.md` and the HTML prototype it lists. Dark by
+default, mobile-first at 390 × 844, 44px minimum tap targets, single sequential chart ramp. No
+confetti, no streak flames.
+
+**Palette (2026-10-06):** blue, not the original gold/brown — the accent token is now `accent`
+(`--color-accent`, was `gold`) with `accent-pressed` and `on-accent`. System/Light/Dark only; four
+style themes were tried on 2026-09-14 and removed the same day as not worth the upkeep. Chart and
+heatmap colours are in `CHART_PALETTE` (`src/lib/themeOptions.ts`, **not** `theme.tsx`).
+
+**Habit × weekday heatmap:** the five ramp steps alone were unreadable, so each cell now also
+prints its percentage (`rampStep`/`rampTextColor`), and no-data cells are dashed outlines rather
+than a sixth shade.
 
 **Motivational copy** was originally banned outright here too. As of 2026-09-04, the user
 deliberately asked for a "quote of the day" on the Today screen (`src/lib/quotes.ts`) — a real,

@@ -1,6 +1,9 @@
 import { db } from './db'
 import { todayLocalStr } from './dates'
 
+/** Bump whenever the set of tables, or the shape of a row, changes. */
+export const EXPORT_SCHEMA_VERSION = 2
+
 function downloadJson(json: string, filename: string): void {
   const blob = new Blob([json], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
@@ -14,18 +17,20 @@ function downloadJson(json: string, filename: string): void {
 }
 
 export async function exportAllData(): Promise<void> {
-  const [habits, entries, weekly_records] = await Promise.all([
-    db.habits.toArray(),
-    db.entries.toArray(),
-    db.weekly_records.toArray(),
-  ])
+  // One read transaction over every table, so the snapshot is consistent: reading each table in
+  // its own transaction lets a write land between them and produce a file where a parent row is
+  // present but its children aren't. Built from db.tables rather than a hardcoded list so a table
+  // added in a later db.version() can't be silently left out of backups — daily_notes was missing
+  // from every export before this.
+  const rows = await db.transaction('r', db.tables, async () =>
+    Promise.all(db.tables.map(async (t) => [t.name, await t.toArray()] as const)),
+  )
 
   const payload = {
     exported_at: todayLocalStr(),
-    schema_version: 1,
-    habits,
-    entries,
-    weekly_records,
+    schema_version: EXPORT_SCHEMA_VERSION,
+    db_version: db.verno,
+    ...Object.fromEntries(rows),
   }
 
   const json = JSON.stringify(payload, null, 2)
