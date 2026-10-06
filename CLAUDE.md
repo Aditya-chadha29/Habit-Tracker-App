@@ -48,6 +48,11 @@ foreground-only — an offline iOS PWA **cannot** notify with the screen locked,
 can. `e1rm`/`volumeLoad`/`isHardSet`/`setsByMuscle` live in `derive.ts`; e1RM returns null above 12
 effective reps rather than printing a number the formula can't support.
 
+**Changing the starter lists later:** seeds only fire into an empty table, so an install that has
+been running for weeks never sees them. Put such changes in `src/lib/setupPatches.ts`
+(`applyPendingSetup`, run from `main.tsx` on every start). It must stay idempotent by checking the
+data itself — never a "has run" flag — so it cannot duplicate rows or undo the user's own edits.
+
 **Food** (`screens/FoodScreen.tsx`) is a plain meal log, by explicit choice: four free-text boxes a
 day (`meals`, keyed `[date+slot]`) with an "ate out" tick. No calories, no macros, no food library.
 Supplements sit below it with dose, schedule and optional stock; ticking one adjusts stock in the

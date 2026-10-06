@@ -23,8 +23,10 @@ export const SUPPLEMENT_SEED: SupplementSeedRow[] = [
   ['Creatine', '5 g', 'daily', null, 'anytime', null, 10],
   ['Whey protein', '1 scoop', 'daily', null, 'postworkout', null, 10],
   ['Multivitamin', '1 tablet', 'daily', null, 'morning', null, null],
-  ['Omega-3', '2 capsules', 'daily', null, 'morning', null, null],
-  ['Vitamin D', '60,000 IU', 'weekly', 6, 'morning', null, null],
+  ['Fish oil', '2 capsules', 'daily', null, 'morning', null, null],
+  ['Yakult', '1 bottle', 'daily', null, 'anytime', null, null],
+  // One dose a week, on Mondays.
+  ['Vitamin D', '60,000 IU', 'weekly', 0, 'morning', null, null],
 ]
 
 /** short_name of the habit the supplement list takes over from; retired at seed time. */

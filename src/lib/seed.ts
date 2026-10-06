@@ -24,6 +24,10 @@ const INITIAL_HABITS: [name: string, short_name: string, polarity: Polarity][] =
   ['No fast food', 'No fast food', 'abstain'],
   ['NS', 'NS', 'abstain'],
   ['NF', 'NF', 'abstain'],
+  ['10 push-ups', '10 push-ups', 'do'],
+  ['10 crunches', '10 crunches', 'do'],
+  ['10 pull-ups', '10 pull-ups', 'do'],
+  ['15 min walk / jog', '15 min walk', 'do'],
 ]
 
 /** Seeds the owner's known habit list on first run only (habits table empty). */

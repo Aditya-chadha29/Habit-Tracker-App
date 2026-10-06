@@ -144,7 +144,7 @@ export function HomeScreen({
 
         {/* The one place motivational copy is allowed (CLAUDE.md): a single quiet line, now on
             Home rather than Today. */}
-        <p className="mt-2.5 text-right font-heading text-[12.5px] leading-[1.4] text-ink/50 italic">
+        <p className="mt-2.5 text-center font-heading text-[12.5px] leading-[1.4] text-ink/50 italic">
           “{quote.text}” <span className="text-ink/35 not-italic">— {quote.attribution}</span>
         </p>
       </header>

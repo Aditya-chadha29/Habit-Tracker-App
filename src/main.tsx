@@ -4,6 +4,7 @@ import { registerSW } from 'virtual:pwa-register'
 import './index.css'
 import App from './App.tsx'
 import { seedGymAndFoodIfEmpty, seedIfEmpty } from './lib/seed.ts'
+import { applyPendingSetup } from './lib/setupPatches.ts'
 import { ThemeProvider } from './lib/theme.tsx'
 
 // autoUpdate mode (skipWaiting + clientsClaim, set in vite.config.ts) only auto-reloads once the
@@ -26,6 +27,8 @@ await seedIfEmpty()
 // Separate from the habit seed on purpose: an existing install already has habits, and would
 // otherwise never receive the exercise and supplement libraries added in schema v3.
 await seedGymAndFoodIfEmpty()
+// Changes to the starter lists after an install has already seeded. Idempotent — see the file.
+await applyPendingSetup()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

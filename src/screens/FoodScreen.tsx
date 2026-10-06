@@ -12,6 +12,7 @@ import {
 } from '../lib/derive'
 import { useMealsForDate, useSupplementLogsForDate, useSupplements } from '../lib/hooks'
 import { setMeal, toggleSupplement } from '../lib/mutations'
+import { SupplementManager } from '../components/food/SupplementManager'
 import type { Meal, MealSlot, Supplement } from '../lib/types'
 
 const buttonPress = 'transition-transform duration-100 active:scale-[0.97] active:bg-accent/12'
@@ -140,6 +141,7 @@ function SupplementRow({
 
 export function FoodScreen() {
   const [dayOffset, setDayOffset] = useState(0)
+  const [managing, setManaging] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
 
   const today = todayLocalStr()
@@ -165,8 +167,8 @@ export function FoodScreen() {
       : `${Math.abs(dayOffset)} days back`
 
   return (
-    <>
-      <header className="border-b border-ink/14 px-4 pt-2 pb-3">
+    <div className="relative flex min-h-0 flex-1 flex-col">
+      <header className="flex-none border-b border-ink/14 px-4 pt-2 pb-3">
         <div className="flex items-center justify-between">
           <button
             type="button"
@@ -219,8 +221,15 @@ export function FoodScreen() {
           ))
         )}
 
-        <div className="px-4 pt-4 pb-1.5 text-[10.5px] tracking-[0.1em] text-ink/45 uppercase">
-          Supplements
+        <div className="flex items-center justify-between px-4 pt-4 pb-1.5">
+          <span className="text-[10.5px] tracking-[0.1em] text-ink/45 uppercase">Supplements</span>
+          <button
+            type="button"
+            onClick={() => setManaging(true)}
+            className={`min-h-[32px] cursor-pointer border-0 bg-transparent px-1 font-heading text-[12px] text-ink/50 underline decoration-ink/25 underline-offset-2 ${buttonPress}`}
+          >
+            Edit
+          </button>
         </div>
         {active.length === 0 ? (
           <div className="px-4 pb-4 text-[12px] text-ink/35">None yet.</div>
@@ -243,6 +252,8 @@ export function FoodScreen() {
           </div>
         )}
       </div>
-    </>
+
+      {managing && <SupplementManager onClose={() => setManaging(false)} />}
+    </div>
   )
 }
