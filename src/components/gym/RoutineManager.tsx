@@ -1,27 +1,62 @@
 import { useEffect, useState } from 'react'
 import { ChevronLeft, Plus, X } from 'lucide-react'
-import { WEEKDAY_LABELS_MON_FIRST } from '../../lib/dates'
+import { WEEKDAY_INITIALS_MON_FIRST, WEEKDAY_LABELS_MON_FIRST } from '../../lib/dates'
 import { useExercises, useRoutineItems, useRoutines } from '../../lib/hooks'
 import { createRoutine, retireRoutine, setRoutineItems, updateRoutine } from '../../lib/mutations'
-import type { Exercise } from '../../lib/types'
+import type { Exercise, Routine } from '../../lib/types'
 import { ExercisePicker } from './ExercisePicker'
 
 const press = 'transition-transform duration-100 active:scale-[0.97] active:bg-accent/12'
 
 type Draft = { exercise_id: number; target_sets: number }
 
+/** Routines written before multi-day support fall back to their single day_hint (1 = Monday). */
+export function routineWeekdays(routine: Routine): number[] {
+  if (routine.weekdays?.length) return routine.weekdays
+  return routine.day_hint ? [routine.day_hint - 1] : []
+}
+
+/** Which days a routine offers itself on. Several, because cardio runs Mon/Wed/Fri. */
+function DayChips({ value, onChange }: { value: number[]; onChange: (next: number[]) => void }) {
+  return (
+    <div className="flex gap-1">
+      {WEEKDAY_INITIALS_MON_FIRST.map((initial, i) => {
+        const on = value.includes(i)
+        return (
+          <button
+            key={`${initial}-${i}`}
+            type="button"
+            aria-pressed={on}
+            aria-label={WEEKDAY_LABELS_MON_FIRST[i]}
+            onClick={() =>
+              onChange(on ? value.filter((d) => d !== i) : [...value, i].sort((a, b) => a - b))
+            }
+            className={`h-9 w-9 flex-none cursor-pointer rounded-[4px] border text-[11px] ${press} ${
+              on
+                ? 'border-accent bg-accent/12 text-accent'
+                : 'border-ink/14 bg-transparent text-ink/42'
+            }`}
+          >
+            {initial}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 /** Editing a routine changes the plan for next time only. Sessions copy their rows at the moment
  *  they start, so nothing here can rewrite a session already logged. */
 function RoutineEditor({
   routineId,
   name,
-  dayHint,
+  weekdays,
   exercises,
   onBack,
 }: {
   routineId: number
   name: string
-  dayHint: number | null
+  weekdays: number[]
   exercises: Exercise[]
   onBack: () => void
 }) {
@@ -67,7 +102,9 @@ function RoutineEditor({
         <div className="min-w-0 flex-1">
           <div className="truncate font-heading text-[16px]">{name}</div>
           <div className="text-[10.5px] text-ink/42">
-            {dayHint ? `Suggested on ${WEEKDAY_LABELS_MON_FIRST[dayHint - 1]}` : 'No set day'}
+            {weekdays.length
+              ? `Suggested on ${weekdays.map((d) => WEEKDAY_LABELS_MON_FIRST[d]).join(', ')}`
+              : 'No set day'}
           </div>
         </div>
       </div>
@@ -164,7 +201,7 @@ export function RoutineManager({ onClose }: { onClose: () => void }) {
   const exercises = useExercises()
   const [editing, setEditing] = useState<number | null>(null)
   const [newName, setNewName] = useState('')
-  const [newDay, setNewDay] = useState<number | null>(null)
+  const [newDays, setNewDays] = useState<number[]>([])
 
   const active = routines.filter((r) => !r.retired_on)
   const current = active.find((r) => r.id === editing)
@@ -174,7 +211,7 @@ export function RoutineManager({ onClose }: { onClose: () => void }) {
       <RoutineEditor
         routineId={current.id!}
         name={current.name}
-        dayHint={current.day_hint}
+        weekdays={routineWeekdays(current)}
         exercises={exercises}
         onBack={() => setEditing(null)}
       />
@@ -204,42 +241,31 @@ export function RoutineManager({ onClose }: { onClose: () => void }) {
         )}
 
         {active.map((routine) => (
-          <div key={routine.id} className="flex items-center gap-2 border-b border-ink/9 px-4 py-2">
-            <button
-              type="button"
-              onClick={() => setEditing(routine.id!)}
-              className={`min-w-0 flex-1 cursor-pointer border-0 bg-transparent py-1 text-left ${press}`}
-            >
-              <span className="block truncate text-[14px] text-ink/80">{routine.name}</span>
-              <span className="block text-[10.5px] text-ink/42">
-                {routine.day_hint ? WEEKDAY_LABELS_MON_FIRST[routine.day_hint - 1] : 'No set day'}
-              </span>
-            </button>
-            <select
-              value={routine.day_hint ?? ''}
-              onChange={(e) =>
-                void updateRoutine(routine.id!, {
-                  day_hint: e.target.value ? Number(e.target.value) : null,
-                })
-              }
-              aria-label={`Day for ${routine.name}`}
-              className="h-9 flex-none rounded-[4px] border border-ink/20 bg-transparent px-1 text-[12px] text-ink/60"
-            >
-              <option value="">—</option>
-              {WEEKDAY_LABELS_MON_FIRST.map((label, i) => (
-                <option key={label} value={i + 1}>
-                  {label}
-                </option>
-              ))}
-            </select>
-            <button
-              type="button"
-              onClick={() => void retireRoutine(routine.id!)}
-              aria-label={`Retire ${routine.name}`}
-              className={`h-9 flex-none cursor-pointer rounded-[4px] border border-ink/14 bg-transparent px-2 text-[11px] text-ink/42 ${press}`}
-            >
-              Retire
-            </button>
+          <div key={routine.id} className="border-b border-ink/9 px-4 py-2">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setEditing(routine.id!)}
+                className={`min-w-0 flex-1 cursor-pointer border-0 bg-transparent py-1 text-left ${press}`}
+              >
+                <span className="block truncate text-[14px] text-ink/80">{routine.name}</span>
+                <span className="block text-[10.5px] text-ink/42">Tap to edit exercises</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => void retireRoutine(routine.id!)}
+                aria-label={`Retire ${routine.name}`}
+                className={`h-9 flex-none cursor-pointer rounded-[4px] border border-ink/14 bg-transparent px-2 text-[11px] text-ink/42 ${press}`}
+              >
+                Retire
+              </button>
+            </div>
+            <div className="mt-1.5 pb-1">
+              <DayChips
+                value={routineWeekdays(routine)}
+                onChange={(weekdays) => void updateRoutine(routine.id!, { weekdays })}
+              />
+            </div>
           </div>
         ))}
 
@@ -250,34 +276,22 @@ export function RoutineManager({ onClose }: { onClose: () => void }) {
             placeholder="New routine name"
             className="w-full rounded-[4px] border border-ink/20 bg-transparent px-3 py-2 text-[14px] text-ink placeholder:text-ink/35 focus:outline-none"
           />
-          <div className="mt-2 flex items-center gap-2">
-            <select
-              value={newDay ?? ''}
-              onChange={(e) => setNewDay(e.target.value ? Number(e.target.value) : null)}
-              aria-label="Day for the new routine"
-              className="h-11 flex-none rounded-[4px] border border-ink/20 bg-transparent px-2 text-[13px] text-ink/60"
-            >
-              <option value="">No day</option>
-              {WEEKDAY_LABELS_MON_FIRST.map((label, i) => (
-                <option key={label} value={i + 1}>
-                  {label}
-                </option>
-              ))}
-            </select>
-            <button
-              type="button"
-              disabled={!newName.trim()}
-              onClick={async () => {
-                const id = await createRoutine(newName, newDay)
-                setNewName('')
-                setNewDay(null)
-                if (id) setEditing(id)
-              }}
-              className={`min-h-[44px] flex-1 cursor-pointer rounded-[4px] border border-accent bg-transparent font-heading text-[14px] text-accent disabled:opacity-40 ${press}`}
-            >
-              Create
-            </button>
+          <div className="mt-2">
+            <DayChips value={newDays} onChange={setNewDays} />
           </div>
+          <button
+            type="button"
+            disabled={!newName.trim()}
+            onClick={async () => {
+              const id = await createRoutine(newName, newDays)
+              setNewName('')
+              setNewDays([])
+              if (id) setEditing(id)
+            }}
+            className={`mt-2 min-h-[44px] w-full cursor-pointer rounded-[4px] border border-accent bg-transparent font-heading text-[14px] text-accent disabled:opacity-40 ${press}`}
+          >
+            Create
+          </button>
         </div>
       </div>
     </div>

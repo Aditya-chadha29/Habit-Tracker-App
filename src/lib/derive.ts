@@ -1,7 +1,10 @@
 import type {
-  Entry, Exercise, Habit, Meal, MealSlot, MuscleGroup, SetLog, Supplement, SupplementLog,
+  Entry, Exercise, Habit, HabitCategory, HabitSchedule, Meal, MealSlot, MuscleGroup, SetLog,
+  Supplement, SupplementLog,
 } from './types'
-import { addDays, compareDateStr, dateRange, mondayIndex, parseLocalDateStr } from './dates'
+import {
+  addDays, compareDateStr, dateRange, mondayIndex, mondayOf, parseLocalDateStr,
+} from './dates'
 
 export type DoneMap = Map<string, boolean>
 
@@ -23,14 +26,60 @@ export function activeHabits(habits: Habit[], dateStr: string): Habit[] {
   return habits.filter((h) => isHabitActive(h, dateStr))
 }
 
+export function habitCategory(habit: Habit): HabitCategory {
+  return habit.category ?? 'body'
+}
+
+export function habitSchedule(habit: Habit): HabitSchedule {
+  return habit.schedule ?? 'daily'
+}
+
+/**
+ * Is this habit expected on this date?
+ *
+ * A `times_per_week` habit is never due on a particular day — it carries a weekly target instead —
+ * so it stays out of the daily denominator entirely. Counting "twice a week" as a miss on the
+ * other five days is exactly the fiction the scoring rules exist to prevent.
+ */
+export function isDueOn(habit: Habit, dateStr: string): boolean {
+  if (!isHabitActive(habit, dateStr)) return false
+  const schedule = habitSchedule(habit)
+  if (schedule === 'daily') return true
+  if (schedule === 'weekdays') return (habit.weekdays ?? []).includes(mondayIndex(dateStr))
+  return false
+}
+
+/** The habits that count toward this date's score. */
+export function dueHabits(habits: Habit[], dateStr: string): Habit[] {
+  return habits.filter((h) => isDueOn(h, dateStr))
+}
+
+/** Active habits carrying a weekly target rather than a per-day expectation. */
+export function weeklyTargetHabits(habits: Habit[], dateStr: string): Habit[] {
+  return habits.filter((h) => isHabitActive(h, dateStr) && habitSchedule(h) === 'times_per_week')
+}
+
+/** Progress against a weekly target, counted across the Monday-start week holding `dateStr`. */
+export function weeklyProgress(
+  habit: Habit,
+  doneMap: DoneMap,
+  dateStr: string,
+): { done: number; target: number } {
+  const monday = mondayOf(dateStr)
+  const done = dateRange(monday, addDays(monday, 6)).filter((iso) =>
+    isDone(doneMap, habit.id!, iso),
+  ).length
+  return { done, target: habit.times_per_week ?? 1 }
+}
+
 export function computeScore(
   habits: Habit[],
   doneMap: DoneMap,
   dateStr: string,
 ): { done: number; total: number } {
-  const active = activeHabits(habits, dateStr)
-  const done = active.filter((h) => isDone(doneMap, h.id!, dateStr)).length
-  return { done, total: active.length }
+  const due = dueHabits(habits, dateStr)
+  const done = due.filter((h) => isDone(doneMap, h.id!, dateStr)).length
+  return { done, total: due.length }
 }
 
 /** Editing history is allowed for the previous 7 days only (today back to today-6). */
@@ -52,12 +101,19 @@ export function habitActiveDates(habit: Habit, todayStr: string): string[] {
   return dateRange(habit.created_on, end)
 }
 
+/** Active dates the habit was actually expected on — the denominator for every rate and streak.
+ *  Days it was never due are excluded entirely, the same way days before created_on are. */
+export function habitDueDates(habit: Habit, todayStr: string): string[] {
+  return habitActiveDates(habit, todayStr).filter((iso) => isDueOn(habit, iso))
+}
+
 export function streak(
   habit: Habit,
   doneMap: DoneMap,
   todayStr: string,
 ): { cur: number; best: number } {
-  const dates = habitActiveDates(habit, todayStr)
+  // Counted over the days it was due: a Monday-only habit shouldn't break its streak on Tuesday.
+  const dates = habitDueDates(habit, todayStr)
   let cur = 0
   let best = 0
   let run = 0
@@ -79,7 +135,7 @@ export function streak(
 
 /** Per-weekday (Mon-first) completion rate across the habit's whole history, or null if no data. */
 export function weekdayRateGrid(habit: Habit, doneMap: DoneMap, todayStr: string): (number | null)[] {
-  const dates = habitActiveDates(habit, todayStr)
+  const dates = habitDueDates(habit, todayStr)
   const n = [0, 0, 0, 0, 0, 0, 0]
   const d = [0, 0, 0, 0, 0, 0, 0]
   for (const iso of dates) {
@@ -92,7 +148,7 @@ export function weekdayRateGrid(habit: Habit, doneMap: DoneMap, todayStr: string
 
 /** Overall completion rate across the habit's whole history, or null if no data. */
 export function allTimeRate(habit: Habit, doneMap: DoneMap, todayStr: string): number | null {
-  const dates = habitActiveDates(habit, todayStr)
+  const dates = habitDueDates(habit, todayStr)
   if (!dates.length) return null
   const done = dates.filter((iso) => isDone(doneMap, habit.id!, iso)).length
   return done / dates.length

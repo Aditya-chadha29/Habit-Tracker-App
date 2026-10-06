@@ -1,8 +1,11 @@
 import {
+  Activity,
   BarChart3,
+  Brain,
   CalendarDays,
   ChevronLeft,
   Dumbbell,
+  HeartPulse,
   House,
   LayoutGrid,
   List,
@@ -12,7 +15,17 @@ import {
 } from 'lucide-react'
 import type { ComponentType } from 'react'
 
-export type Section = 'home' | 'today' | 'gym' | 'food' | 'week' | 'insights' | 'habits'
+export type Section =
+  | 'home'
+  | 'today'
+  | 'mind'
+  | 'body'
+  | 'exercise'
+  | 'gym'
+  | 'food'
+  | 'week'
+  | 'insights'
+  | 'habits'
 
 type IconType = ComponentType<{ size?: number; strokeWidth?: number; className?: string }>
 
@@ -23,6 +36,9 @@ type IconType = ComponentType<{ size?: number; strokeWidth?: number; className?:
 export const SECTIONS: { key: Section; label: string; hint: string; Icon: IconType }[] = [
   { key: 'home', label: 'Home', hint: 'Dashboard', Icon: House },
   { key: 'today', label: 'Today', hint: 'Tick the day', Icon: List },
+  { key: 'mind', label: 'Mind', hint: 'Meditation, paath', Icon: Brain },
+  { key: 'body', label: 'Body', hint: 'Care, food, supplements', Icon: HeartPulse },
+  { key: 'exercise', label: 'Exercise', hint: 'Daily movement', Icon: Activity },
   { key: 'gym', label: 'Gym', hint: 'Log a session', Icon: Dumbbell },
   { key: 'food', label: 'Food', hint: 'Meals, supplements', Icon: UtensilsCrossed },
   { key: 'week', label: 'Week', hint: 'Grid, weight, notes', Icon: CalendarDays },

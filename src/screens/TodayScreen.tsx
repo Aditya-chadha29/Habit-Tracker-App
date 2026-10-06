@@ -1,7 +1,15 @@
 import { memo, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useAutoAnimate } from '@formkit/auto-animate/react'
 import { Check } from 'lucide-react'
-import { activeHabits, computeScore, historyDayCount, isDone, type DoneMap } from '../lib/derive'
+import {
+  computeScore,
+  dueHabits,
+  historyDayCount,
+  isDone,
+  weeklyProgress,
+  weeklyTargetHabits,
+  type DoneMap,
+} from '../lib/derive'
 import { addDays, formatDayTitle, todayLocalStr } from '../lib/dates'
 import { toggleEntry } from '../lib/mutations'
 import { useFlashOnTrue, usePulseOnChange } from '../lib/hooks'
@@ -92,7 +100,9 @@ export function TodayScreen({ habits, doneMap }: { habits: Habit[]; doneMap: Don
   const today = todayLocalStr()
   const dateStr = addDays(today, dayOffset)
   const isTodayDate = dayOffset === 0
-  const active = activeHabits(habits, dateStr)
+  // Only what is actually due that day: a twice-a-week habit is not pending on a Tuesday.
+  const active = dueHabits(habits, dateStr)
+  const weeklyTargets = weeklyTargetHabits(habits, dateStr)
   const score = computeScore(habits, doneMap, dateStr)
   const scorePct = score.total ? Math.round((score.done / score.total) * 100) : 0
   const historyCount = historyDayCount(habits, today)
@@ -179,6 +189,48 @@ export function TodayScreen({ habits, doneMap }: { habits: Habit[]; doneMap: Don
             First day logged. Nothing to compare against yet — Insights unlocks as history accumulates.
           </div>
         )}
+        {/* Weekly targets sit below the day's list: they can't be missed today, but they'd be
+            forgotten entirely if they only lived on the Body screen. */}
+        {isTodayDate && weeklyTargets.length > 0 && (
+          <div className="border-b border-ink/14">
+            {weeklyTargets.map((habit) => {
+              const progress = weeklyProgress(habit, doneMap, dateStr)
+              const done = isDone(doneMap, habit.id!, dateStr)
+              return (
+                <div
+                  key={habit.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => toggleEntry(habit.id!, dateStr)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') toggleEntry(habit.id!, dateStr)
+                  }}
+                  aria-pressed={done}
+                  className={`flex min-h-[46px] cursor-pointer items-center gap-3 border-b border-ink/9 px-4 transition-colors duration-100 active:bg-accent/12 ${
+                    done ? 'bg-accent/6' : ''
+                  }`}
+                >
+                  <div
+                    className={`flex h-5 w-5 flex-none items-center justify-center rounded-[2px] border ${
+                      done ? 'border-accent bg-accent' : 'border-ink/32 bg-transparent'
+                    }`}
+                  >
+                    {done && <Check size={12} strokeWidth={3.2} className="text-on-accent" />}
+                  </div>
+                  <span
+                    className={`min-w-0 flex-1 truncate text-[14px] ${done ? 'text-ink' : 'text-ink/72'}`}
+                  >
+                    {habit.name}
+                  </span>
+                  <span className="flex-none text-[11px] text-ink/42">
+                    {progress.done} of {progress.target} this week
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
         <div ref={listRef}>
           {ordered.map((habit) => {
             const done = isDone(doneMap, habit.id!, dateStr)

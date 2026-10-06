@@ -2,7 +2,7 @@ import { memo, useEffect, useRef, useState } from 'react'
 import { Line } from 'react-chartjs-2'
 import { Check } from 'lucide-react'
 import '../lib/chartSetup'
-import { computeScore, isDone, isEditable, isHabitActive, type DoneMap } from '../lib/derive'
+import { computeScore, isDone, isDueOn, isEditable, type DoneMap } from '../lib/derive'
 import { addDays, formatWeekTitle, mondayOf, todayLocalStr, WEEKDAY_LABELS_MON_FIRST } from '../lib/dates'
 import { setWeeklyRecord, toggleEntry } from '../lib/mutations'
 import { useAllWeeklyRecords, useFlashOnTrue, useWeeklyRecordForWeek } from '../lib/hooks'
@@ -161,7 +161,8 @@ export function WeekScreen({ habits, doneMap }: { habits: Habit[]; doneMap: Done
               const future = iso > today
               if (future) return <FutureCell key={iso} />
               const done = isDone(doneMap, habit.id!, iso)
-              const tappable = isEditable(iso, today) && isHabitActive(habit, iso)
+              // Days the habit was never due are not misses, so they are not tappable either.
+              const tappable = isEditable(iso, today) && isDueOn(habit, iso)
               return <WeekCell key={iso} habitId={habit.id!} iso={iso} done={done} tappable={tappable} />
             })}
           </div>

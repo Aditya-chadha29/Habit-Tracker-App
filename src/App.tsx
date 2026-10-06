@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react'
 import { SectionSheet, TopBar, type Section } from './components/SectionMenu'
 import { HomeScreen } from './screens/HomeScreen'
 import { TodayScreen } from './screens/TodayScreen'
+import { CategoryScreen } from './screens/CategoryScreen'
 import { WeekScreen } from './screens/WeekScreen'
 import { InsightsScreen } from './screens/InsightsScreen'
 import { HabitsScreen } from './screens/HabitsScreen'
@@ -43,6 +44,33 @@ function App() {
       </Panel>
       <Panel active={section === 'today'}>
         <TodayScreen habits={habits} doneMap={doneMap} />
+      </Panel>
+      <Panel active={section === 'mind'}>
+        <CategoryScreen
+          category="mind"
+          title="Mind"
+          blurb="Stillness and study"
+          habits={habits}
+          doneMap={doneMap}
+        />
+      </Panel>
+      <Panel active={section === 'body'}>
+        <CategoryScreen
+          category="body"
+          title="Body"
+          blurb="Care, food and supplements"
+          habits={habits}
+          doneMap={doneMap}
+        />
+      </Panel>
+      <Panel active={section === 'exercise'}>
+        <CategoryScreen
+          category="exercise"
+          title="Exercise"
+          blurb="Daily movement"
+          habits={habits}
+          doneMap={doneMap}
+        />
       </Panel>
       <Panel active={section === 'gym'}>
         <GymScreen active={section === 'gym'} />

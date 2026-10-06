@@ -1,6 +1,8 @@
 import { db } from './db'
 import { todayLocalStr } from './dates'
-import type { Exercise, Meal, MealSlot, Polarity, Session, SetLog, Supplement } from './types'
+import type {
+  Exercise, Meal, MealSlot, Polarity, Routine, Session, SetLog, Supplement,
+} from './types'
 
 /**
  * Read and write inside one transaction: outside one, two fast taps can both read the same
@@ -317,7 +319,7 @@ export async function deleteSession(sessionId: number): Promise<void> {
 
 // ─── Routines ────────────────────────────────────────────────────────────────────────────────
 
-export async function createRoutine(name: string, dayHint: number | null): Promise<number> {
+export async function createRoutine(name: string, weekdays: number[] = []): Promise<number> {
   const trimmed = name.trim()
   if (!trimmed) return 0
   return db.transaction('rw', db.routines, async () => {
@@ -325,7 +327,9 @@ export async function createRoutine(name: string, dayHint: number | null): Promi
     const sortOrder = all.reduce((max, r) => Math.max(max, r.sort_order), -1) + 1
     return (await db.routines.add({
       name: trimmed,
-      day_hint: dayHint,
+      // day_hint stays in step with the first weekday so older readers still work.
+      day_hint: weekdays.length ? weekdays[0] + 1 : null,
+      weekdays,
       sort_order: sortOrder,
       retired_on: null,
     })) as number
@@ -334,9 +338,11 @@ export async function createRoutine(name: string, dayHint: number | null): Promi
 
 export async function updateRoutine(
   id: number,
-  patch: Partial<{ name: string; day_hint: number | null }>,
+  patch: Partial<{ name: string; weekdays: number[] }>,
 ): Promise<void> {
-  await db.routines.update(id, patch)
+  const next: Partial<Routine> = { ...patch }
+  if (patch.weekdays) next.day_hint = patch.weekdays.length ? patch.weekdays[0] + 1 : null
+  await db.routines.update(id, next)
 }
 
 export async function retireRoutine(id: number): Promise<void> {

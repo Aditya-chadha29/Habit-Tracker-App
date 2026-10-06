@@ -1,5 +1,17 @@
 export type Polarity = 'do' | 'abstain'
 
+/** Which category screen a habit belongs to. */
+export type HabitCategory = 'mind' | 'body' | 'exercise'
+
+/**
+ * How often a habit is expected.
+ * - `daily` — every active day, the original behaviour and the default.
+ * - `weekdays` — only on the listed weekdays.
+ * - `times_per_week` — a weekly target with no particular day; these stay OUT of the daily
+ *   denominator, because "twice a week" cannot be missed on a Tuesday.
+ */
+export type HabitSchedule = 'daily' | 'weekdays' | 'times_per_week'
+
 export interface Habit {
   id?: number
   name: string
@@ -8,6 +20,16 @@ export interface Habit {
   created_on: string
   retired_on: string | null
   sort_order: number
+  // Everything below is optional so rows written before categories and schedules existed stay
+  // valid; readers fall back to the old behaviour (body / daily) and setupPatches backfills.
+  category?: HabitCategory
+  /** Sub-heading inside the category ("Face care", "Food"). Empty means no sub-heading. */
+  group?: string
+  schedule?: HabitSchedule
+  /** 0 = Monday … 6 = Sunday. Only read when schedule is `weekdays`. */
+  weekdays?: number[]
+  /** Target count. Only read when schedule is `times_per_week`. */
+  times_per_week?: number | null
 }
 
 export interface Entry {
@@ -69,8 +91,11 @@ export interface Exercise {
 export interface Routine {
   id?: number
   name: string
-  /** 1 = Monday ... 7 = Sunday, or null. A suggestion on that weekday, never enforced. */
+  /** Superseded by `weekdays`; kept so routines written before it still load. */
   day_hint: number | null
+  /** 0 = Monday … 6 = Sunday. Days this routine suggests itself on — cardio runs on several.
+   *  A suggestion only, never enforced: any routine can be started on any day. */
+  weekdays?: number[]
   sort_order: number
   retired_on: string | null
 }
@@ -144,6 +169,8 @@ export type TimeHint = 'morning' | 'preworkout' | 'postworkout' | 'evening' | 'a
 
 export interface Supplement {
   id?: number
+  /** Which category screen it shows under: body (food supplements) or exercise (gym). */
+  category?: Exclude<HabitCategory, 'mind'>
   name: string
   /** Free text so any unit works: "5 g", "1 scoop", "60,000 IU". */
   dose_text: string

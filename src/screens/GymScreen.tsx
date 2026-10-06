@@ -21,7 +21,7 @@ import {
 } from '../lib/hooks'
 import { startSession } from '../lib/mutations'
 import { ExercisePicker } from '../components/gym/ExercisePicker'
-import { RoutineManager } from '../components/gym/RoutineManager'
+import { RoutineManager, routineWeekdays } from '../components/gym/RoutineManager'
 import { SessionView } from '../components/gym/SessionView'
 import type { Exercise } from '../lib/types'
 
@@ -121,7 +121,7 @@ export function GymScreen({ active }: { active: boolean }) {
   const openSession = todaySessions.find((s) => s.ended_at === null)
   const liveSession = openId ? todaySessions.find((s) => s.id === openId) : undefined
   const activeRoutines = routines.filter((r) => !r.retired_on)
-  const suggested = activeRoutines.find((r) => r.day_hint === mondayIndex(today) + 1)
+  const suggested = activeRoutines.find((r) => routineWeekdays(r).includes(mondayIndex(today)))
   const others = activeRoutines.filter((r) => r.id !== suggested?.id)
   const latestWeight = weekly
     .filter((w) => w.weight_kg !== null)
