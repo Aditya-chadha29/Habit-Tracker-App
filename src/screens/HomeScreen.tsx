@@ -26,6 +26,7 @@ import {
   useSupplementLogsForDate,
   useSupplements,
 } from '../lib/hooks'
+import { quoteForDate } from '../lib/quotes'
 import { useTheme } from '../lib/theme'
 import { CHART_PALETTE } from '../lib/themeOptions'
 import type { Habit } from '../lib/types'
@@ -72,6 +73,7 @@ export function HomeScreen({
   const { effective } = useTheme()
   const palette = CHART_PALETTE[effective]
 
+  const quote = quoteForDate(today)
   const score = computeScore(habits, doneMap, today)
   const scorePct = score.total ? Math.round((score.done / score.total) * 100) : 0
   const pending = score.total - score.done
@@ -107,34 +109,44 @@ export function HomeScreen({
 
   return (
     <>
-      <header className="flex flex-none items-start justify-between gap-2 border-b border-ink/14 px-4 pt-2 pb-3">
-        <div className="min-w-0">
-          <div className="font-heading text-[18px] tracking-[0.01em]">{formatDayTitle(today)}</div>
-          <div className="mt-1.5 flex items-baseline gap-2">
-            <span className="tnum font-heading text-[34px] leading-none">
-              {score.done}/{score.total}
-            </span>
-            <span className="text-[11.5px] text-ink/50">so far</span>
+      <header className="flex-none border-b border-ink/14 px-4 pt-2 pb-3">
+        {/* Controls left, the day and its score right. */}
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex flex-none items-center gap-2">
+            <button
+              type="button"
+              onClick={() => onOpen('habits')}
+              aria-label="Habits and settings"
+              title="Habits and settings"
+              className={`flex h-9 w-9 cursor-pointer items-center justify-center rounded-[4px] border border-ink/20 bg-transparent text-ink/60 ${press}`}
+            >
+              <Settings size={16} strokeWidth={1.5} />
+            </button>
+            <MenuButton onClick={onMenu} />
           </div>
-          <div className="mt-2 h-0.5 w-40 bg-ink/12">
-            <div
-              className="h-0.5 bg-accent transition-[width] duration-300 ease-out"
-              style={{ width: `${scorePct}%` }}
-            />
+          <div className="min-w-0 pt-0.5 text-right font-heading text-[18px] tracking-[0.01em]">
+            {formatDayTitle(today)}
           </div>
         </div>
-        <div className="flex flex-none items-center gap-2">
-          <button
-            type="button"
-            onClick={() => onOpen('habits')}
-            aria-label="Habits and settings"
-            title="Habits and settings"
-            className={`flex h-9 w-9 cursor-pointer items-center justify-center rounded-[4px] border border-ink/20 bg-transparent text-ink/60 ${press}`}
-          >
-            <Settings size={16} strokeWidth={1.5} />
-          </button>
-          <MenuButton onClick={onMenu} />
+
+        <div className="mt-1.5 flex items-baseline justify-end gap-2">
+          <span className="text-[11.5px] text-ink/50">so far</span>
+          <span className="tnum font-heading text-[34px] leading-none">
+            {score.done}/{score.total}
+          </span>
         </div>
+        <div className="mt-2 h-0.5 bg-ink/12">
+          <div
+            className="h-0.5 bg-accent transition-[width] duration-300 ease-out"
+            style={{ width: `${scorePct}%` }}
+          />
+        </div>
+
+        {/* The one place motivational copy is allowed (CLAUDE.md): a single quiet line, now on
+            Home rather than Today. */}
+        <p className="mt-2.5 text-right font-heading text-[12.5px] leading-[1.4] text-ink/50 italic">
+          “{quote.text}” <span className="text-ink/35 not-italic">— {quote.attribution}</span>
+        </p>
       </header>
 
       <div className="min-h-0 flex-1 overflow-auto px-4 pt-3 pb-5">

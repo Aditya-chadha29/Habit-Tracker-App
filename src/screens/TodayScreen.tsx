@@ -5,7 +5,6 @@ import { activeHabits, computeScore, historyDayCount, isDone, type DoneMap } fro
 import { addDays, formatDayTitle, todayLocalStr } from '../lib/dates'
 import { toggleEntry } from '../lib/mutations'
 import { useFlashOnTrue, usePulseOnChange } from '../lib/hooks'
-import { quoteForDate } from '../lib/quotes'
 import type { Habit } from '../lib/types'
 
 const TodayRow = memo(function TodayRow({
@@ -99,7 +98,6 @@ export function TodayScreen({ habits, doneMap }: { habits: Habit[]; doneMap: Don
   const historyCount = historyDayCount(habits, today)
   const showFirstDayNote = isTodayDate && historyCount <= 1
   const scorePulse = usePulseOnChange(score.done)
-  const quote = quoteForDate(today)
 
   // Pending habits stay at the top; ticked ones sink to the bottom, animated by auto-animate.
   const ordered = isTodayDate
@@ -173,11 +171,6 @@ export function TodayScreen({ habits, doneMap }: { habits: Habit[]; doneMap: Don
         <div className="mt-2.5 h-0.5 bg-ink/12">
           <div className="h-0.5 bg-accent transition-[width] duration-300 ease-out" style={{ width: `${scorePct}%` }} />
         </div>
-        {isTodayDate && (
-          <p className="mt-2.5 font-heading text-[12.5px] leading-[1.4] text-ink/50 italic">
-            “{quote.text}” <span className="not-italic text-ink/35">— {quote.attribution}</span>
-          </p>
-        )}
       </header>
 
       <div ref={scrollRef} className="min-h-0 flex-1 overflow-auto">
