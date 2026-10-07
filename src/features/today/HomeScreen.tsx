@@ -101,7 +101,7 @@ export default function HomeScreen() {
               <ScoreRing compact lead title="This week" tally={tally} caption="so far" tone="ok" />
             </Link>
             {areas.map((area) => (
-              <Link key={area.id} to={`/area/${area.id}`} className="block rounded-card transition-opacity duration-100 active:opacity-80">
+              <Link key={area.id} to={area.id === 'learning' ? '/learn' : `/area/${area.id}`} className="block rounded-card transition-opacity duration-100 active:opacity-80">
                 <ScoreRing compact title={area.label} tally={day.by_area.get(area.id) ?? { done: 0, due: 0 }} caption="today" tone={areaTone(area.color)} />
               </Link>
             ))}
