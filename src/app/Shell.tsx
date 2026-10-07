@@ -144,7 +144,7 @@ export function Shell({ routes, fallback }: { routes: readonly RouteDef[]; fallb
     <ShellContext.Provider value={shell}>
       <div className="flex h-dvh w-full overflow-hidden bg-ground text-ink pt-safe">
         <Sidebar current={current} />
-        <div className="flex min-w-0 flex-1 flex-col pb-safe">
+        <div className="flex min-w-0 flex-1 flex-col">
           <main className="flex min-h-0 flex-1 flex-col">
             <ErrorBoundary key={path}>
               <Suspense fallback={fallback ?? null}>

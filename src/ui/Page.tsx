@@ -74,7 +74,8 @@ export function Page({ title, subtitle, back, actions, tabs, width = 'default', 
         {tabs && <div className={cx('mx-auto w-full px-4 pb-3 lg:px-8', WIDTH[width])}>{tabs}</div>}
       </header>
       <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto">
-        <div className={cx('mx-auto w-full px-4 py-4 lg:px-8 lg:py-6', WIDTH[width], className)}>{children}</div>
+        <div className={cx(// The screen runs to the very bottom of the phone; the last of it clears the home indicator.
+          'mx-auto w-full px-4 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] lg:px-8 lg:py-6', WIDTH[width], className)}>{children}</div>
       </div>
     </div>
   )

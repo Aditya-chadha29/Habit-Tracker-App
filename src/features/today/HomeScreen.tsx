@@ -87,46 +87,22 @@ export default function HomeScreen() {
       <div className="flex flex-col gap-4 lg:grid lg:grid-cols-12 lg:items-start lg:gap-6">
         <div className="contents lg:col-span-7 lg:flex lg:flex-col lg:gap-5 xl:col-span-8">
           {quote && (
-            <Card className="relative order-1 overflow-hidden lg:order-none lg:p-6">
+            <Card padded={false} className="relative order-1 overflow-hidden px-4 py-3 lg:order-none lg:p-6">
               <Ridge />
               <QuoteLine quote={quote} className="relative" />
             </Card>
           )}
 
-          <div className="order-2 grid grid-cols-2 gap-3 lg:order-none lg:gap-5">
-            <ScoreRing
-              title="Today"
-              tally={day}
-              caption={day.due === 0 ? 'nothing due' : 'so far'}
-              footer={
-                <Link to="/today" className="mt-1.5 inline-block text-[13px] font-medium text-accent-ink">
-                  Open today
-                </Link>
-              }
-            />
-            <ScoreRing
-              title="This week"
-              tally={tally}
-              caption="so far"
-              tone="ok"
-              footer={
-                <Link to="/review" className="mt-1.5 inline-block text-[13px] font-medium text-accent-ink">
-                  Open review
-                </Link>
-              }
-            />
-          </div>
-
-          <nav aria-label="Pillars" className="order-3 grid grid-cols-2 gap-3 lg:order-none lg:gap-5">
+          <nav aria-label="Scores" className="order-2 grid grid-cols-2 gap-2.5 lg:order-none lg:gap-4">
+            <Link to="/today" className="block rounded-card transition-opacity duration-100 active:opacity-80">
+              <ScoreRing compact title="Today" tally={day} caption={day.due === 0 ? 'nothing due' : 'so far'} />
+            </Link>
+            <Link to="/review" className="block rounded-card transition-opacity duration-100 active:opacity-80">
+              <ScoreRing compact title="This week" tally={tally} caption="so far" tone="ok" />
+            </Link>
             {areas.map((area) => (
               <Link key={area.id} to={`/area/${area.id}`} className="block rounded-card transition-opacity duration-100 active:opacity-80">
-                <ScoreRing
-                  title={area.label}
-                  tally={day.by_area.get(area.id) ?? { done: 0, due: 0 }}
-                  caption="today"
-                  tone={areaTone(area.color)}
-                  footer={<span className="mt-1.5 inline-block text-[13px] font-medium text-accent-ink">Open</span>}
-                />
+                <ScoreRing compact title={area.label} tally={day.by_area.get(area.id) ?? { done: 0, due: 0 }} caption="today" tone={areaTone(area.color)} />
               </Link>
             ))}
           </nav>
