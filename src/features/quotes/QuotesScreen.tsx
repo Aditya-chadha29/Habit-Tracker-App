@@ -159,6 +159,7 @@ export default function QuotesScreen() {
   return (
     <Page
       title="Quotes"
+      back="/settings"
       subtitle={`${quotes.filter((quote) => quote.active).length} in the collection`}
       width="default"
       actions={

@@ -12,7 +12,7 @@ import { Page } from '../../ui/Page'
 import { Segmented } from '../../ui/Tabs'
 import { useToast } from '../../ui/Toast'
 import { usePillars, useResources } from './hooks'
-import { LearnTabs, ResourceForm, ResourceRow } from './shared'
+import { ResourceForm, ResourceRow } from './shared'
 
 const TYPE_FILTERS = [
   { id: 'all', label: 'All' },
@@ -132,10 +132,10 @@ export default function LibraryScreen() {
 
   return (
     <Page
-      title="Learn"
+      title="Library"
+      back="/learn"
       subtitle={`${list.filter((resource) => resource.status !== 'archived').length} resources`}
       width="default"
-      tabs={<LearnTabs current="/learn/library" />}
       actions={
         <>
           <IconButton icon="sliders" label="Manage learning pillars" onClick={() => setManaging(true)} />

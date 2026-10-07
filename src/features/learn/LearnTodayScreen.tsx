@@ -43,7 +43,17 @@ export default function LearnTodayScreen() {
   }
 
   return (
-    <Page title="Learn" subtitle="One thing at a time, in order" width="wide" tabs={<LearnTabs current="/learn" />}>
+    <Page
+      title="Learn"
+      subtitle="One thing at a time, in order"
+      width="wide"
+      tabs={<LearnTabs current="/learn" />}
+      actions={
+        <Button variant="secondary" size="sm" icon="plus" onClick={() => setAdding(true)}>
+          Add
+        </Button>
+      }
+    >
       <div className="flex flex-col gap-5 lg:grid lg:grid-cols-12 lg:items-start lg:gap-6">
         <div className="flex flex-col gap-5 lg:col-span-7">
           {!now.loaded ? null : current ? (
@@ -195,6 +205,15 @@ export default function LearnTodayScreen() {
           </section>
         </div>
       </div>
+
+      <p className="mt-6 flex flex-wrap gap-x-5 gap-y-2 px-1 text-[13px]">
+        <Link to="/learn/queue" className="font-medium text-accent-ink">
+          Change the order
+        </Link>
+        <Link to="/learn/library" className="font-medium text-accent-ink">
+          Everything saved
+        </Link>
+      </p>
 
       {logging && <SessionSheet resource={logging.resource} lane={logging.lane} finishing={logging.finishing} onClose={() => setLogging(null)} />}
       {adding && <ResourceForm pillars={pillars} onClose={() => setAdding(false)} onSaved={() => navigate('/learn/queue')} />}

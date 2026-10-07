@@ -41,12 +41,10 @@ const STATUS_TONE: Record<ResourceStatus, Tone> = {
 
 const SECTIONS = [
   { id: '/learn', label: 'Today' },
-  { id: '/learn/queue', label: 'Queue' },
-  { id: '/learn/library', label: 'Library' },
   { id: '/learn/reading', label: 'Reading' },
 ] as const
 
-/** The four main places in Learn, as one strip. */
+/** The two places in Learn, as one strip. The queue and the library are reached from Today. */
 export function LearnTabs({ current }: { current: (typeof SECTIONS)[number]['id'] }) {
   return <Segmented options={SECTIONS} value={current} onChange={(to) => navigate(to, { replace: true })} label="Learn section" block />
 }

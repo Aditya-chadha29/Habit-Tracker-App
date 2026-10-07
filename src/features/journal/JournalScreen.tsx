@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { navigate, useQueryState } from '../../app/router'
 import { DayNav } from '../../components/DayNav'
-import { QuoteLine } from '../../components/QuoteLine'
 import { db } from '../../data/db'
 import { mergePrompts, saveJournalEntry, saveNote, type DailyKind } from '../../data/journalRepo'
 import { saveSettings } from '../../data/settingsRepo'
@@ -17,7 +16,6 @@ import { Drawer } from '../../ui/Overlay'
 import { Page } from '../../ui/Page'
 import { Segmented } from '../../ui/Tabs'
 import { useToast } from '../../ui/Toast'
-import { useQuoteOfDay } from '../quotes/hooks'
 import { saveStateLabel, useAutosave } from '../../state/useAutosave'
 
 const KINDS = [
@@ -176,7 +174,6 @@ export default function JournalScreen() {
   const first = firstEditableDate(today, settings.edit_window_days)
   const date: DateStr = isValidDateStr(rawDate) && rawDate >= first && rawDate <= today ? rawDate : today
   const kind: KindId = KINDS.some((k) => k.id === rawKind) ? (rawKind as KindId) : 'morning'
-  const { quote } = useQuoteOfDay(date)
 
   return (
     <Page
@@ -193,7 +190,6 @@ export default function JournalScreen() {
     >
       <div className="flex flex-col gap-5">
         <DayNav date={date} onChange={setDate} />
-        {quote && <QuoteLine quote={quote} linked={false} className="px-1" />}
         {kind === 'general' ? <Notes date={date} /> : <DailyEntry date={date} kind={kind} prompts={settings.journal_prompts[kind]} />}
       </div>
       {editingPrompts && kind !== 'general' && <PromptEditor kind={kind} onClose={() => setEditingPrompts(false)} />}

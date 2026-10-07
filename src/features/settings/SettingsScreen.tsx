@@ -168,6 +168,11 @@ export default function SettingsScreen() {
       <div className="flex flex-col gap-7">
         <Profile settings={settings} save={save} summary={summary} />
 
+        <Group title="Quotes and data">
+          <NavRow to="/quotes" icon="quotes" title="Quotes" hint="The library and how the daily quote is chosen" />
+          <NavRow to="/data" icon="data" title="Data" hint="Export, import, automatic copies" />
+        </Group>
+
         <Group title="Appearance">
           <Row title="Theme" hint="System follows the device.">
             <Segmented options={THEMES} value={settings.theme} onChange={(theme) => save({ theme })} label="Theme" size="sm" />
@@ -266,9 +271,7 @@ export default function SettingsScreen() {
         <Group title="Set up">
           <NavRow to="/habits" icon="habits" title="Habits" hint="Add, change, reorder, retire" />
           <NavRow to="/routines" icon="routines" title="Routines" hint="The order of a normal day" />
-          <NavRow to="/quotes" icon="quotes" title="Quotes" hint="The library and how the daily quote is chosen" />
           <NavRow to="/journal" icon="journal" title="Journal" hint="Its prompts are changed from the journal itself" />
-          <NavRow to="/data" icon="data" title="Data" hint="Export, import, automatic copies" />
         </Group>
       </div>
 

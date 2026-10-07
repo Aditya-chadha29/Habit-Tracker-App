@@ -232,7 +232,8 @@ describe('a phone that never saw the 6 October build', () => {
     ])
     expect(routines.find((r) => r.name === 'Chest + Triceps')!.weekdays).toEqual([1])
     expect(await db.routine_items.count()).toBeGreaterThan(20)
-    expect(await db.quotes.count()).toBe(60)
+    // The first collection and the fifty added later, each exactly once.
+    expect(await db.quotes.count()).toBe(110)
     expect((await db.learning_pillars.toArray()).map((p) => p.name)).toEqual([
       'Self Growth', 'AI & Technology', 'Technical / Professional', 'Construction & Manufacturing',
     ])

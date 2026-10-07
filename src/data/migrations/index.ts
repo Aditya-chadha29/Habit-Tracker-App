@@ -4,6 +4,7 @@ import { saveSettings, DATA_FORMAT } from '../settingsRepo'
 import { EXERCISE_LIBRARY } from '../seed/exercises'
 import { LEARNING_PILLAR_SEED } from '../seed/learning'
 import { SEED_QUOTES } from '../seed/quotes'
+import { MORE_QUOTES } from '../seed/quotesMore'
 import { WORKOUT_ROUTINE_SEED } from '../seed/workoutRoutines'
 import type {
   DateStr, Entry, Exercise, LegacyHabit, LegacySupplement, LegacySupplementLog, Session, SetLog,
@@ -177,9 +178,18 @@ export function guessQuoteCategory(text: string): string {
   return QUOTE_CATEGORIES.find(([pattern]) => pattern.test(text))?.[1] ?? 'Life'
 }
 
-async function seedQuotes({ db, today }: MigrationContext): Promise<{ added: number }> {
+async function seedQuotes(ctx: MigrationContext): Promise<{ added: number }> {
+  return addSeedQuotes(ctx, SEED_QUOTES)
+}
+
+async function seedMoreQuotes(ctx: MigrationContext): Promise<{ added: number }> {
+  return addSeedQuotes(ctx, MORE_QUOTES)
+}
+
+/** Adds built-in quotes that are not in the collection yet. Never touches a quote that is. */
+async function addSeedQuotes({ db, today }: MigrationContext, list: readonly { text: string; attribution: string }[]): Promise<{ added: number }> {
   const existing = new Set((await db.quotes.toArray()).map((q) => q.seed_key).filter(Boolean))
-  const rows = SEED_QUOTES.map((quote) => ({ quote, key: quoteSeedKey(quote.text) })).filter(({ key }) => !existing.has(key))
+  const rows = list.map((quote) => ({ quote, key: quoteSeedKey(quote.text) })).filter(({ key }) => !existing.has(key))
   await db.quotes.bulkAdd(
     rows.map(({ quote, key }) => ({
       text: quote.text,
@@ -253,6 +263,7 @@ export const MIGRATIONS: Migration[] = [
   { id: '003-quotes', run: seedQuotes },
   { id: '004-learning-pillars', run: seedLearningPillars },
   { id: '005-weekly-records', run: carryWeeklyRecords },
+  { id: '006-more-quotes', run: seedMoreQuotes },
 ]
 
 export async function pendingMigrations(db: AppDb, migrations: Migration[] = MIGRATIONS): Promise<Migration[]> {

@@ -9,7 +9,7 @@ import { EmptyState } from '../../ui/EmptyState'
 import { Page } from '../../ui/Page'
 import { useToast } from '../../ui/Toast'
 import { usePillars, useResources } from './hooks'
-import { LearnTabs, ResourceForm, ResourceRow } from './shared'
+import { ResourceForm, ResourceRow } from './shared'
 
 /**
  * The queue, and the two stages before it. Things move left to right — inbox, shortlist, queue —
@@ -31,10 +31,10 @@ export default function QueueScreen() {
 
   return (
     <Page
-      title="Learn"
+      title="Queue"
+      back="/learn"
       subtitle={`${queue.length} in queue`}
       width="default"
-      tabs={<LearnTabs current="/learn/queue" />}
       actions={
         <Button variant="primary" size="sm" icon="plus" onClick={() => setAdding(true)}>
           Add

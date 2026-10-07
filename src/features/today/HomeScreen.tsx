@@ -11,13 +11,11 @@ import { attentionItems } from '../../engine/attention'
 import { formatDayTitle } from '../../engine/dates'
 import { periodOf, shiftPeriod } from '../../engine/periods'
 import { dayScore, weekTally } from '../../engine/score'
-import { compareWindows } from '../../engine/trend'
 import { useCore } from '../../state/core'
 import { Card, SectionTitle } from '../../ui/Card'
 import { areaTone, toneBg, toneText } from '../../ui/Chip'
 import { cx } from '../../ui/cx'
 import { Icon } from '../../ui/icons'
-import { TrendMark } from '../../ui/Metric'
 import { Page } from '../../ui/Page'
 import { useLearningNow } from '../learn/hooks'
 import { useQuoteOfDay } from '../quotes/hooks'
@@ -94,7 +92,6 @@ export default function HomeScreen() {
     [habits, index, today, hour, weekStart, settings, workout, learning, lastWeekReviewed],
   )
 
-  const overall = useMemo(() => compareWindows(habits, index, today), [habits, index, today])
 
   return (
     <Page title={formatDayTitle(today)} subtitle={greeting(hour, settings.name)} width="wide">
@@ -236,44 +233,6 @@ export default function HomeScreen() {
             </section>
           )}
 
-          <section className="order-8 flex flex-col gap-2 lg:order-none">
-            <SectionTitle
-              action={
-                <Link to="/progress" className="font-medium">
-                  Progress
-                </Link>
-              }
-            >
-              Trend · 7 days against the 7 before
-            </SectionTitle>
-            <Card padded={false} className="divide-y divide-line overflow-hidden">
-              {[{ id: '', label: 'Overall', comparison: overall }, ...areas.map((area) => ({ id: area.id, label: area.label, comparison: compareWindows(habits, index, today, 7, area.id) }))].map(
-                ({ id, label, comparison }) => (
-                  <div key={id || 'overall'} className="flex min-h-[48px] items-center gap-3 px-4 py-2">
-                    <span className="min-w-0 flex-1 truncate text-[14px] text-ink">{label}</span>
-                    {comparison.direction === null || comparison.delta === null ? (
-                      <span className="text-[12.5px] text-ink-3">Need more history</span>
-                    ) : (
-                      <>
-                        <span className="tnum text-[12.5px] text-ink-3">
-                          {Math.round((comparison.previous.done / comparison.previous.due) * 100)}% → {Math.round((comparison.current.done / comparison.current.due) * 100)}%
-                        </span>
-                        <TrendMark
-                          direction={comparison.direction}
-                          good={comparison.direction === 'flat' ? null : comparison.direction === 'up'}
-                          label={
-                            comparison.direction === 'flat'
-                              ? `${label}: steady`
-                              : `${label}: ${comparison.direction === 'up' ? 'up' : 'down'} ${Math.abs(comparison.delta)} points`
-                          }
-                        />
-                      </>
-                    )}
-                  </div>
-                ),
-              )}
-            </Card>
-          </section>
         </div>
       </div>
     </Page>

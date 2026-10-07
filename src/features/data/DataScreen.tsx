@@ -21,6 +21,7 @@ const STEP_LABEL: Record<string, string> = {
   '003-quotes': 'Quote library added',
   '004-learning-pillars': 'Learning pillars added',
   '005-weekly-records': 'Weights and weekly notes carried over',
+  '006-more-quotes': 'Fifty more quotes added',
 }
 
 function ExportCard() {
@@ -158,7 +159,7 @@ export default function DataScreen() {
   const changed = () => setRefreshKey((key) => key + 1)
 
   return (
-    <Page title="Data" subtitle="Yours, on this device" width="narrow">
+    <Page title="Data" subtitle="Yours, on this device" back="/settings" width="narrow">
       <div className="flex flex-col gap-7">
         <section className="flex flex-col gap-2">
           <SectionTitle>Export</SectionTitle>
