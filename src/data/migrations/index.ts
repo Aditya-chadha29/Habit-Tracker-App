@@ -271,6 +271,25 @@ async function oneJournalPage({ db }: MigrationContext): Promise<{ questions: nu
   return { questions: daily.length }
 }
 
+/**
+ * Removes the duplicate Breakfast habit, at the user's request. It was created and retired on the
+ * same day in August, so it was never due on any day and no score has ever counted it; the
+ * Breakfast that is in use is untouched. Done only when that is exactly the situation.
+ */
+async function dropDuplicateBreakfast({ db }: MigrationContext): Promise<{ removed: number[] }> {
+  const habits = await db.habits.toArray()
+  const inUse = habits.some((habit) => habit.name.toLowerCase() === 'breakfast' && habit.retired_on === null)
+  const removed: number[] = []
+  if (!inUse) return { removed }
+  for (const habit of habits) {
+    if (habit.name.toLowerCase() !== 'breakfast' || habit.retired_on === null || habit.retired_on > habit.created_on) continue
+    await db.entries.bulkDelete(await db.entries.where('habit_id').equals(habit.id!).primaryKeys())
+    await db.habits.delete(habit.id!)
+    removed.push(habit.id!)
+  }
+  return { removed }
+}
+
 async function seedLearningPillars({ db }: MigrationContext): Promise<{ added: number }> {
   if ((await db.learning_pillars.count()) > 0) return { added: 0 }
   await db.learning_pillars.bulkAdd(
@@ -330,6 +349,7 @@ export const MIGRATIONS: Migration[] = [
   { id: '007-four-pillars', run: fourPillars },
   { id: '008-week-starts-sunday', run: weekStartsSunday },
   { id: '009-one-journal-page', run: oneJournalPage },
+  { id: '010-drop-duplicate-breakfast', run: dropDuplicateBreakfast },
 ]
 
 export async function pendingMigrations(db: AppDb, migrations: Migration[] = MIGRATIONS): Promise<Migration[]> {

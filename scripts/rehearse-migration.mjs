@@ -39,7 +39,7 @@ const port = Number(args.port ?? 5311)
 const base = `http://localhost:${port}`
 const DB = 'habit-tracker'
 const BACKUPS = 'habit-tracker-backups'
-const LEDGER = ['001-cutover', '002-training-library', '003-quotes', '004-learning-pillars', '005-weekly-records', '006-more-quotes', '007-four-pillars', '008-week-starts-sunday', '009-one-journal-page']
+const LEDGER = ['001-cutover', '002-training-library', '003-quotes', '004-learning-pillars', '005-weekly-records', '006-more-quotes', '007-four-pillars', '008-week-starts-sunday', '009-one-journal-page', '010-drop-duplicate-breakfast']
 
 const env = { ...process.env, PATH: `C:\\Program Files\\Git\\cmd;${process.env.PATH ?? ''}` }
 
@@ -225,6 +225,8 @@ try {
     parity ? `${parity.days_checked} days checked, ${differing} differ` + (differing ? ': ' + parity.mismatches.slice(0, 5).map((m) => `${m.date} ${m.before} to ${m.after}`).join(', ') : '') : 'no report',
   )
 
+  // One habit is removed on purpose: a duplicate that was created and retired on the same day.
+  const dropped = new Set((after.tables.migrations ?? []).find((row) => row.id === '010-drop-duplicate-breakfast')?.notes?.removed ?? [])
   const key = (row) => `${row.habit_id}|${row.date}`
   const afterEntries = new Map()
   let duplicates = 0
@@ -232,19 +234,19 @@ try {
     if (afterEntries.has(key(row))) duplicates += 1
     afterEntries.set(key(row), row)
   }
-  const beforeEntries = before.tables.entries ?? []
+  const beforeEntries = (before.tables.entries ?? []).filter((row) => !dropped.has(row.habit_id))
   const lostDone = beforeEntries.filter((row) => row.done && !afterEntries.get(key(row))?.done).length
   const flipped = beforeEntries.filter((row) => !row.done && afterEntries.get(key(row))?.done).length
   check('every tick is still a tick', lostDone === 0, `${beforeEntries.filter((row) => row.done).length} ticks before, ${lostDone} lost`)
   check('no day has two rows for one habit', duplicates === 0, `${duplicates} duplicates`)
   console.log(`  entries: ${beforeEntries.length} before, ${(after.tables.entries ?? []).length} after; ${flipped} not-done rows became done`)
 
-  const exportTicks = (exported.entries ?? []).filter((row) => row.done)
+  const exportTicks = (exported.entries ?? []).filter((row) => row.done && !dropped.has(row.habit_id))
   const lostFromExport = exportTicks.filter((row) => !afterEntries.get(key(row))?.done).length
   check('every tick in the export survived the whole chain', lostFromExport === 0, `${exportTicks.length} ticks in the export, ${lostFromExport} lost`)
 
   const afterHabitIds = new Set((after.tables.habits ?? []).map((row) => row.id))
-  const missingHabits = (before.tables.habits ?? []).filter((row) => !afterHabitIds.has(row.id)).length
+  const missingHabits = (before.tables.habits ?? []).filter((row) => !afterHabitIds.has(row.id) && !dropped.has(row.id)).length
   check('no habit was deleted', missingHabits === 0, `${(before.tables.habits ?? []).length} before, ${(after.tables.habits ?? []).length} after, ${missingHabits} missing`)
   const invalid = (after.tables.habits ?? []).filter((row) => !Array.isArray(row.versions) || row.versions.length === 0).length
   check('every habit has its dated chapters', invalid === 0, `${invalid} without`)
@@ -253,7 +255,7 @@ try {
   const first = snapshots.find((row) => row.label === 'before-001-cutover')
   check(
     'a full copy from before the change is kept',
-    first && first.tables.entries.length === beforeEntries.length && first.tables.habits.length === (before.tables.habits ?? []).length,
+    first && first.tables.entries.length === (before.tables.entries ?? []).length && first.tables.habits.length === (before.tables.habits ?? []).length,
     first ? `${first.row_count} records` : `${snapshots.length} copies, none labelled before-001-cutover`,
   )
 

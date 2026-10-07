@@ -25,6 +25,7 @@ const STEP_LABEL: Record<string, string> = {
   '007-four-pillars': 'Learning pillars set to the four',
   '008-week-starts-sunday': 'Week moved to start on Sunday',
   '009-one-journal-page': 'Journal questions moved onto one daily page',
+  '010-drop-duplicate-breakfast': 'Duplicate retired Breakfast removed',
 }
 
 function ExportCard() {

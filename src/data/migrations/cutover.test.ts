@@ -116,10 +116,10 @@ async function expectFinalShape(db: AppDb): Promise<void> {
   expect(byName.get('No alcohol')!.polarity).toBe('abstain')
   expect(byName.get('10 push-ups')!.measure).toEqual({ type: 'count', target: 10, unit: 'reps' })
 
-  // The duplicate Breakfast that was retired in August stays retired and untouched.
-  const duplicate = all.find((h) => h.id === 19)!
-  expect(duplicate.retired_on).not.toBeNull()
-  expect(isDueOn(duplicate, CUTOVER_DAY)).toBe(false)
+  // The duplicate Breakfast, created and retired on one day in August, was removed at the user's
+  // request; the Breakfast in use keeps its id and its history.
+  expect(all.find((h) => h.id === 19)).toBeUndefined()
+  expect(all.filter((h) => h.name === 'Breakfast')).toHaveLength(1)
 
   // No leftovers from the pre-versioning shape.
   for (const habit of all) {

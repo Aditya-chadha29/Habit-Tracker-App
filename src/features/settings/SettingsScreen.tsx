@@ -1,15 +1,11 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Link } from '../../app/router'
-import { moved, Reorderable } from '../../components/SortableList'
 import { saveSettings } from '../../data/settingsRepo'
-import type { AreaConfig, Settings, ThemePreference } from '../../data/types'
-import { formatMediumDate, WEEKDAY_LONG } from '../../engine/dates'
-import { isRetired } from '../../engine/timeline'
+import type { Settings, ThemePreference } from '../../data/types'
+import { WEEKDAY_LONG } from '../../engine/dates'
 import { useCore } from '../../state/core'
 import { Card, SectionTitle } from '../../ui/Card'
-import { areaTone, toneSolid } from '../../ui/Chip'
-import { cx } from '../../ui/cx'
-import { Field, Select, Stepper, TextArea, TextInput } from '../../ui/Field'
+import { Select, Stepper } from '../../ui/Field'
 import { Icon, type IconName } from '../../ui/icons'
 import { ConfirmationDialog } from '../../ui/Overlay'
 import { Page } from '../../ui/Page'
@@ -71,99 +67,23 @@ function NavRow({ to, icon, title, hint }: { to: string; icon: IconName; title: 
   )
 }
 
-function Profile({ settings, save, summary }: { settings: Settings; save: Save; summary: string }) {
-  const [name, setName] = useState(settings.name)
-  const [focus, setFocus] = useState(settings.focus)
-  return (
-    <section className="flex flex-col gap-2">
-      <SectionTitle>Profile</SectionTitle>
-      <Card className="flex flex-col gap-4">
-        <Field label="Name" hint="Used in the greeting on Home.">
-          <TextInput
-            value={name}
-            maxLength={40}
-            onChange={(event) => setName(event.target.value)}
-            onBlur={() => {
-              if (name.trim() !== settings.name) save({ name: name.trim() })
-            }}
-          />
-        </Field>
-        <Field label="What I am working toward" hint="One line, in your own words.">
-          <TextArea
-            autoGrow
-            rows={2}
-            value={focus}
-            maxLength={200}
-            onChange={(event) => setFocus(event.target.value)}
-            onBlur={() => {
-              if (focus.trim() !== settings.focus) save({ focus: focus.trim() })
-            }}
-          />
-        </Field>
-        <p className="text-[12.5px] text-ink-3">{summary}</p>
-      </Card>
-    </section>
-  )
-}
-
-function Pillars({ areas, save }: { areas: AreaConfig[]; save: Save }) {
-  const [labels, setLabels] = useState<Record<string, string>>(() => Object.fromEntries(areas.map((area) => [area.id, area.label])))
-  const commit = (next: AreaConfig[]) => save({ areas: next.map((area, i) => ({ ...area, sort_order: i })) })
-  return (
-    <section className="flex flex-col gap-2">
-      <SectionTitle>Pillars</SectionTitle>
-      <Card padded={false} className="overflow-hidden">
-        <Reorderable items={areas} nameOf={(area) => area.label} onMove={(from, to) => commit(moved(areas, from, to))} className="divide-y divide-line" itemClassName="bg-surface">
-        {(area, _i, handle) => (
-          <div className="flex min-h-[60px] items-center gap-2 py-2 pr-3 pl-1">
-            {handle}
-            <span aria-hidden="true" className={cx('h-2.5 w-2.5 shrink-0 rounded-full', toneSolid(areaTone(area.color)))} />
-            <TextInput
-              aria-label={`Name of the ${area.label} pillar`}
-              value={labels[area.id] ?? area.label}
-              maxLength={24}
-              className="min-w-0 flex-1"
-              onChange={(event) => setLabels((current) => ({ ...current, [area.id]: event.target.value }))}
-              onBlur={() => {
-                const label = (labels[area.id] ?? '').trim()
-                if (!label) setLabels((current) => ({ ...current, [area.id]: area.label }))
-                else if (label !== area.label) commit(areas.map((a) => (a.id === area.id ? { ...a, label } : a)))
-              }}
-            />
-          </div>
-        )}
-        </Reorderable>
-      </Card>
-      <p className="px-1 text-[12.5px] leading-relaxed text-ink-3">Renaming a pillar renames it everywhere, past weeks included. Which pillar a habit belongs to is set on the habit.</p>
-    </section>
-  )
-}
-
 /**
  * Everything adjustable that is not a habit, a routine or a programme. Each control saves as it is
  * changed; there is no Save button to forget.
  */
 export default function SettingsScreen() {
-  const { settings, areas, habits } = useCore()
+  const { settings } = useCore()
   const toast = useToast()
   const [pendingWeekStart, setPendingWeekStart] = useState<number | null>(null)
   const save: Save = (patch) => {
     saveSettings(patch).catch(() => toast.show('That setting could not be saved.', { tone: 'risk' }))
   }
 
-  const summary = useMemo(() => {
-    const active = habits.filter((habit) => !isRetired(habit)).length
-    const first = habits.reduce<string | null>((earliest, habit) => (earliest === null || habit.created_on < earliest ? habit.created_on : earliest), null)
-    return first ? `${active} active habits · tracking since ${formatMediumDate(first)}` : `${active} active habits`
-  }, [habits])
-
   const editDays = settings.edit_window_days
 
   return (
     <Page title="Settings" subtitle="Saved as you change them" width="narrow">
       <div className="flex flex-col gap-7">
-        <Profile settings={settings} save={save} summary={summary} />
-
         <Group title="Quotes and data">
           <NavRow to="/quotes" icon="quotes" title="Quotes" hint="The library and how the daily quote is chosen" />
           <NavRow to="/data" icon="data" title="Data" hint="Export, import, automatic copies" />
@@ -261,8 +181,6 @@ export default function SettingsScreen() {
           </Row>
           <NavRow to="/learn" icon="learn" title="Topics" hint="The subjects you are learning about" />
         </Group>
-
-        <Pillars key={areas.map((area) => `${area.id}:${area.label}`).join('|')} areas={areas} save={save} />
 
         <Group title="Set up">
           <NavRow to="/habits" icon="habits" title="Habits" hint="Add, change, reorder, retire" />
