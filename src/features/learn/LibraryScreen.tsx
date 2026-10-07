@@ -133,7 +133,7 @@ export default function LibraryScreen() {
   return (
     <Page
       title="Library"
-      back="/learn"
+      back="/learn/today"
       subtitle={`${list.filter((resource) => resource.status !== 'archived').length} resources`}
       width="default"
       actions={

@@ -200,7 +200,7 @@ async function scenarioC() {
   try {
     const seed = await import(pathToFileURL(resolve('scripts/seeds/learn-queue.mjs')).href)
     await seed.default(app.page)
-    await app.open('/learn')
+    await app.open('/learn/today')
     const heading = () => app.page.locator('main h2').first().textContent()
     check('the head of the queue is today\'s learning', (await heading()) === 'AI Agents - Lesson 3', (await heading()) ?? '')
     const before = await app.text()

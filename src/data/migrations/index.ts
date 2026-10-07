@@ -208,6 +208,38 @@ async function addSeedQuotes({ db, today }: MigrationContext, list: readonly { t
   return { added: rows.length }
 }
 
+/**
+ * The user settled on four pillars: Self Growth, AI & Technology, Construction, Manufacturing.
+ * The two that were seeded under other names are brought into line - but only where they are
+ * still exactly as seeded and nothing is saved under them. Anything the user renamed or uses is
+ * left alone, and the pillar that is then missing is added.
+ */
+async function fourPillars({ db }: MigrationContext): Promise<{ renamed: string[]; added: string[] }> {
+  const renamed: string[] = []
+  const added: string[] = []
+  const pillars = await db.learning_pillars.toArray()
+  const used = new Set((await db.learning_resources.toArray()).map((resource) => resource.pillar_id))
+  const has = (name: string) => pillars.some((pillar) => pillar.name.toLowerCase() === name.toLowerCase())
+  const wanted: { name: string; from: string; description: string; color: string }[] = [
+    { name: 'Construction', from: 'Construction & Manufacturing', description: 'Construction: materials, methods, structures and how things are built.', color: 'body' },
+    { name: 'Manufacturing', from: 'Technical / Professional', description: 'Manufacturing: processes, machines, quality and how things are made.', color: 'exercise' },
+  ]
+  let next = pillars.reduce((max, pillar) => Math.max(max, pillar.sort_order), -1) + 1
+  for (const want of wanted) {
+    if (has(want.name)) continue
+    const old = pillars.find((pillar) => pillar.name === want.from && pillar.retired_on === null && !used.has(pillar.id!))
+    if (old) {
+      // Construction sits third and Manufacturing fourth, whichever row each one came from.
+      await db.learning_pillars.update(old.id!, { name: want.name, description: want.description, color: want.color, sort_order: want.name === 'Construction' ? 2 : 3 })
+      renamed.push(`${want.from} -> ${want.name}`)
+    } else {
+      await db.learning_pillars.add({ name: want.name, description: want.description, color: want.color, sort_order: next++, retired_on: null })
+      added.push(want.name)
+    }
+  }
+  return { renamed, added }
+}
+
 async function seedLearningPillars({ db }: MigrationContext): Promise<{ added: number }> {
   if ((await db.learning_pillars.count()) > 0) return { added: 0 }
   await db.learning_pillars.bulkAdd(
@@ -264,6 +296,7 @@ export const MIGRATIONS: Migration[] = [
   { id: '004-learning-pillars', run: seedLearningPillars },
   { id: '005-weekly-records', run: carryWeeklyRecords },
   { id: '006-more-quotes', run: seedMoreQuotes },
+  { id: '007-four-pillars', run: fourPillars },
 ]
 
 export async function pendingMigrations(db: AppDb, migrations: Migration[] = MIGRATIONS): Promise<Migration[]> {

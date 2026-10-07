@@ -32,7 +32,7 @@ export default function QueueScreen() {
   return (
     <Page
       title="Queue"
-      back="/learn"
+      back="/learn/today"
       subtitle={`${queue.length} in queue`}
       width="default"
       actions={

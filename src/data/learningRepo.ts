@@ -282,5 +282,17 @@ export async function setPillarRetired(id: number, retiredOn: DateStr | null, da
   await database.learning_pillars.update(id, { retired_on: retiredOn })
 }
 
+/**
+ * Removes a pillar for good. What was saved under it is kept and simply has no pillar any more;
+ * retiring is the way to keep the name on it.
+ */
+export async function deletePillar(id: number, database: AppDb = db): Promise<void> {
+  await database.transaction('rw', database.learning_pillars, database.learning_resources, async () => {
+    const filed = (await database.learning_resources.toArray()).filter((resource) => resource.pillar_id === id)
+    for (const resource of filed) await database.learning_resources.update(resource.id!, { pillar_id: null })
+    await database.learning_pillars.delete(id)
+  })
+}
+
 /** Statuses a resource can be moved to by hand from the library. */
 export const MOVABLE: ResourceStatus[] = ['inbox', 'shortlist', 'queued']

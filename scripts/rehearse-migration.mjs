@@ -39,7 +39,7 @@ const port = Number(args.port ?? 5311)
 const base = `http://localhost:${port}`
 const DB = 'habit-tracker'
 const BACKUPS = 'habit-tracker-backups'
-const LEDGER = ['001-cutover', '002-training-library', '003-quotes', '004-learning-pillars', '005-weekly-records', '006-more-quotes']
+const LEDGER = ['001-cutover', '002-training-library', '003-quotes', '004-learning-pillars', '005-weekly-records', '006-more-quotes', '007-four-pillars']
 
 const env = { ...process.env, PATH: `C:\\Program Files\\Git\\cmd;${process.env.PATH ?? ''}` }
 

@@ -47,7 +47,7 @@ export default function LearnTodayScreen() {
       title="Learn"
       subtitle="One thing at a time, in order"
       width="wide"
-      tabs={<LearnTabs current="/learn" />}
+      tabs={<LearnTabs current="/learn/today" />}
       actions={
         <Button variant="secondary" size="sm" icon="plus" onClick={() => setAdding(true)}>
           Add

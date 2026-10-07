@@ -22,6 +22,7 @@ const STEP_LABEL: Record<string, string> = {
   '004-learning-pillars': 'Learning pillars added',
   '005-weekly-records': 'Weights and weekly notes carried over',
   '006-more-quotes': 'Fifty more quotes added',
+  '007-four-pillars': 'Learning pillars set to the four',
 }
 
 function ExportCard() {

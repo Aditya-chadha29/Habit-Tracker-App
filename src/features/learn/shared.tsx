@@ -40,7 +40,7 @@ const STATUS_TONE: Record<ResourceStatus, Tone> = {
 }
 
 const SECTIONS = [
-  { id: '/learn', label: 'Today' },
+  { id: '/learn/today', label: 'Today' },
   { id: '/learn/reading', label: 'Reading' },
 ] as const
 

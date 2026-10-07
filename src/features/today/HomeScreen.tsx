@@ -154,7 +154,8 @@ export default function HomeScreen() {
           <section className="order-6 flex flex-col gap-2 lg:order-none">
             <SectionTitle>Next</SectionTitle>
             <Card padded={false} className="divide-y divide-line overflow-hidden">
-              <Link to="/learn" className="flex min-h-[60px] items-center gap-3 px-4 py-2.5 transition-colors duration-100 hover:bg-surface-2 active:bg-surface-3">
+              {learning.current && (
+              <Link to="/learn/today" className="flex min-h-[60px] items-center gap-3 px-4 py-2.5 transition-colors duration-100 hover:bg-surface-2 active:bg-surface-3">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-learning/12 text-learning">
                   <Icon name="learn" size={17} />
                 </span>
@@ -170,6 +171,7 @@ export default function HomeScreen() {
                 </span>
                 <Icon name="chevron-right" size={17} className="shrink-0 text-ink-3" />
               </Link>
+              )}
               <Link
                 to={workout.open ? `/train/session/${workout.open.id}` : '/train'}
                 className="flex min-h-[60px] items-center gap-3 px-4 py-2.5 transition-colors duration-100 hover:bg-surface-2 active:bg-surface-3"
