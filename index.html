@@ -24,6 +24,30 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // If the app has put nothing on screen after a while, say so and say why, instead of
+      // leaving a blank page. Plain script on purpose: it must work when the app itself did not load.
+      (function () {
+        var errors = []
+        window.__boot = { stage: "loading the app", errors: errors }
+        window.addEventListener("error", function (e) { errors.push(String((e && (e.message || (e.target && e.target.src))) || e)) }, true)
+        window.addEventListener("unhandledrejection", function (e) { errors.push(String(e && e.reason && (e.reason.message || e.reason))) })
+        setTimeout(function () {
+          var root = document.getElementById("root")
+          if (!root || root.childElementCount > 0) return
+          var box = document.createElement("div")
+          box.style.cssText = "font:15px/1.5 -apple-system,system-ui,sans-serif;color:#e6ebf5;background:#0a0f1a;min-height:100vh;padding:64px 24px;box-sizing:border-box"
+          var h = document.createElement("h1"); h.style.cssText = "font-size:20px;margin:0 0 12px"; h.textContent = "The app has not started"
+          var p = document.createElement("p"); p.style.cssText = "margin:0 0 12px;color:#aab4c8"; p.textContent = "Nothing has been changed or deleted. It stopped while " + window.__boot.stage + "."
+          var d = document.createElement("pre"); d.style.cssText = "white-space:pre-wrap;word-break:break-word;font-size:12px;color:#aab4c8;margin:0 0 20px"; d.textContent = (errors.length ? errors.slice(0, 6).join("
+") : "No error was reported.") + "
+" + navigator.userAgent
+          var b = document.createElement("button"); b.textContent = "Reload"; b.style.cssText = "font:inherit;padding:12px 20px;border-radius:12px;border:0;background:#2f6feb;color:#fff"
+          b.onclick = function () { location.reload() }
+          box.appendChild(h); box.appendChild(p); box.appendChild(d); box.appendChild(b); root.appendChild(box)
+        }, 9000)
+      })()
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -37,8 +37,15 @@ const root = createRoot(document.getElementById('root')!)
  *   3. run any pending data migration, each one atomic and preceded by a full backup copy;
  *   4. only then render the app.
  */
+/** Where start-up has got to, for the plain-HTML watchdog in index.html to report if it stalls. */
+function stage(name: string): void {
+  const boot = (window as unknown as { __boot?: { stage: string } }).__boot
+  if (boot) boot.stage = name
+}
+
 async function boot(): Promise<void> {
   try {
+    stage('opening the database')
     await db.open()
 
     // Ask the browser not to evict this origin's storage under pressure. Everything the user
@@ -52,6 +59,7 @@ async function boot(): Promise<void> {
       return
     }
 
+    stage('updating the data')
     const now = new Date()
     await runMigrations({ db, today: toLocalDateStr(now), now: now.getTime(), theme: readStoredTheme() })
   } catch (error) {
@@ -65,6 +73,7 @@ async function boot(): Promise<void> {
     ;(window as unknown as { __db: typeof db }).__db = db
   }
 
+  stage('drawing the first screen')
   root.render(
     <StrictMode>
       <App />
