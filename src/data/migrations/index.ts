@@ -1,6 +1,6 @@
 import type { AppDb } from '../db'
 import { takeSnapshot } from '../backup'
-import { saveSettings, DATA_FORMAT } from '../settingsRepo'
+import { readSettings, saveSettings, DATA_FORMAT } from '../settingsRepo'
 import { EXERCISE_LIBRARY } from '../seed/exercises'
 import { LEARNING_PILLAR_SEED } from '../seed/learning'
 import { SEED_QUOTES } from '../seed/quotes'
@@ -260,6 +260,17 @@ async function weekStartsSunday({ db }: MigrationContext): Promise<{ moved: numb
   return { moved }
 }
 
+/**
+ * The journal is one page a day. Its questions become the daily ones followed by the morning and
+ * the evening ones, each once; the morning and evening lists are left as they are.
+ */
+async function oneJournalPage({ db }: MigrationContext): Promise<{ questions: number }> {
+  const prompts = (await readSettings(db)).journal_prompts
+  const daily = [...new Set([...prompts.daily, ...prompts.morning, ...prompts.evening].map((prompt) => prompt.trim()).filter(Boolean))]
+  await saveSettings({ journal_prompts: { ...prompts, daily } }, db)
+  return { questions: daily.length }
+}
+
 async function seedLearningPillars({ db }: MigrationContext): Promise<{ added: number }> {
   if ((await db.learning_pillars.count()) > 0) return { added: 0 }
   await db.learning_pillars.bulkAdd(
@@ -318,6 +329,7 @@ export const MIGRATIONS: Migration[] = [
   { id: '006-more-quotes', run: seedMoreQuotes },
   { id: '007-four-pillars', run: fourPillars },
   { id: '008-week-starts-sunday', run: weekStartsSunday },
+  { id: '009-one-journal-page', run: oneJournalPage },
 ]
 
 export async function pendingMigrations(db: AppDb, migrations: Migration[] = MIGRATIONS): Promise<Migration[]> {

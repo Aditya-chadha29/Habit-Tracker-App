@@ -1,11 +1,11 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { Link } from '../../app/router'
+import { moved, Reorderable } from '../../components/SortableList'
 import { saveSettings } from '../../data/settingsRepo'
 import type { AreaConfig, Settings, ThemePreference } from '../../data/types'
 import { formatMediumDate, WEEKDAY_LONG } from '../../engine/dates'
 import { isRetired } from '../../engine/timeline'
 import { useCore } from '../../state/core'
-import { IconButton } from '../../ui/Button'
 import { Card, SectionTitle } from '../../ui/Card'
 import { areaTone, toneSolid } from '../../ui/Chip'
 import { cx } from '../../ui/cx'
@@ -109,17 +109,14 @@ function Profile({ settings, save, summary }: { settings: Settings; save: Save; 
 function Pillars({ areas, save }: { areas: AreaConfig[]; save: Save }) {
   const [labels, setLabels] = useState<Record<string, string>>(() => Object.fromEntries(areas.map((area) => [area.id, area.label])))
   const commit = (next: AreaConfig[]) => save({ areas: next.map((area, i) => ({ ...area, sort_order: i })) })
-  const swap = (i: number, j: number) => {
-    const next = [...areas]
-    ;[next[i], next[j]] = [next[j], next[i]]
-    commit(next)
-  }
   return (
     <section className="flex flex-col gap-2">
       <SectionTitle>Pillars</SectionTitle>
-      <Card padded={false} className="divide-y divide-line overflow-hidden">
-        {areas.map((area, i) => (
-          <div key={area.id} className="flex min-h-[60px] items-center gap-2 py-2 pr-1 pl-4">
+      <Card padded={false} className="overflow-hidden">
+        <Reorderable items={areas} nameOf={(area) => area.label} onMove={(from, to) => commit(moved(areas, from, to))} className="divide-y divide-line" itemClassName="bg-surface">
+        {(area, _i, handle) => (
+          <div className="flex min-h-[60px] items-center gap-2 py-2 pr-3 pl-1">
+            {handle}
             <span aria-hidden="true" className={cx('h-2.5 w-2.5 shrink-0 rounded-full', toneSolid(areaTone(area.color)))} />
             <TextInput
               aria-label={`Name of the ${area.label} pillar`}
@@ -133,10 +130,9 @@ function Pillars({ areas, save }: { areas: AreaConfig[]; save: Save }) {
                 else if (label !== area.label) commit(areas.map((a) => (a.id === area.id ? { ...a, label } : a)))
               }}
             />
-            <IconButton icon="chevron-up" label={`Move ${area.label} up`} size="sm" variant="ghost" disabled={i === 0} onClick={() => swap(i, i - 1)} />
-            <IconButton icon="chevron-down" label={`Move ${area.label} down`} size="sm" variant="ghost" disabled={i === areas.length - 1} onClick={() => swap(i, i + 1)} />
           </div>
-        ))}
+        )}
+        </Reorderable>
       </Card>
       <p className="px-1 text-[12.5px] leading-relaxed text-ink-3">Renaming a pillar renames it everywhere, past weeks included. Which pillar a habit belongs to is set on the habit.</p>
     </section>
@@ -263,7 +259,7 @@ export default function SettingsScreen() {
           >
             <Stepper label="Days before a resource counts as stalled" value={settings.learning_stale_days} onChange={(value) => save({ learning_stale_days: value })} min={0} max={365} unit="days" />
           </Row>
-          <NavRow to="/learn/library" icon="library" title="Library and pillars" hint="Everything saved to learn from" />
+          <NavRow to="/learn" icon="learn" title="Topics" hint="The subjects you are learning about" />
         </Group>
 
         <Pillars key={areas.map((area) => `${area.id}:${area.label}`).join('|')} areas={areas} save={save} />

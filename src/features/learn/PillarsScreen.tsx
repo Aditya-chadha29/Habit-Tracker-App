@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { SortableList } from '../../components/SortableList'
+import { moved, Reorderable } from '../../components/SortableList'
 import { addPillar, deletePillar, reorderPillars, setPillarRetired, updatePillar } from '../../data/learningRepo'
 import type { LearningPillar } from '../../data/types'
 import { formatMediumDate } from '../../engine/dates'
@@ -41,11 +41,11 @@ function PillarForm({ pillar, count, onClose }: { pillar: LearningPillar | null;
       <Modal
         open
         onClose={onClose}
-        title={pillar ? 'Pillar' : 'New pillar'}
+        title={pillar ? 'Topic' : 'New topic'}
         size="sm"
         footer={
           <Button variant="primary" block onClick={save}>
-            {pillar ? 'Save' : 'Add pillar'}
+            {pillar ? 'Save' : 'Add topic'}
           </Button>
         }
       >
@@ -79,8 +79,8 @@ function PillarForm({ pillar, count, onClose }: { pillar: LearningPillar | null;
         title={`Delete ${pillar?.name ?? ''}?`}
         body={
           count > 0
-            ? `The pillar is removed for good. The ${count} ${count === 1 ? 'thing' : 'things'} saved under it ${count === 1 ? 'stays' : 'stay'}, without a pillar. To keep the pillar's name on them, retire it instead.`
-            : 'The pillar is removed for good. Nothing is saved under it.'
+            ? `The topic is removed for good. The ${count} ${count === 1 ? 'thing' : 'things'} saved under it ${count === 1 ? 'stays' : 'stay'}, without a topic. To keep the topic's name on them, retire it instead.`
+            : 'The topic is removed for good. Nothing is saved under it.'
         }
         confirmLabel="Delete"
         tone="danger"
@@ -94,7 +94,7 @@ function PillarForm({ pillar, count, onClose }: { pillar: LearningPillar | null;
   )
 }
 
-/** Learn, for now, is the pillars: the few subjects everything studied is filed under. */
+/** Learn, for now, is the topics: the few subjects everything studied is filed under. */
 export default function PillarsScreen() {
   const toast = useToast()
   const pillars = usePillars()
@@ -112,7 +112,6 @@ export default function PillarsScreen() {
   return (
     <Page
       title="Learn"
-      subtitle={`${active.length} ${active.length === 1 ? 'pillar' : 'pillars'}`}
       width="narrow"
       actions={
         <Button variant="primary" size="sm" icon="plus" onClick={() => setEditing('new')}>
@@ -124,37 +123,45 @@ export default function PillarsScreen() {
         {active.length === 0 ? (
           <EmptyState
             icon="learn"
-            title="No pillars."
-            body="A pillar is a subject you want to keep learning about."
+            title="No topics."
+            body="A topic is a subject you want to keep learning about."
             action={
               <Button variant="primary" icon="plus" onClick={() => setEditing('new')}>
-                Add a pillar
+                Add a topic
               </Button>
             }
           />
         ) : (
-          <SortableList
+          <Reorderable
+            grid
             items={active}
-            idOf={(pillar) => pillar.id!}
             nameOf={(pillar) => pillar.name}
-            onReorder={(ids) => {
+            onMove={(from, to) => {
+              const ids = moved(active.map((pillar) => pillar.id!), from, to)
               reorderPillars([...ids, ...retired.map((pillar) => pillar.id!)]).catch(() => toast.show('The order could not be saved.', { tone: 'risk' }))
             }}
+            className="grid grid-cols-2 gap-3 lg:gap-5"
+            itemClassName="relative"
           >
-            {(pillar, i) => (
+            {(pillar, i, handle) => (
+              <>
+              <span className="absolute top-1.5 right-1">{handle}</span>
               <button
                 type="button"
                 onClick={() => setEditing(pillar)}
-                className="flex min-h-[72px] w-full cursor-pointer items-center gap-3 py-3 pr-3 text-left transition-colors duration-100 hover:bg-surface-2"
+                className="flex min-h-[150px] w-full cursor-pointer flex-col items-start gap-3 rounded-card bg-surface p-4 text-left shadow-card transition-colors duration-100 hover:bg-surface-2 active:bg-surface-3"
               >
-                <span className={cx('flex h-9 w-9 shrink-0 items-center justify-center rounded-control text-[14px] font-semibold text-on-accent', toneSolid(areaTone(pillar.color)))}>{i + 1}</span>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[16px] font-medium text-ink">{pillar.name}</span>
-                  {pillar.description && <span className="mt-0.5 line-clamp-2 text-[12.5px] leading-snug text-ink-3">{pillar.description}</span>}
+                <span className={cx('flex h-10 w-10 shrink-0 items-center justify-center rounded-control text-[16px] font-semibold text-on-accent', toneSolid(areaTone(pillar.color)))}>{i + 1}</span>
+                <span className="min-w-0">
+                  <span className="block text-[17px] leading-snug font-semibold tracking-tight text-ink">{pillar.name}</span>
+                  <span className="mt-1 block text-[12.5px] text-ink-3">
+                    {(countOf.get(pillar.id!) ?? 0) === 0 ? 'Nothing saved yet' : `${countOf.get(pillar.id!)} saved`}
+                  </span>
                 </span>
               </button>
+              </>
             )}
-          </SortableList>
+          </Reorderable>
         )}
 
         {retired.length > 0 && (
@@ -179,7 +186,7 @@ export default function PillarsScreen() {
           </section>
         )}
 
-        <p className="px-1 text-[12.5px] leading-relaxed text-ink-3">Tap a pillar to rename, retire or delete it. Drag the handle, or use the arrows, to change the order.</p>
+        <p className="px-1 text-[12.5px] leading-relaxed text-ink-3">Tap a topic to rename, retire or delete it. Drag the dots to change the order.</p>
       </div>
 
       {editing && (

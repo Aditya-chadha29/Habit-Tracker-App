@@ -1,43 +1,90 @@
-import { closestCenter, DndContext, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
-import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
+import { closestCenter, DndContext, KeyboardSensor, PointerSensor, TouchSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
+import { arrayMove, rectSortingStrategy, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import type { ReactNode } from 'react'
-import { IconButton } from '../ui/Button'
 import { cx } from '../ui/cx'
 import { Icon } from '../ui/icons'
 
-interface RowProps {
-  id: number
-  name: string
-  index: number
-  count: number
-  onMove: (index: number, by: number) => void
-  children: ReactNode
+/** Moves one element of a list from one place to another, returning a new list. */
+export function moved<T>(list: readonly T[], from: number, to: number): T[] {
+  return arrayMove([...list], from, to)
 }
 
-function Row({ id, name, index, count, onMove, children }: RowProps) {
+interface ItemProps {
+  id: string
+  name: string
+  className?: string
+  children: (handle: ReactNode) => ReactNode
+}
+
+function Item({ id, name, className, children }: ItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
-  return (
-    <li
-      ref={setNodeRef}
-      style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={cx('flex items-stretch bg-surface', isDragging && 'relative z-10 shadow-pop')}
+  const handle = (
+    <button
+      type="button"
+      aria-label={`Drag to reorder ${name}. With a keyboard: space to pick up, arrows to move, space to drop.`}
+      className="flex h-11 w-9 shrink-0 cursor-grab touch-none items-center justify-center text-ink-3 active:cursor-grabbing"
+      {...attributes}
+      {...listeners}
     >
-      <button
-        type="button"
-        aria-label={`Drag to reorder ${name}`}
-        className="flex w-9 shrink-0 cursor-grab touch-none items-center justify-center text-ink-3 active:cursor-grabbing"
-        {...attributes}
-        {...listeners}
-      >
-        <Icon name="grip" size={16} />
-      </button>
-      <div className="min-w-0 flex-1">{children}</div>
-      <div className="flex shrink-0 items-center pr-1">
-        <IconButton icon="chevron-up" size="sm" label={`Move ${name} up`} disabled={index === 0} onClick={() => onMove(index, -1)} />
-        <IconButton icon="chevron-down" size="sm" label={`Move ${name} down`} disabled={index === count - 1} onClick={() => onMove(index, 1)} />
-      </div>
+      <Icon name="grip" size={16} />
+    </button>
+  )
+  return (
+    <li ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition }} className={cx(className, isDragging && 'relative z-10 opacity-90 shadow-pop')}>
+      {children(handle)}
     </li>
+  )
+}
+
+interface ReorderableProps<T> {
+  items: readonly T[]
+  nameOf: (item: T, index: number) => string
+  /** Called when an item has been dropped somewhere else. */
+  onMove: (from: number, to: number) => void
+  /** Each row is given the drag handle (the dots) to place where it wants. */
+  children: (item: T, index: number, handle: ReactNode) => ReactNode
+  /** Classes for the list. */
+  className?: string
+  /** Classes for each row. */
+  itemClassName?: string
+  /** A grid of cards rather than a column of rows. */
+  grid?: boolean
+}
+
+/**
+ * Anything whose order the user sets. The order is changed by dragging the dots, with a finger, a
+ * mouse or the keyboard; there are no separate up and down buttons, at the user's request.
+ */
+export function Reorderable<T>({ items, nameOf, onMove, children, className, itemClassName, grid = false }: ReorderableProps<T>) {
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 120, tolerance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  )
+  // Positions are the identities: the list is re-read after every drop.
+  const ids = items.map((_, index) => String(index))
+
+  const onDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+    const from = ids.indexOf(String(active.id))
+    const to = ids.indexOf(String(over.id))
+    if (from >= 0 && to >= 0) onMove(from, to)
+  }
+
+  return (
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+      <SortableContext items={ids} strategy={grid ? rectSortingStrategy : verticalListSortingStrategy}>
+        <ul className={className}>
+          {items.map((item, index) => (
+            <Item key={ids[index]} id={ids[index]} name={nameOf(item, index)} className={itemClassName}>
+              {(handle) => children(item, index, handle)}
+            </Item>
+          ))}
+        </ul>
+      </SortableContext>
+    </DndContext>
   )
 }
 
@@ -51,43 +98,22 @@ interface SortableListProps<T> {
   className?: string
 }
 
-/**
- * A list whose order can be changed two ways: by dragging the handle, or with the up and down
- * buttons — so reordering never depends on being able to drag.
- */
+/** A card of rows that are stored records, reordered by their ids. */
 export function SortableList<T>({ items, idOf, nameOf, onReorder, children, className }: SortableListProps<T>) {
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  )
-  const ids = items.map(idOf)
-
-  const move = (index: number, by: number) => {
-    const target = index + by
-    if (target < 0 || target >= ids.length) return
-    onReorder(arrayMove(ids, index, target))
-  }
-
-  const onDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event
-    if (!over || active.id === over.id) return
-    const from = ids.indexOf(Number(active.id))
-    const to = ids.indexOf(Number(over.id))
-    if (from < 0 || to < 0) return
-    onReorder(arrayMove(ids, from, to))
-  }
-
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-      <SortableContext items={ids} strategy={verticalListSortingStrategy}>
-        <ul className={cx('divide-y divide-line overflow-hidden rounded-card bg-surface shadow-card', className)}>
-          {items.map((item, index) => (
-            <Row key={idOf(item)} id={idOf(item)} name={nameOf(item)} index={index} count={items.length} onMove={move}>
-              {children(item, index)}
-            </Row>
-          ))}
-        </ul>
-      </SortableContext>
-    </DndContext>
+    <Reorderable
+      items={items}
+      nameOf={nameOf}
+      onMove={(from, to) => onReorder(moved(items.map(idOf), from, to))}
+      className={cx('divide-y divide-line overflow-hidden rounded-card bg-surface shadow-card', className)}
+      itemClassName="flex items-stretch bg-surface"
+    >
+      {(item, index, handle) => (
+        <>
+          <span className="flex items-center">{handle}</span>
+          <div className="min-w-0 flex-1">{children(item, index)}</div>
+        </>
+      )}
+    </Reorderable>
   )
 }

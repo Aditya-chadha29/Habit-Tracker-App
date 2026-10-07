@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { goBack, navigate, type RouteProps } from '../../app/router'
 import { db } from '../../data/db'
 import { createRoutine, retireRoutine, setRoutineItems, updateRoutine, type RoutineItemInput } from '../../data/workoutRepo'
+import { moved, Reorderable } from '../../components/SortableList'
 import { useCore } from '../../state/core'
 import { Button, IconButton } from '../../ui/Button'
 import { Card, SectionTitle } from '../../ui/Card'
@@ -69,13 +70,6 @@ export default function RoutineEditorScreen({ params }: RouteProps) {
   }
   if (!draft) return <Page title="Routine" back="/train/setup">{null}</Page>
 
-  const move = (index: number, by: number) => {
-    const target = index + by
-    if (target < 0 || target >= draft.items.length) return
-    const items = [...draft.items]
-    ;[items[index], items[target]] = [items[target], items[index]]
-    setDraft({ ...draft, items })
-  }
 
   const save = async () => {
     try {
@@ -114,19 +108,24 @@ export default function RoutineEditorScreen({ params }: RouteProps) {
           {draft.items.length === 0 ? (
             <EmptyState title="No exercises yet." body="Add them in the order you do them." />
           ) : (
-            <Card padded={false} className="divide-y divide-line overflow-hidden">
-              {draft.items.map((item, index) => {
+            <Card padded={false} className="overflow-hidden">
+              <Reorderable
+                items={draft.items}
+                nameOf={(item) => byId.get(item.exercise_id)?.name ?? 'exercise'}
+                onMove={(from, to) => setDraft({ ...draft, items: moved(draft.items, from, to) })}
+                className="divide-y divide-line"
+                itemClassName="bg-surface"
+              >
+              {(item, index, handle) => {
                 const exercise = byId.get(item.exercise_id)
                 return (
-                  <div key={`${item.exercise_id}-${index}`} className="px-3 py-2.5">
+                  <div className="py-2.5 pr-3 pl-1">
                     <div className="flex items-center gap-1">
-                      <span className="tnum w-5 shrink-0 text-center text-[12.5px] text-ink-3">{index + 1}</span>
+                      {handle}
                       <span className="min-w-0 flex-1 pl-1">
                         <span className="block truncate text-[14.5px] text-ink">{exercise?.name ?? 'Removed exercise'}</span>
                         {exercise && <span className="block text-[12.5px] text-ink-3">{MUSCLE_LABEL[exercise.primary_muscle]}</span>}
                       </span>
-                      <IconButton icon="chevron-up" size="sm" label={`Move ${exercise?.name ?? 'exercise'} up`} disabled={index === 0} onClick={() => move(index, -1)} />
-                      <IconButton icon="chevron-down" size="sm" label={`Move ${exercise?.name ?? 'exercise'} down`} disabled={index === draft.items.length - 1} onClick={() => move(index, 1)} />
                       <IconButton
                         icon="close"
                         size="sm"
@@ -134,7 +133,7 @@ export default function RoutineEditorScreen({ params }: RouteProps) {
                         onClick={() => setDraft({ ...draft, items: draft.items.filter((_, i) => i !== index) })}
                       />
                     </div>
-                    <div className="mt-2 flex items-center gap-3 pl-6">
+                    <div className="mt-2 flex items-center gap-3 pl-10">
                       <span className="text-[12.5px] text-ink-3">Sets</span>
                       <Stepper
                         label={`Target sets for ${exercise?.name ?? 'exercise'}`}
@@ -147,7 +146,8 @@ export default function RoutineEditorScreen({ params }: RouteProps) {
                     </div>
                   </div>
                 )
-              })}
+              }}
+              </Reorderable>
             </Card>
           )}
           <Button variant="secondary" icon="plus" onClick={() => setPicking(true)}>

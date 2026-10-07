@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { addPillar, reorderPillars, setPillarRetired, updatePillar } from '../../data/learningRepo'
+import { addPillar, setPillarRetired, updatePillar } from '../../data/learningRepo'
 import type { LearningPillar, ResourceStatus, ResourceType } from '../../data/types'
 import { STATUS_LABEL, TYPE_LABEL } from '../../engine/learning'
 import { useCore } from '../../state/core'
@@ -35,13 +35,6 @@ function PillarManager({ pillars, onClose }: { pillars: LearningPillar[]; onClos
   const [name, setName] = useState('')
   const fail = (error: unknown) => toast.show(error instanceof Error ? error.message : 'That could not be saved.', { tone: 'risk' })
 
-  const move = (index: number, by: number) => {
-    const target = index + by
-    if (target < 0 || target >= pillars.length) return
-    const ids = pillars.map((pillar) => pillar.id!)
-    ;[ids[index], ids[target]] = [ids[target], ids[index]]
-    reorderPillars(ids).catch(fail)
-  }
 
   return (
     <Drawer open onClose={onClose} title="Learning pillars">
@@ -59,8 +52,6 @@ function PillarManager({ pillars, onClose }: { pillars: LearningPillar[]; onClos
                   if (event.target.value.trim() !== pillar.name) updatePillar(pillar.id!, { name: event.target.value }).catch(fail)
                 }}
               />
-              <IconButton icon="chevron-up" size="sm" label={`Move ${pillar.name} up`} disabled={index === 0} onClick={() => move(index, -1)} />
-              <IconButton icon="chevron-down" size="sm" label={`Move ${pillar.name} down`} disabled={index === pillars.length - 1} onClick={() => move(index, 1)} />
             </div>
             <TextInput
               key={`${pillar.id}-description`}

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { goBack, navigate, type RouteProps } from '../../app/router'
+import { moved, Reorderable } from '../../components/SortableList'
 import { db } from '../../data/db'
 import { createDayRoutine, newStepKey, setDayRoutineRetired, updateDayRoutine } from '../../data/routineRepo'
 import type { DayRoutine, RoutineSlot, RoutineStep } from '../../data/types'
@@ -15,13 +16,6 @@ import { ConfirmationDialog, Modal } from '../../ui/Overlay'
 import { Page } from '../../ui/Page'
 import { useToast } from '../../ui/Toast'
 import { SLOT_OPTIONS } from './labels'
-
-function move<T>(list: readonly T[], from: number, to: number): T[] {
-  const next = [...list]
-  const [item] = next.splice(from, 1)
-  next.splice(to, 0, item)
-  return next
-}
 
 function Editor({ routine }: { routine: DayRoutine | null }) {
   const { today, habits } = useCore()
@@ -98,14 +92,21 @@ function Editor({ routine }: { routine: DayRoutine | null }) {
           {steps.length === 0 ? (
             <Card className="text-[13.5px] text-ink-3">No steps yet. Add the habits you do in this part of the day, in order.</Card>
           ) : (
-            <Card padded={false} className="divide-y divide-line overflow-hidden">
-              {steps.map((step, i) => {
+            <Card padded={false} className="overflow-hidden">
+              <Reorderable
+                items={steps}
+                nameOf={(step) => (step.habit_id === null ? step.label || 'reminder' : (byId.get(step.habit_id)?.name ?? 'step'))}
+                onMove={(from, to) => setSteps((current) => moved(current, from, to))}
+                className="divide-y divide-line"
+                itemClassName="bg-surface"
+              >
+              {(step, i, handle) => {
                 const habit = step.habit_id === null ? null : byId.get(step.habit_id)
                 const title = habit ? habit.name : step.habit_id === null ? step.label || 'Reminder' : 'A habit that no longer exists'
                 return (
-                  <div key={step.key} className="flex flex-col gap-2 py-2.5 pr-1 pl-4">
+                  <div className="flex flex-col gap-2 py-2.5 pr-1 pl-1">
                     <div className="flex items-center gap-1">
-                      <span className="tnum w-5 shrink-0 text-[12px] text-ink-3">{i + 1}</span>
+                      {handle}
                       {step.habit_id === null ? (
                         <TextInput
                           aria-label={`Reminder ${i + 1}`}
@@ -121,18 +122,9 @@ function Editor({ routine }: { routine: DayRoutine | null }) {
                           {habit && <span className="block truncate text-[12.5px] text-ink-3">{isRetired(habit) ? 'Retired — not shown on Today' : describeFrequency(currentVersion(habit))}</span>}
                         </span>
                       )}
-                      <IconButton icon="chevron-up" label={`Move ${title} up`} size="sm" variant="ghost" disabled={i === 0} onClick={() => setSteps((current) => move(current, i, i - 1))} />
-                      <IconButton
-                        icon="chevron-down"
-                        label={`Move ${title} down`}
-                        size="sm"
-                        variant="ghost"
-                        disabled={i === steps.length - 1}
-                        onClick={() => setSteps((current) => move(current, i, i + 1))}
-                      />
                       <IconButton icon="close" label={`Remove ${title} from this routine`} size="sm" variant="ghost" onClick={() => setSteps((current) => current.filter((s) => s.key !== step.key))} />
                     </div>
-                    <label className="flex items-center gap-2 pl-6 text-[12.5px] text-ink-3">
+                    <label className="flex items-center gap-2 pl-10 text-[12.5px] text-ink-3">
                       Around
                       <input
                         type="time"
@@ -146,7 +138,7 @@ function Editor({ routine }: { routine: DayRoutine | null }) {
                         </button>
                       )}
                     </label>
-                    <div className="flex items-center gap-2 pl-6">
+                    <div className="flex items-center gap-2 pl-10">
                       <TextInput
                         aria-label={`Minutes for ${title}`}
                         inputMode="numeric"
@@ -169,7 +161,8 @@ function Editor({ routine }: { routine: DayRoutine | null }) {
                     </div>
                   </div>
                 )
-              })}
+              }}
+              </Reorderable>
             </Card>
           )}
           <div className="flex flex-wrap gap-2 pt-1">
