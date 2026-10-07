@@ -45,7 +45,6 @@ src/
   components/           shared domain components (HabitRow, QuoteCard, …)
   features/<area>/      one folder per area: routes.tsx + screens + area-only components + hooks
   testing/              test builders, fixtures, the legacy boot used to rehearse the migration
-legacy-reference/       the previous UI, kept ONLY to port from. Not compiled. Never import it.
 ```
 
 Dependency direction: `features → components → ui`, and everything may read `state`, `data`,

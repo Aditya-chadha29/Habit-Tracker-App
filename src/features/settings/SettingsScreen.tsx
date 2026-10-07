@@ -1,7 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { Link } from '../../app/router'
 import { saveSettings } from '../../data/settingsRepo'
-import type { AreaConfig, JournalPrompts, Settings, ThemePreference } from '../../data/types'
+import type { AreaConfig, Settings, ThemePreference } from '../../data/types'
 import { formatMediumDate, WEEKDAY_LONG } from '../../engine/dates'
 import { isRetired } from '../../engine/timeline'
 import { useCore } from '../../state/core'
@@ -28,13 +28,6 @@ const UNITS = [
   { id: 'kg', label: 'kg' },
   { id: 'lb', label: 'lb' },
 ] as const
-
-const PROMPT_SETS: { id: keyof JournalPrompts; label: string }[] = [
-  { id: 'morning', label: 'Morning' },
-  { id: 'evening', label: 'Evening' },
-  { id: 'daily', label: 'Daily reflection' },
-  { id: 'weekly', label: 'Weekly review' },
-]
 
 function hourLabel(hour: number): string {
   if (hour === 0) return 'Midnight'
@@ -146,32 +139,6 @@ function Pillars({ areas, save }: { areas: AreaConfig[]; save: Save }) {
         ))}
       </Card>
       <p className="px-1 text-[12.5px] leading-relaxed text-ink-3">Renaming a pillar renames it everywhere, past weeks included. Which pillar a habit belongs to is set on the habit.</p>
-    </section>
-  )
-}
-
-function Prompts({ prompts, save }: { prompts: JournalPrompts; save: Save }) {
-  const [text, setText] = useState<Record<string, string>>(() => Object.fromEntries(PROMPT_SETS.map((set) => [set.id, prompts[set.id].join('\n')])))
-  return (
-    <section className="flex flex-col gap-2">
-      <SectionTitle>Journal prompts</SectionTitle>
-      <Card className="flex flex-col gap-4">
-        {PROMPT_SETS.map((set) => (
-          <Field key={set.id} label={set.label} hint="One prompt per line.">
-            <TextArea
-              autoGrow
-              rows={2}
-              value={text[set.id] ?? ''}
-              onChange={(event) => setText((current) => ({ ...current, [set.id]: event.target.value }))}
-              onBlur={() => {
-                const lines = (text[set.id] ?? '').split('\n').map((line) => line.trim()).filter(Boolean)
-                if (lines.join('\n') !== prompts[set.id].join('\n')) save({ journal_prompts: { ...prompts, [set.id]: lines } })
-              }}
-            />
-          </Field>
-        ))}
-        <p className="text-[12.5px] leading-relaxed text-ink-3">Changing a prompt changes what is asked from now on. What you already wrote stays under the prompt as it was worded then.</p>
-      </Card>
     </section>
   )
 }
@@ -296,12 +263,11 @@ export default function SettingsScreen() {
 
         <Pillars key={areas.map((area) => `${area.id}:${area.label}`).join('|')} areas={areas} save={save} />
 
-        <Prompts prompts={settings.journal_prompts} save={save} />
-
         <Group title="Set up">
           <NavRow to="/habits" icon="habits" title="Habits" hint="Add, change, reorder, retire" />
           <NavRow to="/routines" icon="routines" title="Routines" hint="The order of a normal day" />
           <NavRow to="/quotes" icon="quotes" title="Quotes" hint="The library and how the daily quote is chosen" />
+          <NavRow to="/journal" icon="journal" title="Journal" hint="Its prompts are changed from the journal itself" />
           <NavRow to="/data" icon="data" title="Data" hint="Export, import, automatic copies" />
         </Group>
       </div>

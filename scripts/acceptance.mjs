@@ -11,7 +11,7 @@
 //   c. Completing the resource at the head of the learning queue moves the next one up.
 import { pathToFileURL } from 'node:url'
 import { resolve } from 'node:path'
-import { chromium } from '@playwright/test'
+import { chromium, webkit } from '@playwright/test'
 
 const args = Object.fromEntries(
   process.argv.slice(2).reduce((pairs, arg, i, all) => {
@@ -29,7 +29,8 @@ const check = (name, ok, detail = '') => {
   console.log(`${ok ? 'PASS' : 'FAIL'}  ${scenario}  ${name}${detail ? `  (${detail})` : ''}`)
 }
 
-const browser = await chromium.launch({ channel: 'msedge' })
+// Edge by default; --browser webkit runs the engine Safari and every iPhone browser use.
+const browser = args.browser === 'webkit' ? await webkit.launch() : await chromium.launch({ channel: 'msedge' })
 
 /** A brand-new install, started at `now`. */
 async function install(now) {
@@ -45,19 +46,32 @@ async function install(now) {
   await page.waitForFunction(() => window.__db !== undefined, null, { timeout: 30000 })
   await page.waitForTimeout(500)
 
+  /** Waits until the screen has finished loading: its text has stopped changing. */
+  const settle = async () => {
+    await page.waitForLoadState('networkidle').catch(() => undefined)
+    let last = null
+    let stable = 0
+    for (let i = 0; i < 60 && stable < 4; i++) {
+      await page.waitForTimeout(150)
+      const now = await page.locator('main').textContent().catch(() => null)
+      stable = now !== null && now === last ? stable + 1 : 0
+      last = now
+    }
+  }
+
   /** Opens a screen as it would look at `when`: a cold start at that moment. */
   const open = async (route, when) => {
     if (when) await context.clock.setFixedTime(new Date(when))
     await page.goto(`${base}/#${route}`)
     await page.reload()
     await page.waitForFunction(() => window.__db !== undefined, null, { timeout: 30000 })
-    await page.waitForTimeout(700)
+    await settle()
   }
   const habitRow = (name) => page.getByRole('button', { name: new RegExp(`^${name}:`) }).first()
   const label = async (name) => (await habitRow(name).getAttribute('aria-label')) ?? ''
   const table = (name) => page.evaluate((tableName) => window.__db.table(tableName).toArray(), name)
   const text = async () => ((await page.locator('main').textContent()) ?? '').replace(/\s+/g, ' ')
-  return { context, page, problems, open, habitRow, label, table, text }
+  return { context, page, problems, open, settle, habitRow, label, table, text }
 }
 
 /** The words under a target's bar on the screen that is showing, for the named habit. */
@@ -87,7 +101,7 @@ async function scenarioA() {
     await app.open('/today')
     check('starts the week pending at 0 of 2', /0 of 2 this week/.test(await app.label('Hair oiling')), await app.label('Hair oiling'))
     await app.habitRow('Hair oiling').click()
-    await app.page.waitForTimeout(400)
+    await app.settle()
     check('one tick reads 1 of 2', /1 of 2 this week/.test(await app.label('Hair oiling')), await app.label('Hair oiling'))
 
     await app.open('/today', '2026-10-14T09:00:00')
@@ -112,13 +126,13 @@ async function scenarioA() {
 
     // Now change things, and see that the finished week does not move.
     await app.habitRow('Hair oiling').click()
-    await app.page.waitForTimeout(300)
+    await app.settle()
     const habits = await app.table('habits')
     const hair = habits.find((habit) => habit.name === 'Hair oiling')
     await app.open(`/habits/${hair.id}`)
     await app.page.getByRole('button', { name: 'More: Times per week' }).click()
     await app.page.getByRole('button', { name: 'Save', exact: true }).click()
-    await app.page.waitForTimeout(600)
+    await app.settle()
     await app.open('/today')
     check('the change applies from today: 1 of 3 this week', /1 of 3 this week/.test(await app.label('Hair oiling')), await app.label('Hair oiling'))
 
@@ -149,12 +163,12 @@ async function scenarioB() {
     await app.open('/train')
     await app.page.getByRole('button', { name: /^Start / }).first().click()
     await app.page.waitForURL(/#\/train\/session\//, { timeout: 10000 })
-    await app.page.waitForTimeout(600)
+    await app.settle()
     await app.page.getByRole('button', { name: /^Set 1: tap when done/ }).first().click()
-    await app.page.waitForTimeout(400)
+    await app.settle()
     await app.page.getByRole('button', { name: 'Finish', exact: true }).click()
     await app.page.getByRole('button', { name: 'Finish workout', exact: true }).click()
-    await app.page.waitForTimeout(800)
+    await app.settle()
 
     const sessions = await app.table('sessions')
     const finished = sessions.filter((session) => session.date === '2026-10-12' && session.ended_at !== null)
@@ -190,7 +204,7 @@ async function scenarioC() {
 
     await app.page.getByRole('button', { name: 'Mark complete', exact: true }).click()
     await app.page.getByRole('button', { name: 'Save and mark completed', exact: true }).click()
-    await app.page.waitForTimeout(800)
+    await app.settle()
 
     check('the next resource moves up', (await heading()) === 'RAG Fundamentals', (await heading()) ?? '')
     const resources = await app.table('learning_resources')

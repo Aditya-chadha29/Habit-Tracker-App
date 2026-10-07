@@ -3,9 +3,10 @@ import { Link, navigate, type RouteProps } from '../../app/router'
 import { canReflectOn, freezeDueWeeks, saveReflection, weekStatsFor, type ReflectionPatch } from '../../data/reviewRepo'
 import type { DateStr, HabitWeekResult, TargetResult, WeeklyReview, WeekStats } from '../../data/types'
 import { addDays, formatMediumDate, formatRange, isValidDateStr, weekStartOf } from '../../engine/dates'
-import { describeFrequency } from '../../engine/describe'
+import { describeFrequency, describeTarget } from '../../engine/describe'
 import { firstEditableDate } from '../../engine/lock'
 import { rankHabits } from '../../engine/review'
+import { targetProgress } from '../../engine/targets'
 import { currentVersion, isRetired } from '../../engine/timeline'
 import { useCore } from '../../state/core'
 import { useKeyedLiveQuery } from '../../state/live'
@@ -117,7 +118,7 @@ function HabitList({ title, habits }: { title: string; habits: HabitWeekResult[]
  * A running week reads "so far"; a week past the correction window is frozen and never changes.
  */
 export default function ReviewScreen({ params }: RouteProps) {
-  const { today, settings, weekStart: firstDay, areas, habits } = useCore()
+  const { today, settings, weekStart: firstDay, areas, habits, index } = useCore()
   const current = weekStartOf(today, firstDay)
   const asked = params.weekStart && isValidDateStr(params.weekStart) ? weekStartOf(params.weekStart, firstDay) : current
   const start = asked > current ? current : asked
@@ -250,7 +251,11 @@ export default function ReviewScreen({ params }: RouteProps) {
                 <Card padded={false} className="divide-y divide-line overflow-hidden">
                   {stats.targets.map((target) => {
                     const outcome = OUTCOME[target.outcome]
-                    const tone = target.outcome === 'open' && target.done >= target.target ? 'ok' : outcome.tone
+                    // A target still running is worded exactly as it is on Home and Today.
+                    const habit = target.outcome === 'open' && target.per === 'week' ? habits.find((candidate) => candidate.id === target.habit_id) : undefined
+                    const live = habit ? targetProgress(habit, { per: 'week', start, end: addDays(start, 6) }, today, index) : null
+                    const tone: Tone =
+                      target.outcome === 'open' && target.done >= target.target ? 'ok' : live?.state === 'at_risk' ? 'risk' : live?.state === 'attention' ? 'warn' : outcome.tone
                     return (
                       <div key={target.habit_id} className="px-4 py-3">
                         <div className="flex items-baseline gap-2">
@@ -262,7 +267,7 @@ export default function ReviewScreen({ params }: RouteProps) {
                           </span>
                         </div>
                         <ProgressBar value={Math.min(target.done, target.target)} max={target.target} tone={tone} label={`${target.name}: ${target.done} of ${target.target}`} className="mt-2" />
-                        <p className={cx('mt-1.5 text-[12.5px]', toneText(tone === 'accent' ? 'neutral' : tone))}>{outcome.text(target)}</p>
+                        <p className={cx('mt-1.5 text-[12.5px]', toneText(tone === 'accent' ? 'neutral' : tone))}>{live ? describeTarget(live) : outcome.text(target)}</p>
                       </div>
                     )
                   })}

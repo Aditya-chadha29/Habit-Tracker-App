@@ -80,4 +80,7 @@ Decisions the user has already made, so they are not re-opened:
   installed here).
 - `main` auto-deploys to the user's phone through Vercel. Verify a deploy by matching the bundle
   hash in `dist/index.html` against the live site, not by the push succeeding.
-- `legacy-reference/` is the previous UI, kept only to port from. It is not compiled.
+- The three acceptance scenarios run through the UI with `node scripts/acceptance.mjs` (add
+  `--browser webkit` for Safari's engine). An upgrade from any old release is rehearsed with
+  `node scripts/rehearse-migration.mjs --export <file> --chain <commits>`; run it before any
+  change to `src/data/migrations/` reaches `main`.

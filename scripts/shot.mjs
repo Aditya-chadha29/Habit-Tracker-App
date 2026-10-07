@@ -14,13 +14,14 @@
 //               (the Dexie database, exposed in dev only) to add rows, then the script reloads.
 //   --now       ISO local date-time to freeze the clock at, e.g. "2026-10-10T09:00:00"
 //   --full      capture the full scroll height of the page body instead of the viewport
+//   --browser   edge (default) | webkit, the engine Safari and every iPhone browser use
 //   --base      dev server origin (default http://localhost:5199)
 //
 // Every run starts from an empty database: the app seeds itself as a brand-new install.
 import { mkdirSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { chromium } from '@playwright/test'
+import { chromium, webkit } from '@playwright/test'
 
 const args = Object.fromEntries(
   process.argv.slice(2).reduce((pairs, arg, i, all) => {
@@ -39,7 +40,8 @@ const viewport = VIEWPORTS[args.viewport ?? 'phone'] ?? VIEWPORTS.phone
 const theme = args.theme === 'light' ? 'light' : 'dark'
 const base = args.base ?? 'http://localhost:5199'
 
-const browser = await chromium.launch({ channel: 'msedge' })
+// Edge by default; --browser webkit runs the engine Safari and every iPhone browser use.
+const browser = args.browser === 'webkit' ? await webkit.launch() : await chromium.launch({ channel: 'msedge' })
 try {
   const context = await browser.newContext({
     viewport,
@@ -66,7 +68,14 @@ try {
     await page.waitForFunction(() => window.__db !== undefined, null, { timeout: 20000 })
   }
 
-  await page.waitForTimeout(700)
+  // Lazy screens and their queries take a moment, longer in WebKit: wait for the text to stop changing.
+  await page.waitForLoadState('networkidle').catch(() => undefined)
+  for (let i = 0, last = null, stable = 0; i < 60 && stable < 4; i++) {
+    await page.waitForTimeout(150)
+    const now = await page.locator('#root').textContent().catch(() => null)
+    stable = now !== null && now === last ? stable + 1 : 0
+    last = now
+  }
   mkdirSync(dirname(out), { recursive: true })
   if (args.full === 'true') {
     // Screens scroll inside their own container, so a full-page capture needs the viewport grown

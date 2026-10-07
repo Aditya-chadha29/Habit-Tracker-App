@@ -20,7 +20,7 @@ import { execFileSync } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, rmSync, statSync } from 'node:fs'
 import { createServer } from 'node:http'
 import { extname, join, normalize, resolve } from 'node:path'
-import { chromium } from '@playwright/test'
+import { chromium, webkit } from '@playwright/test'
 
 const args = Object.fromEntries(
   process.argv.slice(2).reduce((pairs, arg, i, all) => {
@@ -153,7 +153,8 @@ const dists = chain.map(distOf)
 if (!existsSync(resolve('dist/index.html'))) throw new Error('dist/ is missing: run npm run build first')
 
 await new Promise((ok) => server.listen(port, ok))
-const browser = await chromium.launch({ channel: 'msedge' })
+// Edge by default; --browser webkit runs the engine Safari and every iPhone browser use.
+const browser = args.browser === 'webkit' ? await webkit.launch() : await chromium.launch({ channel: 'msedge' })
 let failed = false
 try {
   const context = await browser.newContext({

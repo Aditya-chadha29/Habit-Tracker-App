@@ -128,7 +128,7 @@ export default function LearnTodayScreen() {
             <SectionTitle
               action={
                 <Link to="/learn/reading" className="font-medium">
-                  Reading
+                  Books
                 </Link>
               }
             >
