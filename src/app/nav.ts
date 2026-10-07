@@ -24,6 +24,7 @@ export const SECONDARY_NAV: NavItem[] = [
   { id: 'habits', label: 'Habits', to: '/habits', icon: 'habits' },
   { id: 'routines', label: 'Routines', to: '/routines', icon: 'routines' },
   { id: 'quotes', label: 'Quotes', to: '/quotes', icon: 'quotes' },
+  { id: 'search', label: 'Search', to: '/search', icon: 'search' },
   { id: 'data', label: 'Data', to: '/data', icon: 'data' },
   { id: 'settings', label: 'Settings', to: '/settings', icon: 'settings' },
 ]

@@ -12,6 +12,7 @@ import { EmptyState } from '../../ui/EmptyState'
 import { Icon } from '../../ui/icons'
 import { MetricCard } from '../../ui/Metric'
 import { Page } from '../../ui/Page'
+import { TrainingInsights } from './TrainingInsights'
 import { sessionSummary } from './TrainScreen'
 
 const NONE: Session[] = []
@@ -68,6 +69,8 @@ export default function HistoryScreen() {
               <p className="mt-2 text-[13.5px] text-ink-3">Need more history. This appears once two weeks have a session in them.</p>
             )}
           </Card>
+
+          <TrainingInsights />
 
           {weeks.map(([start, sessions]) => (
             <section key={start} className="flex flex-col gap-2">

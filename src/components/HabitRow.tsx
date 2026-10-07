@@ -32,6 +32,8 @@ interface HabitRowProps {
   lead?: string
   /** Replaces the default second line. */
   sub?: ReactNode
+  /** What a routine says about this step (its length, a note). Added to the second line. */
+  hint?: string
   /** Extra content at the right edge, after the tick (a history link, a count). */
   trailing?: ReactNode
   /** Hide the status word, where the surrounding layout already says it. */
@@ -45,7 +47,7 @@ interface HabitRowProps {
  * can complete (Gym) goes to where that session is logged instead. A day outside the correction
  * window says that it is locked rather than pretending to respond.
  */
-export function HabitRow({ habit, date, lead, sub, trailing, quiet = false }: HabitRowProps) {
+export function HabitRow({ habit, date, lead, sub, hint, trailing, quiet = false }: HabitRowProps) {
   const { index, today, write, settings } = useCore()
   const toast = useToast()
   const [detailsOpen, setDetailsOpen] = useState(false)
@@ -62,13 +64,14 @@ export function HabitRow({ habit, date, lead, sub, trailing, quiet = false }: Ha
   const measured = habit.measure.type !== 'boolean' && habit.measure.type !== 'session'
   const amount = describeAmount(habit)
 
-  const secondLine =
+  const own =
     sub ??
     (done && via !== 'manual' && via !== null
       ? describeSource(via)
       : !tickable && destination
         ? 'Completed by logging a session'
         : amount)
+  const secondLine = hint && (!own || typeof own === 'string') ? [own, hint].filter(Boolean).join(' · ') : own
 
   const activate = () => {
     if (!editable) {

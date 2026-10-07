@@ -230,6 +230,8 @@ export interface Session {
   quick?: boolean
   /** Minutes, for a quick log that has no start/end clock. */
   minutes?: number | null
+  /** Kilometres covered, for a quick cardio log that records it. */
+  distance_km?: number | null
 }
 
 export interface SetLog {

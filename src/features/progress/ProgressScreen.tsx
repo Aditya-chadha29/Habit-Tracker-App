@@ -9,6 +9,7 @@ import {
   streakLeaders, weeklySeries, type Comparison, type RangeKey,
 } from '../../engine/insights'
 import { weekdayRates } from '../../engine/streaks'
+import { LearningInsights, MonthlyHistory } from './LongerViews'
 import { currentVersion, isRetired } from '../../engine/timeline'
 import { useCore } from '../../state/core'
 import { useLive } from '../../state/live'
@@ -307,6 +308,11 @@ export default function ProgressScreen() {
               <Icon name="chevron-right" size={16} className="text-ink-3" />
             </Link>
           </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start">
+          <MonthlyHistory />
+          <LearningInsights range={range} label={rangeInfo.label} />
         </div>
 
         {weekdayRows.length > 0 && (

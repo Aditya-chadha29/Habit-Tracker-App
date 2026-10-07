@@ -113,11 +113,11 @@ export default function TodayScreen() {
             >
               {section.rows.map((row) =>
                 row.type === 'note' ? (
-                  <NoteRow key={row.key} label={row.label} lead={row.lead} />
+                  <NoteRow key={row.key} label={row.label} lead={row.lead} hint={row.hint} />
                 ) : row.item.habit.kind === 'meal' ? (
                   <MealRow key={row.item.habit.id} habit={row.item.habit} date={date} lead={row.lead} />
                 ) : (
-                  <HabitRow key={row.item.habit.id} habit={row.item.habit} date={date} lead={row.lead} />
+                  <HabitRow key={row.item.habit.id} habit={row.item.habit} date={date} lead={row.lead} hint={row.hint} />
                 ),
               )}
             </HabitGroup>

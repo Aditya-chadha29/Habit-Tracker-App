@@ -21,6 +21,8 @@ import { Page } from '../../ui/Page'
 import { ProgressBar, ProgressRing } from '../../ui/Progress'
 import { WeekStrip } from '../../ui/WeekStrip'
 import { saveStateLabel, useAutosave } from '../../state/useAutosave'
+import { QuoteLine } from '../../components/QuoteLine'
+import { useQuoteOfDay } from '../quotes/hooks'
 
 const pct = (done: number, due: number): number | null => (due ? Math.round((done / due) * 100) : null)
 
@@ -124,6 +126,7 @@ export default function ReviewScreen({ params }: RouteProps) {
   const start = asked > current ? current : asked
   const end = addDays(start, 6)
   const running = end >= today
+  const { quote } = useQuoteOfDay(today)
 
   // Weeks that have fully left the correction window are frozen the first time Review is opened
   // after they lock. Idempotent, so running it on every visit is harmless.
@@ -176,6 +179,7 @@ export default function ReviewScreen({ params }: RouteProps) {
       {!stats ? null : (
         <div className="flex flex-col gap-5 lg:grid lg:grid-cols-12 lg:items-start lg:gap-6">
           <div className="flex flex-col gap-5 lg:col-span-7">
+            {running && quote && <QuoteLine quote={quote} className="px-1" />}
             <div className="flex flex-wrap items-center gap-2">
               {running ? (
                 <Chip tone="accent">In progress</Chip>

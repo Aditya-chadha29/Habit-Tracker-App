@@ -10,8 +10,8 @@ import { dueItems, flexibleItems, type DayItem, type FlexibleItem, type Tally } 
  * then whatever is left grouped by pillar and group, then the habits with no particular day.
  */
 export type DayRow =
-  | { type: 'habit'; item: DayItem; lead?: string }
-  | { type: 'note'; key: string; label: string; lead?: string }
+  | { type: 'habit'; item: DayItem; lead?: string; hint?: string }
+  | { type: 'note'; key: string; label: string; lead?: string; hint?: string }
 
 export interface DaySection {
   key: string
@@ -67,8 +67,10 @@ export function buildDayView(
     const timed = routine.steps.some((step) => step.time)
     for (const step of routine.steps) {
       const lead = timed ? step.time : undefined
+      // What the routine says about the step: how long it is meant to take, and its note.
+      const hint = [step.minutes ? `${step.minutes} min` : '', step.note].filter(Boolean).join(' · ') || undefined
       if (step.habit_id === null) {
-        rows.push({ type: 'note', key: step.key, label: step.label, lead })
+        rows.push({ type: 'note', key: step.key, label: step.label, lead, hint })
         continue
       }
       const item = byId.get(step.habit_id)
@@ -76,7 +78,7 @@ export function buildDayView(
       // due today (a Monday-only supplement on a Tuesday) is simply not there today.
       if (!item || placed.has(step.habit_id)) continue
       placed.add(step.habit_id)
-      rows.push({ type: 'habit', item, lead })
+      rows.push({ type: 'habit', item, lead, hint })
     }
     if (!rows.some((row) => row.type === 'habit')) continue
     sections.push({

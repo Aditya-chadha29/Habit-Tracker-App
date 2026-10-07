@@ -116,6 +116,8 @@ export interface QuickLog {
   date: DateStr
   kind: SessionKind
   minutes: number | null
+  /** Kilometres, for cardio. */
+  distance_km?: number | null
   title?: string
   notes?: string
 }
@@ -139,6 +141,7 @@ export async function quickLogSession(input: QuickLog, ctx: WriteContext, now: n
     kinds: [input.kind],
     quick: true,
     minutes,
+    distance_km: input.kind === 'cardio' && input.distance_km && input.distance_km > 0 ? Math.round(input.distance_km * 100) / 100 : null,
   })) as number
 }
 

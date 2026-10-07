@@ -40,11 +40,14 @@ export function HabitGroup({ title, tally, action, note, children, className }: 
 }
 
 /** A line in a group that is not a habit: a routine's reminder step. Nothing to tick. */
-export function NoteRow({ label, lead }: { label: string; lead?: string }) {
+export function NoteRow({ label, lead, hint }: { label: string; lead?: string; hint?: string }) {
   return (
     <div className="flex min-h-[44px] items-center gap-3 px-4 py-2">
       {lead !== undefined && <span className="tnum w-10 shrink-0 text-[12px] text-ink-3">{lead}</span>}
-      <span className="min-w-0 flex-1 truncate text-[13.5px] text-ink-3">{label}</span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-[13.5px] text-ink-3">{label}</span>
+        {hint && <span className="block truncate text-[12px] text-ink-3">{hint}</span>}
+      </span>
     </div>
   )
 }

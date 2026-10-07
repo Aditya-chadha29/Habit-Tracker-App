@@ -12,7 +12,7 @@ import {
  */
 export type NavId =
   | 'today' | 'learn' | 'train' | 'review' | 'progress'
-  | 'journal' | 'habits' | 'routines' | 'quotes' | 'data' | 'settings'
+  | 'journal' | 'habits' | 'routines' | 'quotes' | 'search' | 'data' | 'settings'
 
 export interface RouteProps {
   /** Values of the `:name` segments in the route's path. */

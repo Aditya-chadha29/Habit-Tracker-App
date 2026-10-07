@@ -32,6 +32,7 @@ export function sessionSummary(session: Session): string {
   const minutes = sessionMinutes(session)
   const parts: string[] = []
   if (minutes !== null) parts.push(`${minutes} min`)
+  if (session.distance_km) parts.push(`${session.distance_km} km`)
   if (session.quick) parts.push('logged without sets')
   return parts.join(' · ')
 }
@@ -41,6 +42,8 @@ function QuickLog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const toast = useToast()
   const [kind, setKind] = useState<SessionKind>('strength')
   const [minutes, setMinutes] = useState(30)
+  const [distance, setDistance] = useState('')
+  const [what, setWhat] = useState('')
   const [date, setDate] = useState<DateStr>(today)
   const [note, setNote] = useState('')
   const first = firstEditableDate(today, settings.edit_window_days)
@@ -49,7 +52,7 @@ function QuickLog({ open, onClose }: { open: boolean; onClose: () => void }) {
 
   const save = async () => {
     try {
-      await quickLogSession({ date, kind, minutes, notes: note }, write, Date.now())
+      await quickLogSession({ date, kind, minutes, notes: note, title: what, distance_km: Number(distance) || null }, write, Date.now())
       toast.show(`${kind === 'cardio' ? 'Cardio' : 'Strength'} session logged for ${relativeDayLabel(date, today).toLowerCase()}.`, { tone: 'ok' })
       onClose()
     } catch (error) {
@@ -84,6 +87,16 @@ function QuickLog({ open, onClose }: { open: boolean; onClose: () => void }) {
         <Field label="Minutes" hint="Optional. Set to 0 to leave it out.">
           <Stepper label="Minutes" value={minutes} onChange={setMinutes} step={5} min={0} max={600} unit="min" />
         </Field>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label={kind === 'cardio' ? 'Type' : 'What'} hint="Optional.">
+            <TextInput value={what} onChange={(event) => setWhat(event.target.value)} maxLength={40} placeholder={kind === 'cardio' ? 'Walk, jog, cycle' : 'Chest + Triceps'} />
+          </Field>
+          {kind === 'cardio' && (
+            <Field label="Distance (km)" hint="Optional.">
+              <TextInput inputMode="decimal" value={distance} onChange={(event) => setDistance(event.target.value.replace(/[^0-9.]/g, ''))} placeholder="3.5" />
+            </Field>
+          )}
+        </div>
         <Field label="Note" hint="Optional.">
           <TextInput value={note} onChange={(event) => setNote(event.target.value)} maxLength={200} />
         </Field>

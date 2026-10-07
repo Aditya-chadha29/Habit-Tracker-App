@@ -7,6 +7,7 @@ import { routes as progress } from '../features/progress/routes'
 import { routes as quotes } from '../features/quotes/routes'
 import { routes as review } from '../features/review/routes'
 import { routes as routines } from '../features/routines/routes'
+import { routes as searchRoutes } from '../features/search/routes'
 import { routes as settings } from '../features/settings/routes'
 import { routes as today } from '../features/today/routes'
 import { routes as train } from '../features/train/routes'
@@ -22,6 +23,7 @@ export const ROUTES: RouteDef[] = [
   ...habits,
   ...routines,
   ...quotes,
+  ...searchRoutes,
   ...data,
   ...settings,
 ]

@@ -146,6 +146,27 @@ function Editor({ routine }: { routine: DayRoutine | null }) {
                         </button>
                       )}
                     </label>
+                    <div className="flex items-center gap-2 pl-6">
+                      <TextInput
+                        aria-label={`Minutes for ${title}`}
+                        inputMode="numeric"
+                        value={step.minutes === null ? '' : String(step.minutes)}
+                        onChange={(event) => {
+                          const minutes = Number(event.target.value.replace(/[^0-9]/g, ''))
+                          patchStep(step.key, { minutes: minutes > 0 ? Math.min(minutes, 600) : null })
+                        }}
+                        placeholder="min"
+                        className="h-9 w-[68px] shrink-0 text-[13px]"
+                      />
+                      <TextInput
+                        aria-label={`Note for ${title}`}
+                        value={step.note}
+                        onChange={(event) => patchStep(step.key, { note: event.target.value })}
+                        maxLength={80}
+                        placeholder="Note (optional)"
+                        className="h-9 min-w-0 flex-1 text-[13px]"
+                      />
+                    </div>
                   </div>
                 )
               })}
