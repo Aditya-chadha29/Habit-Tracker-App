@@ -54,7 +54,7 @@ export function ImportCard({ onChanged }: { onChanged: () => void }) {
       setStage({
         step: 'report',
         fileName: file.name,
-        prepared: { ok: false, upgraded: false, exported_at: '', tables: {}, counts: {}, problems: [{ level: 'error', table: 'file', message: error instanceof Error ? error.message : 'The file could not be read.' }] },
+        prepared: { ok: false, upgraded: false, exported_at: '', tables: {}, counts: {}, merge_blockers: [], problems: [{ level: 'error', table: 'file', message: error instanceof Error ? error.message : 'The file could not be read.' }] },
       })
     }
   }
@@ -145,6 +145,7 @@ export function ImportCard({ onChanged }: { onChanged: () => void }) {
   const { prepared, fileName } = stage
   const errors = prepared.problems.filter((problem) => problem.level === 'error')
   const warnings = prepared.problems.filter((problem) => problem.level === 'warning')
+  const blockers = prepared.merge_blockers
 
   if (!prepared.ok) {
     return (
@@ -205,12 +206,31 @@ export function ImportCard({ onChanged }: { onChanged: () => void }) {
           </ul>
         </div>
       )}
+      {blockers.length > 0 && (
+        <div className="rounded-control bg-surface-2 px-3 py-2.5">
+          <p className="text-[13.5px] font-medium text-ink">This file is from a different history, so it cannot be added to what is here</p>
+          <p className="mt-1 text-[13px] leading-relaxed text-ink-2">
+            The same record numbers are different things in the file and on this device. Adding the file would attach its history to the wrong items. It can replace what is here instead — the right choice on a
+            new phone or after a reinstall.
+          </p>
+          <ul className="mt-1.5 flex flex-col gap-1 text-[12.5px] leading-relaxed text-ink-3">
+            {blockers.slice(0, 4).map((reason) => (
+              <li key={reason}>{reason}</li>
+            ))}
+            {blockers.length > 4 && <li>…and {blockers.length - 4} more.</li>}
+          </ul>
+        </div>
+      )}
       <div className="flex flex-col gap-2">
-        <Button variant="primary" block onClick={() => void apply('merge')}>
-          Add what is missing
-        </Button>
-        <p className="px-1 text-[12.5px] leading-relaxed text-ink-3">Adds only records that are not on this device. Anything already here is left exactly as it is, so importing the same file twice changes nothing.</p>
-        <Button variant="secondary" block onClick={() => setConfirming(true)}>
+        {blockers.length === 0 && (
+          <>
+            <Button variant="primary" block onClick={() => void apply('merge')}>
+              Add what is missing
+            </Button>
+            <p className="px-1 text-[12.5px] leading-relaxed text-ink-3">Adds only records that are not on this device. Anything already here is left exactly as it is, so importing the same file twice changes nothing.</p>
+          </>
+        )}
+        <Button variant={blockers.length ? 'primary' : 'secondary'} block onClick={() => setConfirming(true)}>
           Replace everything on this device…
         </Button>
         <Button variant="ghost" block onClick={() => setStage({ step: 'idle' })}>

@@ -140,6 +140,67 @@ describe('adding what is missing', () => {
   })
 })
 
+describe('a file from a different history', () => {
+  it('cannot be added to this device, and nothing is written when it is tried', async () => {
+    // A new phone: a brand-new install, and the export from the old one. The same ids are
+    // different habits on each, so adding the ticks would hang them on the wrong habits.
+    const { db, backups } = await install()
+    const prepared = await prepareImport(legacyFile(), db, TODAY, 4)
+    expect(prepared.ok).toBe(true)
+    expect(prepared.merge_blockers.length).toBeGreaterThan(0)
+    expect(prepared.merge_blockers[0]).toMatch(/^Habit \d+ is “.+” in the file and “.+” on this device\.$/)
+
+    const before = JSON.stringify(await buildExport(db, TODAY))
+    await expect(applyImport(db, prepared, 'merge', TODAY, 4, backups)).rejects.toThrow(/cannot be added/)
+    expect(JSON.stringify(await buildExport(db, TODAY))).toBe(before)
+
+    // Replacing is still possible, and is the right way to move onto a new device.
+    await applyImport(db, prepared, 'replace', TODAY, 5, backups)
+    expect(await db.entries.count()).toBe(phoneEntries().length)
+  })
+
+  it('is recognised for workouts, exercises and learning too', async () => {
+    const source = await install()
+    const bench = (await source.db.exercises.toArray())[0]
+    const session = await source.db.sessions.add({ date: TODAY, routine_id: null, title: 'Push', started_at: 10, ended_at: 20, notes: '', rest_started_at: null, rest_seconds: null })
+    await source.db.set_logs.add({ session_id: session as number, exercise_id: bench.id!, date: TODAY, position: 0, set_index: 1, weight_kg: 60, reps: 8, seconds: null, distance_m: null, rir: null, kind: 'work', done: true, done_at: 15, note: '' })
+    const file = JSON.stringify(await buildExport(source.db, TODAY))
+
+    const target = await install()
+    await target.db.exercises.update(bench.id!, { name: 'Something else entirely' })
+    const prepared = await prepareImport(file, target.db, TODAY, 2)
+    expect(prepared.merge_blockers).toEqual([`Exercise ${bench.id} is “${bench.name}” in the file and “Something else entirely” on this device.`])
+  })
+
+  it('is not held against a file when nothing being added depends on the difference', async () => {
+    const source = await install()
+    const file = JSON.stringify(await buildExport(source.db, TODAY))
+    const target = await install()
+    // A habit that differs on the two devices, with no tick for it in the file.
+    const last = (await target.db.habits.toArray()).pop()!
+    await target.db.habits.update(last.id!, { name: 'Something else', created_on: '2026-09-15' })
+
+    const prepared = await prepareImport(file, target.db, TODAY, 2)
+    expect(prepared.merge_blockers).toEqual([])
+    await applyImport(target.db, prepared, 'merge', TODAY, 2, target.backups)
+    expect((await target.db.habits.get(last.id!))!.name).toBe('Something else')
+  })
+
+  it('does not mistake a renamed habit for a different one', async () => {
+    const { db, backups } = await install()
+    const habit = (await db.habits.toArray())[0]
+    await setHabitDone(habit.id!, TODAY, true, { today: TODAY, windowDays: 7 }, {}, db)
+    const file = JSON.stringify(await buildExport(db, TODAY))
+    await db.entries.clear()
+    await db.habits.update(habit.id!, { name: 'Renamed since the export' })
+
+    const prepared = await prepareImport(file, db, TODAY, 2)
+    expect(prepared.merge_blockers).toEqual([])
+    const summary = await applyImport(db, prepared, 'merge', TODAY, 2, backups)
+    expect(summary.added.entries).toBe(1)
+  })
+})
+
 describe('replacing everything', () => {
   it('keeps a copy of the current data first', async () => {
     const source = await install()

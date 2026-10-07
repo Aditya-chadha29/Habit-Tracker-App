@@ -38,6 +38,11 @@ export interface PreparedImport {
   tables: Record<string, unknown[]>
   counts: Record<string, number>
   problems: ImportProblem[]
+  /**
+   * Why this file cannot be ADDED to what is on the device (it can still replace it): records
+   * about to be added point at something that is a different thing here. Empty when it can.
+   */
+  merge_blockers: string[]
 }
 
 export interface ImportSummary {
@@ -94,7 +99,107 @@ const keyOf = (table: Table, row: Row): string => {
 }
 
 function blocked(message: string, table = 'file'): PreparedImport {
-  return { ok: false, upgraded: false, exported_at: '', tables: {}, counts: {}, problems: [{ level: 'error', table, message }] }
+  return { ok: false, upgraded: false, exported_at: '', tables: {}, counts: {}, problems: [{ level: 'error', table, message }], merge_blockers: [] }
+}
+
+// ─── Adding a file to what is already here ───────────────────────────────────────────────────
+
+/** Ticks and a few other tables are unique on something other than their id. */
+function naturalKeyOf(table: string): ((row: Row) => string) | null {
+  if (table === 'entries') return (row) => `${row.habit_id}|${row.date}`
+  if (table === 'quotes') return (row) => (row.seed_key ? `seed|${row.seed_key}` : '')
+  if (table === 'weekly_records') return (row) => `week|${row.week_monday}`
+  return null
+}
+
+interface MergePlan {
+  /** Per table, the rows that are not on the device yet. */
+  fresh: Record<string, Row[]>
+  skipped: Record<string, number>
+}
+
+/** What adding a file would write. Reads only; call it inside a transaction. */
+async function planMerge(database: AppDb, tables: Record<string, unknown[]>): Promise<MergePlan> {
+  const fresh: Record<string, Row[]> = {}
+  const skipped: Record<string, number> = {}
+  for (const table of database.tables) {
+    const rows = (tables[table.name] ?? []) as Row[]
+    if (!rows.length) continue
+    const present = (await table.toArray()) as Row[]
+    const existing = new Set(present.map((row) => keyOf(table, row)))
+    const natural = naturalKeyOf(table.name)
+    const taken = natural ? new Set(present.map(natural).filter(Boolean)) : null
+    const add: Row[] = []
+    for (const row of rows) {
+      const naturalKey = natural ? natural(row) : ''
+      if (existing.has(keyOf(table, row)) || (taken && naturalKey && taken.has(naturalKey))) {
+        skipped[table.name] = (skipped[table.name] ?? 0) + 1
+        continue
+      }
+      if (taken && naturalKey) taken.add(naturalKey)
+      existing.add(keyOf(table, row))
+      add.push(row)
+    }
+    fresh[table.name] = add
+  }
+  return { fresh, skipped }
+}
+
+const lower = (value: unknown): string => String(value ?? '').trim().toLowerCase()
+
+/**
+ * For each table other records point at: whether two rows with the same id are the same thing.
+ * A date of creation never changes and a name can, so either matching is enough for a habit or a
+ * resource; things without a creation date are known by their name.
+ */
+const SAME_THING: Record<string, { what: string; same: (a: Row, b: Row) => boolean; name: (row: Row) => string }> = {
+  habits: { what: 'Habit', same: (a, b) => a.created_on === b.created_on || lower(a.name) === lower(b.name), name: (row) => String(row.name) },
+  sessions: { what: 'Workout', same: (a, b) => a.date === b.date && a.started_at === b.started_at, name: (row) => `${String(row.title)} on ${String(row.date)}` },
+  exercises: { what: 'Exercise', same: (a, b) => lower(a.name) === lower(b.name), name: (row) => String(row.name) },
+  routines: { what: 'Workout routine', same: (a, b) => lower(a.name) === lower(b.name), name: (row) => String(row.name) },
+  learning_pillars: { what: 'Learning pillar', same: (a, b) => lower(a.name) === lower(b.name), name: (row) => String(row.name) },
+  learning_resources: { what: 'Learning resource', same: (a, b) => a.created_on === b.created_on || lower(a.title) === lower(b.title), name: (row) => String(row.title) },
+  quotes: { what: 'Quote', same: (a, b) => (!!a.seed_key && a.seed_key === b.seed_key) || a.text === b.text, name: (row) => String(row.text).slice(0, 40) },
+}
+
+/** Every pointer from a record to another table that a merge has to keep true. */
+const MERGE_LINKS: [string, string, string][] = [
+  ...REFERENCES.map(([table, field, target]): [string, string, string] => [table, field, target]),
+  ['learning_resources', 'pillar_id', 'learning_pillars'],
+  ['sessions', 'routine_id', 'routines'],
+]
+
+/**
+ * The reasons a file must not be added to this device. An id is only an id: the same number can
+ * be one habit in the file and another here (a new phone, a reinstall, another person's export).
+ * Adding the file's ticks would then hang them on the wrong habit, silently. So every record about
+ * to be added is followed to what it points at, and where that id already exists here it has to
+ * be the same thing. A difference nothing depends on is not a reason.
+ */
+async function mergeBlockers(database: AppDb, tables: Record<string, unknown[]>, plan: MergePlan): Promise<string[]> {
+  const reasons = new Map<string, string>()
+  const onDevice = new Map<string, Map<unknown, Row>>()
+  const inFile = new Map<string, Map<unknown, Row>>()
+  for (const parent of Object.keys(SAME_THING)) {
+    onDevice.set(parent, new Map(((await database.table(parent).toArray()) as Row[]).map((row) => [row.id, row])))
+    inFile.set(parent, new Map(((tables[parent] ?? []) as Row[]).map((row) => [row.id, row])))
+  }
+  const follow = (parent: string, id: unknown) => {
+    if (id === null || id === undefined) return
+    const here = onDevice.get(parent)!.get(id)
+    const there = inFile.get(parent)!.get(id)
+    if (!here || !there) return
+    const rule = SAME_THING[parent]
+    if (rule.same(there, here)) return
+    reasons.set(`${parent}|${String(id)}`, `${rule.what} ${String(id)} is “${rule.name(there)}” in the file and “${rule.name(here)}” on this device.`)
+  }
+  for (const [table, field, parent] of MERGE_LINKS) {
+    for (const row of plan.fresh[table] ?? []) follow(parent, row[field])
+  }
+  for (const routine of plan.fresh.day_routines ?? []) {
+    for (const step of Array.isArray(routine.steps) ? (routine.steps as Row[]) : []) follow('habits', step.habit_id)
+  }
+  return [...reasons.values()]
 }
 
 let staging = 0
@@ -204,13 +309,26 @@ export async function prepareImport(text: string, schema: AppDb, today: DateStr,
   })
 
   const counts = Object.fromEntries(Object.entries(tables).map(([name, rows]) => [name, rows.length]))
+  const ok = !problems.some((problem) => problem.level === 'error')
+  const blockers = ok ? await schema.transaction('r', schema.tables, async () => mergeBlockers(schema, tables, await planMerge(schema, tables))) : []
   return {
-    ok: !problems.some((problem) => problem.level === 'error'),
+    ok,
     upgraded: legacy,
     exported_at: typeof file.exported_at === 'string' ? file.exported_at : '',
     tables,
     counts,
     problems,
+    merge_blockers: blockers,
+  }
+}
+
+/** Thrown when a file is from a different history and so cannot be added to this one. */
+export class MergeBlockedError extends Error {
+  readonly reasons: string[]
+  constructor(reasons: string[]) {
+    super('This file cannot be added to what is on this device: it comes from a different history. It can replace what is here instead.')
+    this.name = 'MergeBlockedError'
+    this.reasons = reasons
   }
 }
 
@@ -249,34 +367,17 @@ export async function applyImport(
   }
 
   await database.transaction('rw', database.tables, async () => {
+    const plan = await planMerge(database, prepared.tables)
+    // Checked again here, against the data as it is now, and before anything is written.
+    const blockers = await mergeBlockers(database, prepared.tables, plan)
+    if (blockers.length) throw new MergeBlockedError(blockers)
     for (const table of database.tables) {
-      const rows = (prepared.tables[table.name] ?? []) as Row[]
-      if (!rows.length) continue
-      const existing = new Set((await table.toArray()).map((row: Row) => keyOf(table, row)))
-      // Ticks and a few other tables are unique on something other than their id.
-      const natural =
-        table.name === 'entries'
-          ? (row: Row) => `${row.habit_id}|${row.date}`
-          : table.name === 'quotes'
-            ? (row: Row) => (row.seed_key ? `seed|${row.seed_key}` : '')
-            : table.name === 'weekly_records'
-              ? (row: Row) => `week|${row.week_monday}`
-              : null
-      const taken = natural ? new Set((await table.toArray()).map(natural).filter(Boolean)) : null
-      const fresh: Row[] = []
-      for (const row of rows) {
-        const naturalKey = natural ? natural(row) : ''
-        if (existing.has(keyOf(table, row)) || (taken && naturalKey && taken.has(naturalKey))) {
-          skipped[table.name] = (skipped[table.name] ?? 0) + 1
-          continue
-        }
-        if (taken && naturalKey) taken.add(naturalKey)
-        existing.add(keyOf(table, row))
-        fresh.push(row)
-      }
-      if (fresh.length) await table.bulkAdd(fresh)
-      added[table.name] = fresh.length
+      const rows = plan.fresh[table.name]
+      if (!rows) continue
+      if (rows.length) await table.bulkAdd(rows)
+      added[table.name] = rows.length
     }
+    Object.assign(skipped, plan.skipped)
   })
   return { mode, added, skipped, snapshot }
 }
