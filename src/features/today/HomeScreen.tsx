@@ -5,7 +5,6 @@ import { AttentionList } from '../../components/AttentionList'
 import { HabitRow } from '../../components/HabitRow'
 import { QuoteLine } from '../../components/QuoteLine'
 import { ScoreRing } from '../../components/ScoreRing'
-import { TargetRow } from '../../components/TargetRow'
 import { db } from '../../data/db'
 import { attentionItems } from '../../engine/attention'
 import { formatDayTitle } from '../../engine/dates'
@@ -224,16 +223,6 @@ export default function HomeScreen() {
             <AttentionList items={attention} />
           </div>
 
-          {tally.targets.length > 0 && (
-            <section className="order-5 flex flex-col gap-2 lg:order-none">
-              <SectionTitle>This week</SectionTitle>
-              <Card padded={false} className="divide-y divide-line overflow-hidden">
-                {tally.targets.map(({ habit, progress }) => (
-                  <TargetRow key={habit.id} habit={habit} progress={progress} />
-                ))}
-              </Card>
-            </section>
-          )}
 
         </div>
       </div>

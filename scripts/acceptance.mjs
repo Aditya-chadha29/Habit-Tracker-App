@@ -112,13 +112,16 @@ async function scenarioA() {
     const midweek = await app.label('Hair oiling')
     check('mid-week it is still open, not a miss', /1 of 2 this week/.test(midweek) && !/missed|at risk/i.test(midweek), midweek)
 
-    await app.open('/', '2026-10-17T09:00:00')
-    const saturday = await targetLine(app.page, 'Hair oiling')
-    check('on Saturday it is pointed out', /^Attention:/.test(saturday), saturday)
+    await app.open('/review', '2026-10-17T09:00:00')
+    const saturday = ((await app.text()).split('Hair oiling')[1] ?? '').slice(0, 70)
+    check('on Saturday the week shows what is still required', saturday.includes('still required') && saturday.includes('1 day left'), saturday)
+    await app.open('/')
+    check('and Home lists it under what needs attention', ((await app.text()).split('Needs attention')[1] ?? '').includes('Hair oiling'), '')
 
     await app.open('/', '2026-10-18T09:00:00')
-    const sunday = await targetLine(app.page, 'Hair oiling')
-    check('on Sunday, the last day, it is at risk', /^At risk:/.test(sunday), sunday)
+    const sunday = ((await app.text()).split('Needs attention')[1] ?? '')
+    const around = sunday.slice(Math.max(0, sunday.indexOf('Hair oiling') - 20), sunday.indexOf('Hair oiling') + 80)
+    check('on Sunday, the last day, Home shows it at risk', sunday.includes('Hair oiling') && around.includes('At risk'), around)
 
     await app.open('/review/2026-10-12', '2026-10-19T09:00:00')
     const review = await app.text()
@@ -185,9 +188,9 @@ async function scenarioB() {
     const ticks = (await app.table('entries')).filter((entry) => entry.habit_id === gym.id)
     check('with no tick stored for it: the session is the record', ticks.length === 0, `${ticks.length} entries for Gym`)
 
-    await app.open('/')
-    const home = await app.text()
-    check('and the day score counts it', /1 \/ \d+/.test(home), (home.match(/\d+ \/ \d+ so far/) ?? [''])[0])
+    await app.open('/today')
+    const day = await app.text()
+    check('and the day score counts it', day.includes('1 / '), day.slice(0, 80))
     check('no errors in the console', app.problems.length === 0, app.problems.slice(0, 2).join(' | ').slice(0, 240))
   } finally {
     await app.context.close()
