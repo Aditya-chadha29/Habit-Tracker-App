@@ -24,7 +24,7 @@ function Brand() {
           <path d="M5 19 L11 7 L14 13 L16.5 9.5 L20 19 Z" fill="currentColor" />
         </svg>
       </span>
-      <span className="text-[14px] font-semibold tracking-tight text-ink">Personal OS</span>
+      <span className="text-[14px] font-semibold tracking-tight text-ink">IKIKATA</span>
     </div>
   )
 }

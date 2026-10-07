@@ -12,7 +12,7 @@ import { canShareFiles, downloadJson, shareJson } from './transfer'
 import { TypedConfirm } from './TypedConfirm'
 
 function titleOf(label: string): string {
-  if (label === 'before-001-cutover') return 'Before the move to Personal OS'
+  if (label === 'before-001-cutover') return 'Before the move to IKIKATA'
   if (label === 'before-import') return 'Before an import replaced everything'
   if (label.startsWith('before-')) return 'Before an update to the app'
   return label

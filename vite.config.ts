@@ -12,8 +12,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
-        name: 'Personal OS',
-        short_name: 'Personal OS',
+        name: 'IKIKATA',
+        short_name: 'IKIKATA',
         description: 'A private personal operating system: routine, learning, training, review.',
         theme_color: '#0a0f1a',
         background_color: '#0a0f1a',

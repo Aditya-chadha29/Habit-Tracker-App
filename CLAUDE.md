@@ -1,6 +1,6 @@
-# Personal OS — project rules
+# IKIKATA — project rules
 
-A private, single-user "personal operating system": daily routine and habits, nutrition and
+The app is named IKIKATA (named by the user on 2026-10-08; earlier called Personal OS). A private, single-user "personal operating system": daily routine and habits, nutrition and
 supplements, gym training, a learning queue, a journal, weekly review and long-term progress.
 Local-first PWA. It grew out of a habit tracker and still carries that app's data and database
 name (`habit-tracker`), which must never be renamed.
