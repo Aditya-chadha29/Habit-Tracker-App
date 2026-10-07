@@ -61,10 +61,6 @@ export function useChartColors(): ChartColors {
   return colors
 }
 
-function reducedMotion(): boolean {
-  return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-}
-
 const identity = (x: string): string => x
 
 interface LineChartProps {
@@ -107,7 +103,9 @@ export function LineChart({ series, height = 200, yMin, yMax, yFormat = String, 
     () => ({
       responsive: true,
       maintainAspectRatio: false,
-      animation: reducedMotion() ? false : { duration: 250 },
+      // Charts appear as they are. Growing into place is decoration, and a chart that depends on
+      // a running clock to reach its real values can be caught half-drawn.
+      animation: false,
       interaction: { mode: 'index', intersect: false },
       plugins: {
         legend: {
@@ -177,7 +175,7 @@ export function BarChart({ bars, height = 160, yMax, yFormat = String, xFormat =
     () => ({
       responsive: true,
       maintainAspectRatio: false,
-      animation: reducedMotion() ? false : { duration: 250 },
+      animation: false,
       plugins: {
         legend: { display: false },
         tooltip: {
