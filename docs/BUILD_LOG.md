@@ -36,7 +36,7 @@ first**, then `docs/ARCHITECTURE.md`, then continue from "Next step".
 | Learn: today, queue, library, resource, reading | done, repo tested |
 | Journal, Quotes | done, repos tested |
 | Review: engine + repository | done, tested |
-| Review: screen (`src/features/review`) | **not written yet** |
+| Review: screen (`src/features/review`) | done, screenshot checked |
 | Progress: `engine/insights.ts`, `data/weightRepo.ts`, screens (overview, habit history calendar, weight) | not started |
 | Habits setup (list + editor with frequency editor), Routines (day routines), Settings, Data (export + validated import, backups) | not started |
 | End-to-end acceptance tests in the browser (hair oiling, gym, learning queue) | not started |
@@ -48,10 +48,7 @@ gym (workoutRepo.test), learning queue (learningRepo.test).
 
 ## Next step
 
-1. Review screen: `src/features/review/routes.tsx` (`/review`, `/review/:weekStart`) and
-   `ReviewScreen.tsx`, reading `weekStatsFor` from `data/reviewRepo.ts` inside a live query,
-   calling `freezeDueWeeks` once on mount, reflection fields with `useAutosave`
-   (`features/journal/useAutosave.ts`) via `saveReflection`.
+1. (done) Review screen.
 2. Progress: `engine/insights.ts` (ranges, comparisons, weekly series, gates),
    `data/weightRepo.ts`, screens `/progress`, `/progress/habit/:id`, `/progress/weight`.
 3. Setup: `/habits`, `/habits/new`, `/habits/:id`, `/routines`, `/routines/:id`, `/settings`,

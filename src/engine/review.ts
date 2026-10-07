@@ -43,6 +43,7 @@ export interface WeekInput {
 const MIN_DUE_FOR_COMPARISON = 10
 const MIN_AREA_DUE = 5
 const MIN_CHANGE_POINTS = 5
+const MAX_TARGET_LINES = 3
 
 const pct = (done: number, due: number): number => Math.round((done / due) * 100)
 
@@ -113,7 +114,9 @@ function observe(stats: Omit<WeekStats, 'observations'>, previous: readonly Week
     if (fall) lines.push(`${fall.label} went from ${fall.from}% to ${fall.to}%.`)
   }
 
-  // Targets: runs of weeks met, and how often missed recently.
+  // Targets: runs of weeks met, and how often missed recently. Only the few that stand out most
+  // are stated — a line for every target every week would bury the ones that matter.
+  const targetLines: { text: string; weight: number }[] = []
   for (const target of stats.targets) {
     if (target.outcome === 'partial' || target.outcome === 'open') continue
     const history = [target, ...previous.map((week) => week.targets.find((candidate) => candidate.habit_id === target.habit_id))]
@@ -123,13 +126,17 @@ function observe(stats: Omit<WeekStats, 'observations'>, previous: readonly Week
       run += 1
     }
     if (run >= 2) {
-      lines.push(`${target.name} target met for ${run} consecutive weeks.`)
+      targetLines.push({ text: `${target.name} target met for ${run} consecutive weeks.`, weight: run })
       continue
     }
     const recent = history.slice(0, 5).filter((week): week is TargetResult => !!week && (week.outcome === 'met' || week.outcome === 'missed'))
     const missed = recent.filter((week) => week.outcome === 'missed').length
-    if (recent.length >= 3 && missed >= 2) lines.push(`${target.name} target missed in ${missed} of the last ${recent.length} weeks.`)
+    if (recent.length >= 3 && missed >= 2) {
+      targetLines.push({ text: `${target.name} target missed in ${missed} of the last ${recent.length} weeks.`, weight: missed / recent.length + missed })
+    }
   }
+  targetLines.sort((a, b) => b.weight - a.weight)
+  for (const line of targetLines.slice(0, MAX_TARGET_LINES)) lines.push(line.text)
 
   // The habit that changed most in each direction against the week before.
   if (before) {
