@@ -11,14 +11,11 @@ import { periodOf, shiftPeriod } from '../../engine/periods'
 import { dayScore, weekTally } from '../../engine/score'
 import { useCore } from '../../state/core'
 import { Card } from '../../ui/Card'
-import { areaTone, toneBg, toneText } from '../../ui/Chip'
-import { cx } from '../../ui/cx'
-import { Icon } from '../../ui/icons'
+import { areaTone } from '../../ui/Chip'
 import { Page } from '../../ui/Page'
 import { useLearningNow } from '../learn/hooks'
 import { useQuoteOfDay } from '../quotes/hooks'
 import { useTodaysWorkout } from '../train/hooks'
-import { areaIcon } from './areaMeta'
 
 function greeting(hour: number, name: string): string {
   const part = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
@@ -120,27 +117,18 @@ export default function HomeScreen() {
             />
           </div>
 
-          <nav aria-label="Pillars" className="order-3 grid grid-cols-4 gap-2 sm:gap-3 lg:order-none lg:gap-5">
-            {areas.map((area) => {
-              const part = day.by_area.get(area.id)
-              const tone = areaTone(area.color)
-              return (
-                <Link
-                  key={area.id}
-                  to={`/area/${area.id}`}
-                  className="flex min-w-0 flex-col gap-1.5 rounded-card bg-surface p-2.5 shadow-card transition-colors duration-100 hover:bg-surface-2 active:bg-surface-3 sm:p-3.5"
-                >
-                  <span className={cx('flex h-8 w-8 items-center justify-center rounded-control', toneBg(tone), toneText(tone))}>
-                    <Icon name={areaIcon(area)} size={17} />
-                  </span>
-                  <span className="truncate text-[12.5px] font-medium text-ink-2 sm:text-[13.5px]">{area.label}</span>
-                  <span className={cx('tnum text-[15px] font-semibold', part && part.done === part.due ? 'text-ok' : 'text-ink')}>
-                    {part ? `${part.done} / ${part.due}` : '—'}
-                    <span className="sr-only">{part ? ' done today' : ' nothing due today'}</span>
-                  </span>
-                </Link>
-              )
-            })}
+          <nav aria-label="Pillars" className="order-3 grid grid-cols-2 gap-3 lg:order-none lg:gap-5">
+            {areas.map((area) => (
+              <Link key={area.id} to={`/area/${area.id}`} className="block rounded-card transition-opacity duration-100 active:opacity-80">
+                <ScoreRing
+                  title={area.label}
+                  tally={day.by_area.get(area.id) ?? { done: 0, due: 0 }}
+                  caption="today"
+                  tone={areaTone(area.color)}
+                  footer={<span className="mt-1.5 inline-block text-[13px] font-medium text-accent-ink">Open</span>}
+                />
+              </Link>
+            ))}
           </nav>
 
         </div>
