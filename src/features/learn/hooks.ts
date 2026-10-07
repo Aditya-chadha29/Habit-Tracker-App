@@ -1,6 +1,11 @@
-import type { LearningResource } from '../../data/types'
+import { useLiveQuery } from 'dexie-react-hooks'
+import { useMemo } from 'react'
+import { db } from '../../data/db'
+import type { DateStr, LearningPillar, LearningResource, LearningSession } from '../../data/types'
+import { currentAndNext, daysInProgress } from '../../engine/learning'
+import { useCore } from '../../state/core'
+import { useLive } from '../../state/live'
 
-/** STUB — replaced by the Learn feature. Signature is the contract other screens rely on. */
 export interface LearningNow {
   loaded: boolean
   /** Today's learning: the head of the queue. */
@@ -15,6 +20,37 @@ export interface LearningNow {
   currentDaysInProgress: number | null
 }
 
+const NO_PILLARS: LearningPillar[] = []
+const NO_SESSIONS: LearningSession[] = []
+
+export function useResources(): { loaded: boolean; list: LearningResource[] } {
+  const list = useLiveQuery(() => db.learning_resources.toArray(), [])
+  return { loaded: list !== undefined, list: list ?? [] }
+}
+
+export function usePillars(): LearningPillar[] {
+  return useLive(() => db.learning_pillars.orderBy('sort_order').toArray(), [], NO_PILLARS)
+}
+
+/** What learning looks like right now: today's item, the next one, and the book being read. */
 export function useLearningNow(): LearningNow {
-  return { loaded: false, current: null, next: null, queueSize: 0, activeBook: null, currentDaysInProgress: null }
+  const { today, settings } = useCore()
+  const { loaded, list } = useResources()
+  return useMemo(() => {
+    const { current, next, size } = currentAndNext(list)
+    const book = list.find((resource) => resource.id === settings.active_book_id && resource.status !== 'archived' && resource.status !== 'completed')
+    return {
+      loaded,
+      current,
+      next,
+      queueSize: size,
+      activeBook: book ?? null,
+      currentDaysInProgress: current ? daysInProgress(current, today) : null,
+    }
+  }, [loaded, list, settings.active_book_id, today])
+}
+
+/** Learning and reading sessions in [from, to]. */
+export function useLearningSessions(from: DateStr, to: DateStr): LearningSession[] {
+  return useLive(() => db.learning_sessions.where('date').between(from, to, true, true).toArray(), [from, to], NO_SESSIONS)
 }
