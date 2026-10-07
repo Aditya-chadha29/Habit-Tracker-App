@@ -64,34 +64,6 @@ function Sidebar({ current }: { current: NavId | null }) {
   )
 }
 
-function BottomNav({ current }: { current: NavId | null }) {
-  return (
-    <nav
-      aria-label="Main"
-      className="flex shrink-0 items-stretch border-t border-line bg-surface pb-safe lg:hidden"
-    >
-      {PRIMARY_NAV.map((item) => {
-        const active = current === item.id
-        return (
-          <Link
-            key={item.id}
-            to={item.to}
-            aria-current={active ? 'page' : undefined}
-            className={cx(
-              'relative flex min-h-[56px] flex-1 flex-col items-center justify-center gap-1 text-[11px] transition-colors duration-100',
-              active ? 'font-medium text-accent-ink' : 'text-ink-3 active:text-ink-2',
-            )}
-          >
-            {active && <span aria-hidden="true" className="absolute top-0 h-0.5 w-8 rounded-full bg-accent-ink" />}
-            <Icon name={item.icon} size={21} />
-            {item.label}
-          </Link>
-        )
-      })}
-    </nav>
-  )
-}
-
 function MenuSheet({ open, current, onClose }: { open: boolean; current: NavId | null; onClose: () => void }) {
   useEffect(() => {
     if (!open) return
@@ -114,7 +86,7 @@ function MenuSheet({ open, current, onClose }: { open: boolean; current: NavId |
       <div className="animate-sheet-up absolute inset-x-0 bottom-0 rounded-t-[20px] bg-surface pb-safe shadow-pop">
         <div className="mx-auto mt-2.5 h-1 w-9 rounded-full bg-line-strong" aria-hidden="true" />
         <div className="grid grid-cols-3 gap-2 p-4">
-          {SECONDARY_NAV.map((item) => {
+          {[...PRIMARY_NAV, ...SECONDARY_NAV].map((item) => {
             const active = current === item.id
             return (
               <Link
@@ -150,7 +122,8 @@ function NotFound() {
 }
 
 /**
- * The frame every screen sits in: a sidebar on wide screens, a five-item bottom bar on a phone.
+ * The frame every screen sits in: a sidebar on wide screens; on a phone, one menu behind the
+ * grid button at the top left of every main screen (the user chose this over a bottom bar).
  * Only the screen for the current URL is mounted.
  */
 export function Shell({ routes, fallback }: { routes: readonly RouteDef[]; fallback?: ReactNode }) {
@@ -171,7 +144,7 @@ export function Shell({ routes, fallback }: { routes: readonly RouteDef[]; fallb
     <ShellContext.Provider value={shell}>
       <div className="flex h-dvh w-full overflow-hidden bg-ground text-ink pt-safe">
         <Sidebar current={current} />
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex min-w-0 flex-1 flex-col pb-safe">
           <main className="flex min-h-0 flex-1 flex-col">
             <ErrorBoundary key={path}>
               <Suspense fallback={fallback ?? null}>
@@ -179,7 +152,6 @@ export function Shell({ routes, fallback }: { routes: readonly RouteDef[]; fallb
               </Suspense>
             </ErrorBoundary>
           </main>
-          <BottomNav current={current} />
         </div>
         <MenuSheet open={menuOpen} current={current} onClose={() => setMenuOpen(false)} />
       </div>

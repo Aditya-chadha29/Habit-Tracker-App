@@ -247,8 +247,8 @@ describe('a phone that never saw the 6 October build', () => {
     expect(weights).toHaveLength(8)
     expect(weights[0]).toMatchObject({ date: '2026-08-16', kg: 71.0 })
     expect(weights[weights.length - 1]).toMatchObject({ date: '2026-10-04', kg: 71.8 })
-    const review = await db.weekly_reviews.get('2026-08-17')
-    expect(review).toMatchObject({ week_end: '2026-08-23', legacy_notes: 'Started waking earlier. Evenings slipped.', frozen: null })
+    const review = await db.weekly_reviews.get('2026-08-16')
+    expect(review).toMatchObject({ week_end: '2026-08-22', legacy_notes: 'Started waking earlier. Evenings slipped.', frozen: null })
     expect(await db.weekly_reviews.count()).toBe(5)
     // The old rows are still there, untouched.
     expect(await db.weekly_records.count()).toBe(9)

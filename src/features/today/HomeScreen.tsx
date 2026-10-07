@@ -2,16 +2,15 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { useMemo } from 'react'
 import { Link } from '../../app/router'
 import { AttentionList } from '../../components/AttentionList'
-import { HabitRow } from '../../components/HabitRow'
 import { QuoteLine } from '../../components/QuoteLine'
 import { ScoreRing } from '../../components/ScoreRing'
 import { db } from '../../data/db'
 import { attentionItems } from '../../engine/attention'
 import { formatDayTitle } from '../../engine/dates'
 import { periodOf, shiftPeriod } from '../../engine/periods'
-import { dayScore, weekTally } from '../../engine/score'
+import { dayScore } from '../../engine/score'
 import { useCore } from '../../state/core'
-import { Card, SectionTitle } from '../../ui/Card'
+import { Card } from '../../ui/Card'
 import { areaTone, toneBg, toneText } from '../../ui/Chip'
 import { cx } from '../../ui/cx'
 import { Icon } from '../../ui/icons'
@@ -20,8 +19,6 @@ import { useLearningNow } from '../learn/hooks'
 import { useQuoteOfDay } from '../quotes/hooks'
 import { useTodaysWorkout } from '../train/hooks'
 import { areaIcon } from './areaMeta'
-import { buildDayView, nextOpen } from './sections'
-import { useDayRoutines } from './useDayRoutines'
 
 function greeting(hour: number, name: string): string {
   const part = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
@@ -51,7 +48,6 @@ function Ridge() {
  */
 export default function HomeScreen() {
   const { today, hour, settings, weekStart, areas, habits, index } = useCore()
-  const routines = useDayRoutines()
   const workout = useTodaysWorkout()
   const learning = useLearningNow()
   const { quote } = useQuoteOfDay(today)
@@ -66,10 +62,6 @@ export default function HomeScreen() {
     }, [lastWeekStart]) ?? true
 
   const day = useMemo(() => dayScore(habits, today, index), [habits, today, index])
-  const tally = useMemo(() => weekTally(habits, week, today, index), [habits, week, today, index])
-  const view = useMemo(() => buildDayView(habits, routines, areas, today, index), [habits, routines, areas, today, index])
-  const open = useMemo(() => nextOpen(view, 5), [view])
-  const openCount = day.due - day.done
 
   const attention = useMemo(
     () =>
@@ -103,7 +95,7 @@ export default function HomeScreen() {
             </Card>
           )}
 
-          <div className="order-2 grid grid-cols-2 gap-3 lg:order-none lg:gap-5">
+          <div className="order-2 lg:order-none">
             <ScoreRing
               title="Today"
               tally={day}
@@ -111,17 +103,6 @@ export default function HomeScreen() {
               footer={
                 <Link to="/today" className="mt-1.5 inline-block text-[13px] font-medium text-accent-ink">
                   Open today
-                </Link>
-              }
-            />
-            <ScoreRing
-              title="This week"
-              tally={tally}
-              caption="so far"
-              tone="ok"
-              footer={
-                <Link to="/review" className="mt-1.5 inline-block text-[13px] font-medium text-accent-ink">
-                  Open review
                 </Link>
               }
             />
@@ -150,72 +131,6 @@ export default function HomeScreen() {
             })}
           </nav>
 
-          <section className="order-6 flex flex-col gap-2 lg:order-none">
-            <SectionTitle>Next</SectionTitle>
-            <Card padded={false} className="divide-y divide-line overflow-hidden">
-              {learning.current && (
-              <Link to="/learn/today" className="flex min-h-[60px] items-center gap-3 px-4 py-2.5 transition-colors duration-100 hover:bg-surface-2 active:bg-surface-3">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-learning/12 text-learning">
-                  <Icon name="learn" size={17} />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[14.5px] text-ink">{learning.current ? learning.current.title : 'Nothing queued to learn'}</span>
-                  <span className="mt-0.5 block truncate text-[12.5px] text-ink-3">
-                    {learning.current
-                      ? learning.next
-                        ? `Today’s learning · then ${learning.next.title}`
-                        : 'Today’s learning'
-                      : 'Add something to the learning queue'}
-                  </span>
-                </span>
-                <Icon name="chevron-right" size={17} className="shrink-0 text-ink-3" />
-              </Link>
-              )}
-              <Link
-                to={workout.open ? `/train/session/${workout.open.id}` : '/train'}
-                className="flex min-h-[60px] items-center gap-3 px-4 py-2.5 transition-colors duration-100 hover:bg-surface-2 active:bg-surface-3"
-              >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-exercise/12 text-exercise">
-                  <Icon name="train" size={17} />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[14.5px] text-ink">
-                    {workout.open ? workout.open.title : (workout.finished[0]?.title ?? workout.scheduled[0]?.name ?? 'No workout scheduled')}
-                  </span>
-                  <span className="mt-0.5 block truncate text-[12.5px] text-ink-3">
-                    {workout.open
-                      ? 'Workout in progress'
-                      : workout.finished.length
-                        ? 'Logged today'
-                        : workout.scheduled.length
-                          ? 'Today’s workout · not started'
-                          : 'Start any routine from Train'}
-                  </span>
-                </span>
-                <Icon name="chevron-right" size={17} className="shrink-0 text-ink-3" />
-              </Link>
-            </Card>
-          </section>
-
-          <section className="order-7 flex flex-col gap-2 lg:order-none">
-            <SectionTitle
-              action={
-                <Link to="/today" className="font-medium">
-                  All of today
-                </Link>
-              }
-            >
-              {openCount > 0 ? `Still open today · ${openCount}` : 'Today'}
-            </SectionTitle>
-            <Card padded={false} className="divide-y divide-line overflow-hidden">
-              {open.length === 0 && (
-                <p className="px-4 py-4 text-[14px] text-ink-2">{day.due === 0 ? 'Nothing is due today.' : 'Everything due today is done.'}</p>
-              )}
-              {open.map((item) => (
-                <HabitRow key={item.habit.id} habit={item.habit} date={today} />
-              ))}
-            </Card>
-          </section>
         </div>
 
         <div className="contents lg:col-span-5 lg:flex lg:flex-col lg:gap-5 xl:col-span-4">

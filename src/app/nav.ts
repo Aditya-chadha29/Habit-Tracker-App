@@ -15,7 +15,6 @@ export const PRIMARY_NAV: NavItem[] = [
   { id: 'learn', label: 'Learn', to: '/learn', icon: 'learn' },
   { id: 'train', label: 'Train', to: '/train', icon: 'train' },
   { id: 'review', label: 'Review', to: '/review', icon: 'review' },
-  { id: 'progress', label: 'Progress', to: '/progress', icon: 'progress' },
 ]
 
 /** Setup and reference. Behind the menu button on a phone, below the divider in the sidebar. */

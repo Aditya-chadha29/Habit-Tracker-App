@@ -10,7 +10,7 @@ import type {
   DateStr, Entry, Exercise, LegacyHabit, LegacySupplement, LegacySupplementLog, Session, SetLog,
   ThemePreference, WeeklyRecord,
 } from '../types'
-import { addDays } from '../../engine/dates'
+import { addDays, weekdayIndex } from '../../engine/dates'
 import { planCutover, planDayRoutines, type CutoverReport } from './cutover'
 
 /**
@@ -240,6 +240,26 @@ async function fourPillars({ db }: MigrationContext): Promise<{ renamed: string[
   return { renamed, added }
 }
 
+/**
+ * The week now runs Sunday to Saturday. The setting is changed, and each weekly review - which is
+ * stored under the first day of its week - moves to the Sunday just before its Monday, the new
+ * week that shares six of its seven days. Its stored figures are dropped so they are worked out
+ * again for the new week; what the user wrote is kept as it is.
+ */
+async function weekStartsSunday({ db }: MigrationContext): Promise<{ moved: number }> {
+  await saveSettings({ week_start: 6 }, db)
+  let moved = 0
+  for (const review of await db.weekly_reviews.toArray()) {
+    if (weekdayIndex(review.week_start) !== 0) continue
+    const sunday = addDays(review.week_start, -1)
+    if (await db.weekly_reviews.get(sunday)) continue
+    await db.weekly_reviews.put({ ...review, week_start: sunday, week_end: addDays(sunday, 6), frozen: null, frozen_on: null })
+    await db.weekly_reviews.delete(review.week_start)
+    moved += 1
+  }
+  return { moved }
+}
+
 async function seedLearningPillars({ db }: MigrationContext): Promise<{ added: number }> {
   if ((await db.learning_pillars.count()) > 0) return { added: 0 }
   await db.learning_pillars.bulkAdd(
@@ -297,6 +317,7 @@ export const MIGRATIONS: Migration[] = [
   { id: '005-weekly-records', run: carryWeeklyRecords },
   { id: '006-more-quotes', run: seedMoreQuotes },
   { id: '007-four-pillars', run: fourPillars },
+  { id: '008-week-starts-sunday', run: weekStartsSunday },
 ]
 
 export async function pendingMigrations(db: AppDb, migrations: Migration[] = MIGRATIONS): Promise<Migration[]> {

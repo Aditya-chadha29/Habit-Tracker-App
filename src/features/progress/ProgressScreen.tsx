@@ -11,6 +11,7 @@ import {
 import { weekdayRates } from '../../engine/streaks'
 import { LearningInsights, MonthlyHistory } from './LongerViews'
 import { currentVersion, isRetired } from '../../engine/timeline'
+import { ReviewTabs } from '../../components/ReviewTabs'
 import { useCore } from '../../state/core'
 import { useLive } from '../../state/live'
 import { Card, SectionTitle } from '../../ui/Card'
@@ -121,7 +122,12 @@ export default function ProgressScreen() {
       title="Progress"
       subtitle={`${days} ${days === 1 ? 'day' : 'days'} of history`}
       width="wide"
-      tabs={<Segmented options={RANGE_OPTIONS} value={key} onChange={setRange} label="Range" block />}
+      tabs={
+        <div className="flex flex-col gap-2">
+          <ReviewTabs current="/progress" />
+          <Segmented options={RANGE_OPTIONS} value={key} onChange={setRange} label="Range" size="sm" block />
+        </div>
+      }
     >
       <div className="flex flex-col gap-6">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">

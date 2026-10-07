@@ -8,6 +8,7 @@ import { firstEditableDate } from '../../engine/lock'
 import { rankHabits } from '../../engine/review'
 import { targetProgress } from '../../engine/targets'
 import { currentVersion, isRetired } from '../../engine/timeline'
+import { ReviewTabs } from '../../components/ReviewTabs'
 import { useCore } from '../../state/core'
 import { useKeyedLiveQuery } from '../../state/live'
 import { IconButton } from '../../ui/Button'
@@ -163,9 +164,10 @@ export default function ReviewScreen({ params }: RouteProps) {
 
   return (
     <Page
-      title="Weekly review"
+      title="Review"
       subtitle={formatRange(start, end)}
       width="wide"
+      tabs={<ReviewTabs current="/review" />}
       actions={
         <>
           <IconButton icon="chevron-left" label="Previous week" onClick={() => navigate(`/review/${addDays(start, -7)}`, { replace: true })} />

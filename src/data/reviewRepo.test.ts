@@ -26,7 +26,8 @@ async function setup() {
   return { db, meditation, hair, tick }
 }
 
-const settings = DEFAULT_SETTINGS
+// These cases are written around weeks that start on a Monday.
+const settings = { ...DEFAULT_SETTINGS, week_start: 0 }
 
 describe('freezing weeks', () => {
   it('freezes every fully locked week, oldest first, and leaves recent weeks live', async () => {

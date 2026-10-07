@@ -24,8 +24,8 @@ name (`habit-tracker`), which must never be renamed.
   no flag is written to say so. Every number on every screen comes from `src/engine`.
 - **Dates are local `YYYY-MM-DD` strings.** Never `toISOString()`, never a date derived from a
   timestamp. The user is in IST (UTC+5:30): UTC moves everything before 05:30 into the previous
-  day, which breaks the 4 AM wake-up habit specifically. Week starts Monday unless the setting
-  says otherwise.
+  day, which breaks the 4 AM wake-up habit specifically. The week starts on Sunday (changed from Monday by the user on
+  2026-10-07) unless the setting says otherwise.
 - **Local-first, quiet, not a work tool.** No accounts, sync, analytics, external APIs,
   notifications, gamification, confetti, streak flames, AI coach, tasks, projects or CRM.
 - **Polarity.** For an `abstain` habit, done means "held" and a miss is "broken" — never
@@ -53,8 +53,9 @@ localStorage) · Chart.js (the only charting library) · Vitest · Playwright ·
 ## Design and tone
 
 Dark navy, premium, calm, slightly technical; light theme is the same design with the tokens
-re-pointed. Colours come only from the tokens in `src/index.css`. Phone first at 390 px with a
-five-item bottom bar (Today, Learn, Train, Review, Progress); a sidebar and genuinely wider layouts
+re-pointed. Colours come only from the tokens in `src/index.css`. Phone first at 390 px with no
+bottom bar: every destination (Home, Learn, Train, Review, Journal, Habits, Routines, Settings) is in
+the menu behind the grid button at the top left, as the user asked on 2026-10-07; a sidebar and genuinely wider layouts
 from 1024 px. Every tappable thing is at least 44 px. Status is never shown by colour alone.
 
 Copy reports and never comments: "Hair oiling: 1 of 2. 1 session still required." No praise, no
@@ -68,6 +69,11 @@ Decisions the user has already made, so they are not re-opened:
 - Extra style themes (Cybercore, Scrapbook, Glassmorphism, Wabi-sabi) were built and then removed
   at the user's request. Themes are System / Light / Dark only.
 - The palette is blue on navy; the earlier brown palette was rejected.
+- Home shows only the date, the quote, today's ring, the four pillars and what needs attention. The
+  user removed the week ring, weekly targets, Next, Still open today and the trend from it. The quote
+  appears on Home only. Review and Progress are one place with a two-way switch. Quotes and Data
+  live inside Settings. Learn is the pillars screen alone for now; its queue, library and reading
+  screens are kept unlinked until the user decides what Learn should hold.
 - Gym is a daily habit with a 7-per-week target, completed only by a logged session (lifting or
   cardio-only). Hair oiling is 2 per week. Vitamin D is weekly, on Mondays.
 

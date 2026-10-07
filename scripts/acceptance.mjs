@@ -100,7 +100,7 @@ function targetLine(page, name) {
 async function scenarioA() {
   scenario = 'a'
   // Installed on a Monday, so the first week is tracked whole.
-  const app = await install('2026-10-12T09:00:00')
+  const app = await install('2026-10-11T09:00:00')
   try {
     await app.open('/today')
     check('starts the week pending at 0 of 2', /0 of 2 this week/.test(await app.label('Hair oiling')), await app.label('Hair oiling'))
@@ -108,22 +108,22 @@ async function scenarioA() {
     await app.settle()
     check('one tick reads 1 of 2', /1 of 2 this week/.test(await app.label('Hair oiling')), await app.label('Hair oiling'))
 
-    await app.open('/today', '2026-10-14T09:00:00')
+    await app.open('/today', '2026-10-13T09:00:00')
     const midweek = await app.label('Hair oiling')
     check('mid-week it is still open, not a miss', /1 of 2 this week/.test(midweek) && !/missed|at risk/i.test(midweek), midweek)
 
-    await app.open('/review', '2026-10-17T09:00:00')
+    await app.open('/review', '2026-10-16T09:00:00')
     const saturday = ((await app.text()).split('Hair oiling')[1] ?? '').slice(0, 70)
-    check('on Saturday the week shows what is still required', saturday.includes('still required') && saturday.includes('1 day left'), saturday)
+    check('with two days left the week shows what is still required', saturday.includes('still required') && saturday.includes('1 day left'), saturday)
     await app.open('/')
     check('and Home lists it under what needs attention', ((await app.text()).split('Needs attention')[1] ?? '').includes('Hair oiling'), '')
 
-    await app.open('/', '2026-10-18T09:00:00')
+    await app.open('/', '2026-10-17T09:00:00')
     const sunday = ((await app.text()).split('Needs attention')[1] ?? '')
     const around = sunday.slice(Math.max(0, sunday.indexOf('Hair oiling') - 20), sunday.indexOf('Hair oiling') + 80)
-    check('on Sunday, the last day, Home shows it at risk', sunday.includes('Hair oiling') && around.includes('At risk'), around)
+    check('on the last day of the week Home shows it at risk', sunday.includes('Hair oiling') && around.includes('At risk'), around)
 
-    await app.open('/review/2026-10-12', '2026-10-19T09:00:00')
+    await app.open('/review/2026-10-11', '2026-10-18T09:00:00')
     const review = await app.text()
     const judged = /Hair oiling\s*1 \/ 2/.test(review) && /Target missed|Missed/.test(review.slice(review.indexOf('Hair oiling'), review.indexOf('Hair oiling') + 120))
     check('once the week is over it is missed at 1 of 2', judged, review.slice(review.indexOf('Hair oiling'), review.indexOf('Hair oiling') + 90))
@@ -143,14 +143,14 @@ async function scenarioA() {
     await app.open('/today')
     check('the change applies from today: 1 of 3 this week', /1 of 3 this week/.test(await app.label('Hair oiling')), await app.label('Hair oiling'))
 
-    await app.open('/review/2026-10-12')
+    await app.open('/review/2026-10-11')
     const after = await app.text()
     check('the finished week still reads 1 of 2', /Hair oiling\s*1 \/ 2/.test(after), after.slice(after.indexOf('Hair oiling'), after.indexOf('Hair oiling') + 90))
     // A week is stored for good once none of its days can be corrected any more.
-    await app.open('/review/2026-10-12', '2026-10-26T09:00:00')
+    await app.open('/review/2026-10-11', '2026-10-25T09:00:00')
     const later = await app.text()
     check('a week later it still reads 1 of 2', /Hair oiling\s*1 \/ 2/.test(later), later.slice(later.indexOf('Hair oiling'), later.indexOf('Hair oiling') + 60))
-    const kept = (await app.table('weekly_reviews')).find((row) => row.week_start === '2026-10-12')
+    const kept = (await app.table('weekly_reviews')).find((row) => row.week_start === '2026-10-11')
     const stored = kept?.frozen?.targets?.find((target) => target.name === 'Hair oiling')
     check('and is stored that way for good', stored && stored.done === 1 && stored.target === 2 && stored.outcome === 'missed', JSON.stringify(stored ?? null))
     check('no errors in the console', app.problems.length === 0, app.problems.slice(0, 2).join(' | ').slice(0, 240))

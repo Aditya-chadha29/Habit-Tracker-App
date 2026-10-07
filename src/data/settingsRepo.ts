@@ -22,7 +22,8 @@ export const DEFAULT_SETTINGS: Settings = {
   name: '',
   focus: '',
   theme: 'system',
-  week_start: 0,
+  // Sunday. The user moved the week from Monday to Sunday on 2026-10-07.
+  week_start: 6,
   day_start_hour: 0,
   weight_unit: 'kg',
   default_increment_kg: 2.5,

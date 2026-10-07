@@ -23,6 +23,7 @@ const STEP_LABEL: Record<string, string> = {
   '005-weekly-records': 'Weights and weekly notes carried over',
   '006-more-quotes': 'Fifty more quotes added',
   '007-four-pillars': 'Learning pillars set to the four',
+  '008-week-starts-sunday': 'Week moved to start on Sunday',
 }
 
 function ExportCard() {
