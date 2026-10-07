@@ -22,6 +22,16 @@ export interface SnapshotRow {
 
 export type SnapshotSummary = Omit<SnapshotRow, 'tables'>
 
+/**
+ * Copies that are never dropped to make room. The one taken before the move off the original
+ * app is the only record of that app's data exactly as it was, so it outlives the rolling limit.
+ */
+const KEPT_FOREVER: readonly string[] = ['before-001-cutover']
+
+export function isKeptForever(label: string): boolean {
+  return KEPT_FOREVER.includes(label)
+}
+
 type BackupDb = Dexie & { snapshots: Table<SnapshotRow, string> }
 
 function openBackups(name: string): BackupDb {
@@ -60,9 +70,11 @@ export async function takeSnapshot(
       row_count: rowCount,
       tables,
     })
-    // Old copies are dropped oldest-first so the backup store cannot grow without limit.
+    // Old copies are dropped oldest-first so the backup store cannot grow without limit. An id
+    // ends with its label, which is how the permanent ones are recognised without loading them.
     const all = await backups.snapshots.orderBy('taken_at').primaryKeys()
-    if (all.length > keep) await backups.snapshots.bulkDelete(all.slice(0, all.length - keep))
+    const rolling = all.filter((key) => !KEPT_FOREVER.some((label) => key.endsWith(`-${label}`)))
+    if (rolling.length > keep) await backups.snapshots.bulkDelete(rolling.slice(0, rolling.length - keep))
   } finally {
     backups.close()
   }

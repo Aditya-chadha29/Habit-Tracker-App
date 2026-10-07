@@ -72,6 +72,8 @@ describe('the grouped day', () => {
     expect(view.sections[1].part).toBe('evening')
     expect(view.sections[2].part).toBe('day')
     expect(view.sections[0].rows[0]).toMatchObject({ type: 'habit', lead: '04:00' })
+    // A routine with any timed step keeps the time column on every row, so names line up.
+    expect(view.sections[0].rows[1]).toMatchObject({ type: 'habit', lead: '' })
   })
 
   it('drops a routine with nothing due in it and ignores retired routines', () => {

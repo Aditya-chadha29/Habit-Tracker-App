@@ -19,7 +19,7 @@ import { useToast } from '../ui/Toast'
  *
  * Writing a description ticks the meal; the tick can also be made on its own.
  */
-export function MealRow({ habit, date }: { habit: Habit; date: DateStr }) {
+export function MealRow({ habit, date, lead }: { habit: Habit; date: DateStr; lead?: string }) {
   const { index, today, write, settings } = useCore()
   const toast = useToast()
   const slot = habit.meal_slot ?? habit.name.toLowerCase()
@@ -42,6 +42,7 @@ export function MealRow({ habit, date }: { habit: Habit; date: DateStr }) {
   return (
     <div className="px-4 py-3">
       <div className="flex items-center gap-3">
+        {lead !== undefined && <span className="tnum w-10 shrink-0 text-[12px] text-ink-3">{lead}</span>}
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-2">
             <span className="text-[14.5px] text-ink">{version.name}</span>
@@ -59,7 +60,7 @@ export function MealRow({ habit, date }: { habit: Habit; date: DateStr }) {
         />
       </div>
       {loaded ? (
-        <div className="mt-2 flex items-center gap-2">
+        <div className={cx('mt-2 flex items-center gap-2', lead !== undefined && 'pl-[52px]')}>
           <input
             // Keyed on the day and slot, never on the stored value: a save elsewhere must not
             // remount the field and throw away what is being typed.

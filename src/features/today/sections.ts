@@ -63,8 +63,10 @@ export function buildDayView(
   const active = routines.filter((routine) => routine.retired_on === null).sort((a, b) => a.sort_order - b.sort_order)
   for (const routine of active) {
     const rows: DayRow[] = []
+    // Once any step has a time, every row keeps the time column so the names line up.
+    const timed = routine.steps.some((step) => step.time)
     for (const step of routine.steps) {
-      const lead = step.time || undefined
+      const lead = timed ? step.time : undefined
       if (step.habit_id === null) {
         rows.push({ type: 'note', key: step.key, label: step.label, lead })
         continue
