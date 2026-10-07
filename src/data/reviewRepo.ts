@@ -111,7 +111,10 @@ export async function weekStatsFor(
   depth = 5,
 ): Promise<{ stats: WeekStats; frozen: boolean; review: WeeklyReview | null }> {
   const review = (await database.weekly_reviews.get(weekStart)) ?? null
-  if (review?.frozen) return { stats: review.frozen, frozen: true, review }
+  // A stored week stands only while none of its days can be corrected. If the correction window
+  // has since been widened over it, it is worked out live again.
+  const locked = addDays(weekStart, 6) < firstEditableDate(today, settings.edit_window_days)
+  if (review?.frozen && locked) return { stats: review.frozen, frozen: true, review }
 
   const first = await firstWeekStart(settings, database)
   const chain: DateStr[] = []
@@ -136,6 +139,11 @@ export async function freezeDueWeeks(today: DateStr, settings: Settings, now: nu
   if (first === null) return []
   const lockedBefore = firstEditableDate(today, settings.edit_window_days)
   const frozen: DateStr[] = []
+  // Weeks the window has been widened over are released, to be stored again once they lock.
+  await database.transaction('rw', database.weekly_reviews, async () => {
+    const reopened = (await database.weekly_reviews.toArray()).filter((row) => row.frozen && addDays(row.week_start, 6) >= lockedBefore)
+    for (const row of reopened) await database.weekly_reviews.update(row.week_start, { frozen: null, frozen_on: null })
+  })
   for (let start = first; addDays(start, 6) < lockedBefore; start = addDays(start, 7)) {
     const existing = await database.weekly_reviews.get(start)
     if (existing?.frozen) continue

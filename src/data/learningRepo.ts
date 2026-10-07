@@ -152,7 +152,12 @@ export async function logSession(input: SessionInput, ctx: WriteContext, now: nu
   return database.transaction('rw', database.learning_resources, database.learning_sessions, async () => {
     const resource = await database.learning_resources.get(input.resource_id)
     if (!resource) throw new Error('That resource no longer exists.')
-    const before = resource.progress_current
+    const byDay = (a: { date: DateStr; created_at: number }, b: { date: DateStr; created_at: number }) =>
+      a.date < b.date ? -1 : a.date > b.date ? 1 : a.created_at - b.created_at
+    const earlier = (await database.learning_sessions.where('resource_id').equals(input.resource_id).toArray()).sort(byDay)
+    // Where the resource stood on the day this session is for, not where it stands now.
+    const previous = earlier.filter((session) => session.date <= input.date).pop()
+    const before = previous ? previous.progress_after : earlier.length ? 0 : resource.progress_current
     let after = input.progress_after ?? before
     if (input.finished && resource.progress_total) after = resource.progress_total
     if (resource.progress_total) after = Math.min(after, resource.progress_total)
@@ -170,9 +175,12 @@ export async function logSession(input: SessionInput, ctx: WriteContext, now: nu
       created_at: now,
     })) as number
 
+    // The resource stands where its latest session by date left it; a session entered for an
+    // earlier day must not move it back.
+    const later = earlier.filter((session) => session.date > input.date).pop()
     const patch: Partial<LearningResource> = {
-      progress_current: after,
-      started_on: resource.started_on ?? input.date,
+      progress_current: input.finished || !later ? after : later.progress_after,
+      started_on: resource.started_on && resource.started_on < input.date ? resource.started_on : input.date,
     }
     if (input.finished) {
       patch.status = 'completed'

@@ -223,9 +223,10 @@ export async function setHabitDone(
       habit_id: habitId,
       date,
       done,
-      value: done ? details.value ?? existing?.value ?? habit.measure.target ?? null : null,
+      // Unticking keeps what was recorded: a slip of the thumb must not cost the amount or the time.
+      value: done ? details.value ?? existing?.value ?? habit.measure.target ?? null : existing?.value ?? null,
       note: details.note ?? existing?.note ?? '',
-      time: done ? details.time ?? existing?.time ?? null : null,
+      time: done ? details.time ?? existing?.time ?? null : existing?.time ?? null,
     }
     if (existing) await database.entries.update(existing.id!, row)
     else await database.entries.add(row)
@@ -257,7 +258,10 @@ export async function annotateEntry(
   database: AppDb = db,
 ): Promise<void> {
   assertEditable(date, ctx.today, ctx.windowDays)
-  await database.transaction('rw', database.entries, async () => {
+  await database.transaction('rw', database.habits, database.entries, async () => {
+    const habit = await database.habits.get(habitId)
+    if (!habit) throw new Error('That habit no longer exists.')
+    if (!versionOn(habit, date)?.active) throw new NotTickableError(`${habit.name} was not being tracked on ${date}.`)
     const existing = await database.entries.where('[habit_id+date]').equals([habitId, date]).first()
     if (!existing) {
       await database.entries.add({ habit_id: habitId, date, done: false, value: details.value ?? null, note: details.note ?? '', time: null })

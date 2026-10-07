@@ -58,9 +58,12 @@ export async function takeSnapshot(
 ): Promise<string> {
   const tables = await readEverything(database)
   const rowCount = Object.values(tables).reduce((total, rows) => total + rows.length, 0)
-  const id = `${today}-${now}-${label}`
+  // A permanent copy has a fixed id: a start that failed and is tried again must not pile up a
+  // new full copy each time, and the first one already holds the data as it was.
+  const id = isKeptForever(label) ? label : `${today}-${now}-${label}`
   const backups = openBackups(backupName)
   try {
+    if (isKeptForever(label) && (await backups.snapshots.get(id))) return id
     await backups.snapshots.put({
       id,
       label,
@@ -72,13 +75,37 @@ export async function takeSnapshot(
     })
     // Old copies are dropped oldest-first so the backup store cannot grow without limit. An id
     // ends with its label, which is how the permanent ones are recognised without loading them.
-    const all = await backups.snapshots.orderBy('taken_at').primaryKeys()
-    const rolling = all.filter((key) => !KEPT_FOREVER.some((label) => key.endsWith(`-${label}`)))
-    if (rolling.length > keep) await backups.snapshots.bulkDelete(rolling.slice(0, rolling.length - keep))
+    await prune(backups, keep)
   } finally {
     backups.close()
   }
   return id
+}
+
+async function prune(backups: BackupDb, keep: number): Promise<void> {
+  const all = await backups.snapshots.orderBy('taken_at').primaryKeys()
+  const rolling = all.filter((key) => !KEPT_FOREVER.some((label) => key === label || key.endsWith(`-${label}`)))
+  if (rolling.length > keep) await backups.snapshots.bulkDelete(rolling.slice(0, rolling.length - keep))
+}
+
+/** Drops the oldest rolling copies beyond `keep`. */
+export async function pruneSnapshots(backupName: string = BACKUP_DB_NAME, keep = 4): Promise<void> {
+  const backups = openBackups(backupName)
+  try {
+    await prune(backups, keep)
+  } finally {
+    backups.close()
+  }
+}
+
+/** Removes one copy: used when the change it was taken for did not happen after all. */
+export async function removeSnapshot(id: string, backupName: string = BACKUP_DB_NAME): Promise<void> {
+  const backups = openBackups(backupName)
+  try {
+    await backups.snapshots.delete(id)
+  } finally {
+    backups.close()
+  }
 }
 
 export async function listSnapshots(backupName: string = BACKUP_DB_NAME): Promise<SnapshotSummary[]> {

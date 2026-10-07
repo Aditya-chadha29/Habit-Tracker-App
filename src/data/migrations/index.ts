@@ -276,11 +276,15 @@ export async function runMigrations(
 
   const ran: string[] = []
   for (const migration of pending) {
-    await db.transaction('rw', db.tables, async () => {
+    const applied = await db.transaction('rw', db.tables, async () => {
+      // Read again inside the transaction: another tab may have run this step since the list of
+      // pending steps was made, and running it twice would convert already-converted rows.
+      if (await db.migrations.get(migration.id)) return false
       const notes = await migration.run(ctx)
       await db.migrations.put({ id: migration.id, ran_on: today, ran_at: now, notes })
+      return true
     })
-    ran.push(migration.id)
+    if (applied) ran.push(migration.id)
   }
   return { ran, snapshot }
 }

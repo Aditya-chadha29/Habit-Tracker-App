@@ -98,6 +98,20 @@ top-level `name`, `short_name`, `retired_on` are copies of the newest chapter fo
 - Validate at the boundary: trim text, reject empty names, clamp numbers. Throw an `Error` with
   a sentence the user can read; the screen shows it in a toast.
 
+**Export, import and copies** (`data/importExport.ts`, `data/backup.ts`):
+
+- An export is every table at the top level of one JSON object. Import is two steps: `prepareImport`
+  reads and checks a file without touching the device (an old-format file is upgraded by running
+  the real migrations in a throwaway database), `applyImport` then adds or replaces.
+- **Adding** writes only rows whose id (or habit and day, for a tick) is not here yet, and refuses a
+  file whose ids mean something else on this device (`merge_blockers`): on a new phone, habit 2 in
+  an old export is a different habit. **Replacing** copies the whole database into the backup
+  store first, then clears and loads in one transaction.
+- Automatic copies keep the four most recent, plus, permanently, the one taken before the move
+  off the original app (`before-001-cutover`).
+- The cutover recognises a habit the earlier app retired on its own by the DAY it happened (its
+  patch day, or the day its supplements list was first seeded), never by which build ran.
+
 ## 5. Engine (pure functions — `src/engine`)
 
 | File | What it answers |
@@ -320,5 +334,11 @@ Other screens link to a feature by URL: `/train`, `/train/session/:id`, `/learn`
   through `window.__db` first. **Look at your screens** at phone and desktop width, in dark and
   light, with real-looking data and with none, and fix what you see. Screenshots go in `shots/`
   (git-ignored).
+- `node scripts/acceptance.mjs` drives the three acceptance scenarios through the real screens
+  (`--browser webkit` for the engine every iPhone browser uses).
+- `node scripts/rehearse-migration.mjs --export <file> --chain <commits>` loads a real export into
+  an old release, walks it through the given releases and then the build in `dist/`, and checks
+  that every tick and every past score survived. Run it before any change under
+  `src/data/migrations/` reaches `main`.
 - No `console.log` left behind. No dead buttons: every control does something real and persists
   it. No fake or static data in a chart or a number.

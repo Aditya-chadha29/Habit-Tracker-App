@@ -25,50 +25,35 @@ first**, then `docs/ARCHITECTURE.md`, then continue from "Next step".
 
 ## Status
 
-| Part | State |
-|---|---|
-| Spec + designs in `docs/`, architecture brief, CLAUDE.md rewritten | done |
-| Data model, Dexie v4, engine (dates, timeline, completion, targets, score, status, streaks, lock, attention, trend, describe, training, learning, quotes, review) | done, tested |
-| Cutover migration, rehearsed against the real export in both starting states | done, tested |
-| Shell (hash router, sidebar / bottom bar), CoreProvider, SafeMode, tokens, UI kit | done |
-| Today: Home dashboard, day list, pillar screens, Nutrition | done, screenshots checked on phone |
-| Train: overview, live session, history, exercise progress, setup, routine editor | done, repo tested |
-| Learn: today, queue, library, resource, reading | done, repo tested |
-| Journal, Quotes | done, repos tested |
-| Review: engine + repository | done, tested |
-| Review: screen (`src/features/review`) | done, screenshot checked |
-| Progress: `engine/insights.ts`, `data/weightRepo.ts`, screens (overview, habit history calendar, weight) | not started |
-| Habits setup (list + editor with frequency editor), Routines (day routines), Settings, Data (export + validated import, backups) | not started |
-| End-to-end acceptance tests in the browser (hair oiling, gym, learning queue) | not started |
-| Visual QA: desktop width, light theme, empty states | not started |
-| Before shipping (below) | not started |
+Every area of the specification is built: Today (Home, day list, pillars, nutrition), Train,
+Learn, Journal, Quotes, Review, Progress, Habits, Routines, Settings and Data (export, checked
+import, automatic copies). Shipped to `main` on 2026-10-07.
 
-Acceptance tests at the data/engine level already pass: hair oiling (targets.test, review.test),
-gym (workoutRepo.test), learning queue (learningRepo.test).
+Checked before shipping:
 
-## Next step
+- `npx vitest run` (327 tests) and `npm run build` clean.
+- `scripts/rehearse-migration.mjs` with the real phone export, from the September release through
+  every chain of the 6 October releases, in Edge and in WebKit: every tick kept, every past day
+  scoring as before, the same final set-up from every chain.
+- `scripts/acceptance.mjs`: the three acceptance scenarios through the UI, in Edge and WebKit.
+- Phone and desktop, dark and light screenshots of every area.
+- An independent three-reviewer pass over the migration, import/backup and repositories; its
+  findings are fixed and pinned by `src/data/safety.test.ts`.
 
-1. (done) Review screen.
-2. Progress: `engine/insights.ts` (ranges, comparisons, weekly series, gates),
-   `data/weightRepo.ts`, screens `/progress`, `/progress/habit/:id`, `/progress/weight`.
-3. Setup: `/habits`, `/habits/new`, `/habits/:id`, `/routines`, `/routines/:id`, `/settings`,
-   `/data` with `data/importExport.ts` (export every table; import validates, upgrades old
-   schema-1/2 exports through `planCutover`, merges or replaces after a snapshot) and
-   `data/routineRepo.ts`.
-4. Small fixes noted while building: on Today, rows without a time in a routine are not aligned
-   with rows that have one (pass an empty `lead`); Learn-today "Reading" section link text.
-5. Then the "Before shipping" list.
+## Things to know
 
-## Before shipping to main
+- **Never roll the deployment back to a build from before the cutover.** An old bundle can open
+  the upgraded database and write rows the new app cannot read. Fix forward.
+- Not yet verified on the real iPhone: the look in iOS Safari (only Playwright WebKit was
+  available) and that a shared or downloaded export file really lands in Files.
+- Known, accepted: a quick double tap on Save in the quick-log, learning-session and weight forms
+  can add the row twice (it can be deleted within the correction window); an old tab still running
+  the September build blocks the upgrade until it is closed.
 
-- Every nav destination renders a real screen (no "page does not exist").
-- `npm run build` clean; all tests pass.
-- Browser rehearsal of the migration: load the real export (`Exported Data/`, git-ignored) into
-  the old schema, boot the new build, confirm Today and history; repeat after the 6 October
-  build's boot (state B). The unit-level rehearsal already passes for both.
-- The three acceptance scenarios driven through the UI with Playwright.
-- Phone and desktop, dark and light screenshots of every area looked at.
-- Delete `legacy-reference/`. Update memory. Merge to `main`, push, verify the live bundle hash.
+## Before shipping a later change
+
+`npx tsc -p tsconfig.app.json --noEmit`, `npx vitest run`, `npm run build`, then the rehearsal and
+acceptance scripts above if anything under `src/data` or `src/engine` changed.
 
 ## Log
 
@@ -78,3 +63,6 @@ gym (workoutRepo.test), learning queue (learningRepo.test).
 - 2026-10-07 02:17 - Seven parallel builders exhausted the usage window without writing a file.
 - 2026-10-07 06:12 - Resumed; switched to building directly. Kit, Today, Train (`6fb0d26`),
   Learn, Journal, Quotes (`65fb8eb`), review engine and repository.
+- 2026-10-07 07:00-12:00 - Progress, Setup (habits, routines, settings, data), browser rehearsal
+  of the upgrade (which found and fixed a lost-Creatine case for intermediate builds), acceptance
+  runs, WebKit runs, independent review and its fixes. Shipped.

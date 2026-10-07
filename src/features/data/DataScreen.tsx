@@ -55,7 +55,7 @@ function ExportCard() {
         if (result === 'downloaded') toast.show('Sharing did not work, so the export was downloaded instead.')
       } else {
         downloadJson(json, filename)
-        toast.show('Export downloaded.', { tone: 'ok' })
+        toast.show('Download started. Check that the file has arrived before relying on it.')
       }
     } catch {
       toast.show('The export could not be made. Nothing was changed.', { tone: 'risk' })

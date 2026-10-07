@@ -139,7 +139,10 @@ describe('ticking', () => {
     await setHabitDone(id, TODAY, true, ctx, { value: 14 }, db)
     expect((await db.entries.toArray())[0].value).toBe(14)
     await setHabitDone(id, TODAY, false, ctx, {}, db)
-    expect((await db.entries.toArray())[0]).toMatchObject({ done: false, value: null })
+    // Unticking keeps what was recorded, so ticking again brings it back rather than the default.
+    expect((await db.entries.toArray())[0]).toMatchObject({ done: false, value: 14, time: '04:20' })
+    await setHabitDone(id, TODAY, true, ctx, {}, db)
+    expect((await db.entries.toArray())[0]).toMatchObject({ done: true, value: 14, time: '04:20' })
   })
 
   it('allows the last seven days and refuses anything older or in the future', async () => {

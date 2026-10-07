@@ -264,6 +264,9 @@ export async function finishSession(sessionId: number, notes: string, ctx: Write
   await database.transaction('rw', database.sessions, database.set_logs, database.exercises, async () => {
     const session = await database.sessions.get(sessionId)
     if (!session) return
+    // Finishing is what makes the day count as trained, so it obeys the lock like any other
+    // write. A session left open on a day that has since locked can only be discarded.
+    assertEditable(session.date, ctx.today, ctx.windowDays)
     const rows = await database.set_logs.where('session_id').equals(sessionId).toArray()
     const done = rows.filter((row) => row.done)
     await database.set_logs.bulkDelete(rows.filter((row) => !row.done).map((row) => row.id!))

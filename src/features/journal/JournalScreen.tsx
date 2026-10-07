@@ -18,7 +18,7 @@ import { Page } from '../../ui/Page'
 import { Segmented } from '../../ui/Tabs'
 import { useToast } from '../../ui/Toast'
 import { useQuoteOfDay } from '../quotes/hooks'
-import { saveStateLabel, useAutosave } from './useAutosave'
+import { saveStateLabel, useAutosave } from '../../state/useAutosave'
 
 const KINDS = [
   { id: 'morning', label: 'Morning' },

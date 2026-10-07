@@ -20,7 +20,7 @@ import { InsightCard } from '../../ui/Metric'
 import { Page } from '../../ui/Page'
 import { ProgressBar, ProgressRing } from '../../ui/Progress'
 import { WeekStrip } from '../../ui/WeekStrip'
-import { saveStateLabel, useAutosave } from '../journal/useAutosave'
+import { saveStateLabel, useAutosave } from '../../state/useAutosave'
 
 const pct = (done: number, due: number): number | null => (due ? Math.round((done / due) * 100) : null)
 

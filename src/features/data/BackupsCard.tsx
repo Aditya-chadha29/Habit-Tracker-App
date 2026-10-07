@@ -8,7 +8,7 @@ import { Button, IconButton } from '../../ui/Button'
 import { Card } from '../../ui/Card'
 import { Chip } from '../../ui/Chip'
 import { useToast } from '../../ui/Toast'
-import { downloadJson } from './transfer'
+import { canShareFiles, downloadJson, shareJson } from './transfer'
 import { TypedConfirm } from './TypedConfirm'
 
 function titleOf(label: string): string {
@@ -55,7 +55,10 @@ export function BackupsCard({ refreshKey, onChanged }: { refreshKey: number; onC
       toast.show('That copy is no longer there.', { tone: 'risk' })
       return
     }
-    downloadJson(asFile(snapshot), `personal-os-copy-${snapshot.taken_on}.json`)
+    const filename = `personal-os-copy-${snapshot.taken_on}.json`
+    // On a phone the share sheet is the dependable way to get a file out of an installed app.
+    if (canShareFiles() && window.matchMedia('(pointer: coarse)').matches) await shareJson(asFile(snapshot), filename)
+    else downloadJson(asFile(snapshot), filename)
   }
 
   const restore = async (summary: SnapshotSummary) => {
@@ -66,7 +69,11 @@ export function BackupsCard({ refreshKey, onChanged }: { refreshKey: number; onC
       const prepared = await prepareImport(asFile(snapshot), db, today, Date.now())
       if (!prepared.ok) throw new Error(prepared.problems.find((problem) => problem.level === 'error')?.message ?? 'The copy could not be read.')
       await applyImport(db, prepared, 'replace', today, Date.now())
-      toast.show(`Restored the copy from ${formatFullDate(snapshot.taken_on)}.`, { tone: 'ok' })
+      const leftOut = prepared.problems.filter((problem) => problem.level === 'warning').length
+      toast.show(
+        `Restored the copy from ${formatFullDate(snapshot.taken_on)}.` + (leftOut ? ` ${leftOut} ${leftOut === 1 ? 'kind of record in it was' : 'kinds of record in it were'} damaged and left out.` : ''),
+        { tone: 'ok' },
+      )
       onChanged()
     } catch (error) {
       toast.show(`Could not restore. ${error instanceof Error ? error.message : ''} Nothing on this device was changed.`.trim(), { tone: 'risk' })

@@ -258,8 +258,10 @@ export function planCutover(input: CutoverInput): CutoverPlan {
   // from the Creatine habit. A retirement dated to either day was the app's doing, not the
   // user's. The two days differ on a device that received those builds on different days.
   const supplementsSeededOn = input.supplements.map((supplement) => supplement.created_on).sort()[0] ?? null
-  const retiredByApp = (row: LegacyHabit) =>
-    row.retired_on !== null && (row.retired_on === patchDate || row.retired_on === supplementsSeededOn)
+  // That build also re-applied its retirement on every start, so a habit the user restored in
+  // between carries a later date still; any date from the first of those days on is the app's.
+  const firstAppDay = [patchDate, supplementsSeededOn].filter((day): day is DateStr => day !== null).sort()[0] ?? null
+  const retiredByApp = (row: LegacyHabit) => row.retired_on !== null && firstAppDay !== null && row.retired_on >= firstAppDay
 
   // ── Which existing row fills which role ────────────────────────────────────────────────────
   const ruleForRow = new Map<number, LayoutRule>()
@@ -365,8 +367,12 @@ export function planCutover(input: CutoverInput): CutoverPlan {
 
   const carryLogs = (supplementId: number, habitIndex: number) => {
     const existingId = planned[habitIndex].habit.id
+    const legacyRow = existingId === undefined ? undefined : rows.find((row) => row.id === existingId)
     for (const log of input.supplementLogs) {
       if (log.supplement_id !== supplementId || !log.taken) continue
+      // While the habit itself was still being tracked, its own ticks were the record of that
+      // day. A tick made on the supplements list for such a day must not rescore it now.
+      if (legacyRow && (legacyRow.retired_on === null || log.date < legacyRow.retired_on)) continue
       if (existingId !== undefined) {
         const current = entryByKey.get(entryKey(existingId, log.date))
         if (current?.done) continue

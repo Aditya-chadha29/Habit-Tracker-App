@@ -1,5 +1,5 @@
 import type { Table } from 'dexie'
-import { BACKUP_DB_NAME, readEverything, takeSnapshot } from './backup'
+import { BACKUP_DB_NAME, pruneSnapshots, readEverything, removeSnapshot, takeSnapshot } from './backup'
 import { createDb, type AppDb } from './db'
 import { runMigrations } from './migrations'
 import { DATA_FORMAT } from './settingsRepo'
@@ -116,17 +116,28 @@ interface MergePlan {
   /** Per table, the rows that are not on the device yet. */
   fresh: Record<string, Row[]>
   skipped: Record<string, number>
+  /** Rows whose id is taken here by a different record. */
+  clashes: string[]
 }
 
 /** What adding a file would write. Reads only; call it inside a transaction. */
 async function planMerge(database: AppDb, tables: Record<string, unknown[]>): Promise<MergePlan> {
   const fresh: Record<string, Row[]> = {}
   const skipped: Record<string, number> = {}
+  const clashes: string[] = []
   for (const table of database.tables) {
     const rows = (tables[table.name] ?? []) as Row[]
     if (!rows.length) continue
     const present = (await table.toArray()) as Row[]
     const existing = new Set(present.map((row) => keyOf(table, row)))
+    const identity = ROW_IDENTITY[table.name]
+    if (identity) {
+      const here = new Map(present.map((row) => [keyOf(table, row), identity.of(row)]))
+      for (const row of rows) {
+        const mine = here.get(keyOf(table, row))
+        if (mine !== undefined && mine !== identity.of(row)) clashes.push(`${identity.what} ${String(row.id)} is a different record in the file and on this device.`)
+      }
+    }
     const natural = naturalKeyOf(table.name)
     const taken = natural ? new Set(present.map(natural).filter(Boolean)) : null
     const add: Row[] = []
@@ -142,10 +153,25 @@ async function planMerge(database: AppDb, tables: Record<string, unknown[]>): Pr
     }
     fresh[table.name] = add
   }
-  return { fresh, skipped }
+  return { fresh, skipped, clashes }
 }
 
 const lower = (value: unknown): string => String(value ?? '').trim().toLowerCase()
+const firstName = (habit: Row): unknown => (Array.isArray(habit.versions) && habit.versions.length ? (habit.versions[0] as Row).name : habit.name)
+
+/**
+ * Tables whose rows nothing points at and that have no natural key. Two rows with the same id are
+ * the same record only if these fields agree; otherwise the file's row is a different record that
+ * merely reuses the number, and must not be passed over as "already here".
+ */
+const ROW_IDENTITY: Record<string, { what: string; of: (row: Row) => string }> = {
+  entries: { what: 'Tick', of: (row) => `${row.habit_id}|${row.date}` },
+  journal_entries: { what: 'Journal entry', of: (row) => `${row.date}|${row.kind}|${row.created_at}` },
+  weight_entries: { what: 'Weight entry', of: (row) => `${row.date}|${row.created_at}` },
+  learning_sessions: { what: 'Learning session', of: (row) => `${row.resource_id}|${row.date}|${row.created_at}` },
+  sessions: { what: 'Workout', of: (row) => `${row.date}|${row.started_at}` },
+  set_logs: { what: 'Set', of: (row) => `${row.session_id}|${row.exercise_id}|${row.position}|${row.set_index}` },
+}
 
 /**
  * For each table other records point at: whether two rows with the same id are the same thing.
@@ -153,7 +179,13 @@ const lower = (value: unknown): string => String(value ?? '').trim().toLowerCase
  * resource; things without a creation date are known by their name.
  */
 const SAME_THING: Record<string, { what: string; same: (a: Row, b: Row) => boolean; name: (row: Row) => string }> = {
-  habits: { what: 'Habit', same: (a, b) => a.created_on === b.created_on || lower(a.name) === lower(b.name), name: (row) => String(row.name) },
+  habits: {
+    what: 'Habit',
+    // The first chapter's name never changes, so with the day of creation it survives a rename;
+    // the day alone is not enough, because a whole starting set is created on one day.
+    same: (a, b) => lower(a.name) === lower(b.name) || (a.created_on === b.created_on && lower(firstName(a)) === lower(firstName(b))),
+    name: (row) => String(row.name),
+  },
   sessions: { what: 'Workout', same: (a, b) => a.date === b.date && a.started_at === b.started_at, name: (row) => `${String(row.title)} on ${String(row.date)}` },
   exercises: { what: 'Exercise', same: (a, b) => lower(a.name) === lower(b.name), name: (row) => String(row.name) },
   routines: { what: 'Workout routine', same: (a, b) => lower(a.name) === lower(b.name), name: (row) => String(row.name) },
@@ -199,7 +231,7 @@ async function mergeBlockers(database: AppDb, tables: Record<string, unknown[]>,
   for (const routine of plan.fresh.day_routines ?? []) {
     for (const step of Array.isArray(routine.steps) ? (routine.steps as Row[]) : []) follow('habits', step.habit_id)
   }
-  return [...reasons.values()]
+  return [...reasons.values(), ...plan.clashes]
 }
 
 let staging = 0
@@ -264,6 +296,12 @@ export async function prepareImport(text: string, schema: AppDb, today: DateStr,
     } catch (error) {
       return blocked(`This older export could not be brought up to date: ${error instanceof Error ? error.message : String(error)}`)
     }
+  }
+
+  // A file in the current shape must say that the move onto dated chapters has happened. Without
+  // that record the next start would run the move again, on data that has already been through it.
+  if (tables.habits.length && !((tables.migrations ?? []) as Row[]).some((row) => row.id === '001-cutover')) {
+    problems.push({ level: 'error', table: 'migrations', message: 'The file has no record of the updates its data has been through, so it cannot be loaded safely.' })
   }
 
   // Duplicate ids and invalid habits make a file unusable: other rows point at them.
@@ -354,15 +392,24 @@ export async function applyImport(
   let snapshot: string | null = null
 
   if (mode === 'replace') {
-    snapshot = await takeSnapshot(database, 'before-import', today, now, backupName)
-    await database.transaction('rw', database.tables, async () => {
+    // Older copies are only dropped once the replace has really happened; a replace that fails
+    // must not cost a copy, least of all the one being restored from.
+    snapshot = await takeSnapshot(database, 'before-import', today, now, backupName, Number.POSITIVE_INFINITY)
+    const taken = snapshot
+    await database
+      .transaction('rw', database.tables, async () => {
       for (const table of database.tables) {
         await table.clear()
         const rows = prepared.tables[table.name] ?? []
         if (rows.length) await table.bulkAdd(rows)
         added[table.name] = rows.length
       }
-    })
+      })
+      .catch(async (error: unknown) => {
+        await removeSnapshot(taken, backupName).catch(() => undefined)
+        throw error
+      })
+    await pruneSnapshots(backupName)
     return { mode, added, skipped, snapshot }
   }
 

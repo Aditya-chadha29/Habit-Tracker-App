@@ -39,7 +39,9 @@ const CoreContext = createContext<Core | null>(null)
 
 export function CoreProvider({ children, splash = null }: { children: ReactNode; splash?: ReactNode }) {
   const settingRows = useLiveQuery(() => db.settings.toArray(), [])
-  const habits = useLiveQuery(() => db.habits.orderBy('sort_order').toArray(), [])
+  // A row without chapters can only have been written by an earlier build of the app running
+  // against this database. It is left out, not shown wrongly and not deleted.
+  const habits = useLiveQuery(async () => (await db.habits.orderBy('sort_order').toArray()).filter((habit) => Array.isArray(habit.versions) && habit.versions.length > 0), [])
   const entries = useLiveQuery(() => db.entries.toArray(), [])
   // Only the three fields completion needs; a session's notes or timers changing does not
   // matter here, but Dexie re-runs on any write to the table either way.

@@ -18,7 +18,8 @@ export function downloadJson(json: string, filename: string): void {
   document.body.appendChild(link)
   link.click()
   link.remove()
-  URL.revokeObjectURL(url)
+  // Not at once: the browser starts reading the file after this returns.
+  window.setTimeout(() => URL.revokeObjectURL(url), 60_000)
 }
 
 /**
