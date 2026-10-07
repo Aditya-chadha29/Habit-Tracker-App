@@ -81,6 +81,9 @@ top-level `name`, `short_name`, `retired_on` are copies of the newest chapter fo
 - **Every read-then-write is inside `db.transaction('rw', …)`.** Check-then-act outside a
   transaction has silently dropped writes in this app twice. Prefer deterministic primary keys
   (`[date+slot]`, `week_start`, `date`) so a write is one `put`.
+- **Never catch an error thrown inside a nested transaction and carry on.** Dexie aborts the
+  outer transaction when an inner one fails, even if the error is caught, and everything written
+  so far is lost (`PrematureCommitError`). Check the condition first and skip the call instead.
 - **The history lock**: every write that carries a date calls
   `assertEditable(date, ctx.today, ctx.windowDays)` (`engine/lock.ts`) with the `WriteContext`
   from `useCore().write`. Outside the window it throws `LockedError`; the screen shows that the

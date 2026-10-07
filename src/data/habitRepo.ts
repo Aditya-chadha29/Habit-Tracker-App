@@ -270,3 +270,33 @@ export async function annotateEntry(
     await database.entries.update(existing.id!, patch)
   })
 }
+
+/**
+ * Sets several habits done (or not done) for one day in a single transaction, and returns the ids
+ * it actually changed - which is exactly what an Undo needs. Habits that are already in that
+ * state, were not tracked that day, or are completed by sessions are skipped rather than failing
+ * the whole batch.
+ */
+export async function setManyDone(
+  habitIds: readonly number[],
+  date: DateStr,
+  done: boolean,
+  ctx: WriteContext,
+  time: string | null = null,
+  database: AppDb = db,
+): Promise<number[]> {
+  assertEditable(date, ctx.today, ctx.windowDays)
+  return database.transaction('rw', database.habits, database.entries, async () => {
+    const changed: number[] = []
+    for (const id of habitIds) {
+      const habit = await database.habits.get(id)
+      const version = habit ? versionOn(habit, date) : null
+      if (!habit || !version || !version.active || !version.sources.includes('manual')) continue
+      const existing = await database.entries.where('[habit_id+date]').equals([id, date]).first()
+      if ((existing?.done ?? false) === done) continue
+      await setHabitDone(id, date, done, ctx, { time }, database)
+      changed.push(id)
+    }
+    return changed
+  })
+}

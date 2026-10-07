@@ -30,7 +30,10 @@ const args = Object.fromEntries(
 )
 
 const VIEWPORTS = { phone: { width: 390, height: 844 }, desktop: { width: 1280, height: 800 }, tablet: { width: 820, height: 1180 } }
-const route = args.route ?? '/'
+// Git Bash rewrites an argument like /today into C:/Program Files/Git/today before Node sees
+// it. Undo that, and accept a route written without its leading slash.
+const rawRoute = (args.route ?? '/').replace(/^[A-Za-z]:[\/](?:Program Files[\/])?Git[\/]?/, '/')
+const route = rawRoute.startsWith('/') ? rawRoute : '/' + rawRoute
 const out = resolve(args.out ?? 'shots/shot.png')
 const viewport = VIEWPORTS[args.viewport ?? 'phone'] ?? VIEWPORTS.phone
 const theme = args.theme === 'light' ? 'light' : 'dark'
