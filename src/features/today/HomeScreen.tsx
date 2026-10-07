@@ -95,10 +95,10 @@ export default function HomeScreen() {
 
           <nav aria-label="Scores" className="order-2 grid grid-cols-2 gap-2.5 lg:order-none lg:gap-4">
             <Link to="/today" className="block rounded-card transition-opacity duration-100 active:opacity-80">
-              <ScoreRing compact title="Today" tally={day} caption={day.due === 0 ? 'nothing due' : 'so far'} />
+              <ScoreRing compact lead title="Today" tally={day} caption={day.due === 0 ? 'nothing due' : 'so far'} />
             </Link>
             <Link to="/review" className="block rounded-card transition-opacity duration-100 active:opacity-80">
-              <ScoreRing compact title="This week" tally={tally} caption="so far" tone="ok" />
+              <ScoreRing compact lead title="This week" tally={tally} caption="so far" tone="ok" />
             </Link>
             {areas.map((area) => (
               <Link key={area.id} to={`/area/${area.id}`} className="block rounded-card transition-opacity duration-100 active:opacity-80">
