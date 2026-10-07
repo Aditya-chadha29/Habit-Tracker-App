@@ -18,19 +18,11 @@ import { Card } from '../../ui/Card'
 import { EmptyState } from '../../ui/EmptyState'
 import { Page } from '../../ui/Page'
 import { ProgressBar } from '../../ui/Progress'
-import { Segmented } from '../../ui/Tabs'
 import { useToast } from '../../ui/Toast'
 import { buildDayView, type DaySection } from './sections'
 import { useDayRoutines } from './useDayRoutines'
 
-const PARTS = [
-  { id: 'all', label: 'All' },
-  { id: 'morning', label: 'Morning' },
-  { id: 'day', label: 'Day' },
-  { id: 'evening', label: 'Evening' },
-] as const
 
-type PartId = (typeof PARTS)[number]['id']
 
 /**
  * Today answers "what happened today?" and is built for doing: every habit due today, grouped
@@ -42,18 +34,16 @@ export default function TodayScreen() {
   const routines = useDayRoutines()
   const toast = useToast()
   const [rawDate, setDate] = useQueryState('d', today)
-  const [rawPart, setPart] = useQueryState('part', 'all')
 
   const first = firstEditableDate(today, settings.edit_window_days)
   const date: DateStr = isValidDateStr(rawDate) && rawDate >= first && rawDate <= today ? rawDate : today
-  const part: PartId = PARTS.some((p) => p.id === rawPart) ? (rawPart as PartId) : 'all'
   const isToday = date === today
 
   const score = useMemo(() => dayScore(habits, date, index), [habits, date, index])
   const view = useMemo(() => buildDayView(habits, routines, areas, date, index), [habits, routines, areas, date, index])
   const week = useMemo(() => periodOf('week', date, weekStart), [date, weekStart])
-  const sections = part === 'all' ? view.sections : view.sections.filter((section) => section.part === part)
-  const showFlexible = (part === 'all' || part === 'day') && view.flexible.length > 0
+  const sections = view.sections
+  const showFlexible = view.flexible.length > 0
   const pct = percent(score)
 
   const completeSection = async (section: DaySection) => {
@@ -73,7 +63,6 @@ export default function TodayScreen() {
       title="Today"
       subtitle={isToday ? 'Everything due today' : 'A day that can still be corrected'}
       back="/"
-      tabs={<Segmented options={PARTS} value={part} onChange={setPart} label="Part of the day" block />}
     >
       <div className="flex flex-col gap-5">
         <DayNav date={date} onChange={setDate} />
@@ -92,8 +81,8 @@ export default function TodayScreen() {
         {sections.length === 0 && !showFlexible && (
           <EmptyState
             icon="check"
-            title={part === 'all' ? 'Nothing is due on this day.' : 'Nothing in this part of the day.'}
-            body={part === 'all' ? 'Habits are added and scheduled in Habits.' : undefined}
+            title="Nothing is due on this day."
+            body="Habits are added and scheduled in Habits."
           />
         )}
 

@@ -63,10 +63,10 @@ export function buildDayView(
   const active = routines.filter((routine) => routine.retired_on === null).sort((a, b) => a.sort_order - b.sort_order)
   for (const routine of active) {
     const rows: DayRow[] = []
-    // Once any step has a time, every row keeps the time column so the names line up.
-    const timed = routine.steps.some((step) => step.time)
     for (const step of routine.steps) {
-      const lead = timed ? step.time : undefined
+      // A step's time is kept on the routine but not shown on Today: the user asked for the list
+      // without clock times.
+      const lead = undefined
       // What the routine says about the step: how long it is meant to take, and its note.
       const hint = [step.minutes ? `${step.minutes} min` : '', step.note].filter(Boolean).join(' · ') || undefined
       if (step.habit_id === null) {
