@@ -8,7 +8,7 @@ import { db } from '../../data/db'
 import { attentionItems } from '../../engine/attention'
 import { formatDayTitle } from '../../engine/dates'
 import { periodOf, shiftPeriod } from '../../engine/periods'
-import { dayScore } from '../../engine/score'
+import { dayScore, weekTally } from '../../engine/score'
 import { useCore } from '../../state/core'
 import { Card } from '../../ui/Card'
 import { areaTone, toneBg, toneText } from '../../ui/Chip'
@@ -62,6 +62,7 @@ export default function HomeScreen() {
     }, [lastWeekStart]) ?? true
 
   const day = useMemo(() => dayScore(habits, today, index), [habits, today, index])
+  const tally = useMemo(() => weekTally(habits, week, today, index), [habits, week, today, index])
 
   const attention = useMemo(
     () =>
@@ -95,7 +96,7 @@ export default function HomeScreen() {
             </Card>
           )}
 
-          <div className="order-2 lg:order-none">
+          <div className="order-2 grid grid-cols-2 gap-3 lg:order-none lg:gap-5">
             <ScoreRing
               title="Today"
               tally={day}
@@ -103,6 +104,17 @@ export default function HomeScreen() {
               footer={
                 <Link to="/today" className="mt-1.5 inline-block text-[13px] font-medium text-accent-ink">
                   Open today
+                </Link>
+              }
+            />
+            <ScoreRing
+              title="This week"
+              tally={tally}
+              caption="so far"
+              tone="ok"
+              footer={
+                <Link to="/review" className="mt-1.5 inline-block text-[13px] font-medium text-accent-ink">
+                  Open review
                 </Link>
               }
             />

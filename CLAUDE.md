@@ -69,8 +69,8 @@ Decisions the user has already made, so they are not re-opened:
 - Extra style themes (Cybercore, Scrapbook, Glassmorphism, Wabi-sabi) were built and then removed
   at the user's request. Themes are System / Light / Dark only.
 - The palette is blue on navy; the earlier brown palette was rejected.
-- Home shows only the date, the quote, today's ring, the four pillars and what needs attention. The
-  user removed the week ring, weekly targets, Next, Still open today and the trend from it. The quote
+- Home shows only the date, the quote, the Today and This week rings, the four pillars and what needs attention. The
+  user removed the weekly targets list, Next, Still open today and the trend from it. The quote
   appears on Home only. Review and Progress are one place with a two-way switch. Quotes and Data
   live inside Settings. Learn is the pillars screen alone for now; its queue, library and reading
   screens are kept unlinked until the user decides what Learn should hold.
