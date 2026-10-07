@@ -33,8 +33,8 @@ export interface LayoutRule {
   seed: boolean
   /** Part of a brand-new install's starting set. */
   fresh: boolean
-  /** A retirement made by the 6 October build only moved the item to the supplements list, so
-   *  it is undone when supplements become habits again. */
+  /** A retirement made by one of the 6 October builds only moved the item to the supplements
+   *  list, so it is undone when supplements become habits again. */
   reactivate: boolean
 }
 
@@ -179,7 +179,7 @@ export const LAYOUT: LayoutRule[] = [
     match: ['fish oil', 'omega-3'],
     kind: 'supplement',
     group: 'Supplements',
-    dose: { amount: 1, unit: 'capsule' },
+    dose: { amount: 2, unit: 'capsules' },
     icon: 'pill',
     seed: true,
     fresh: true,
@@ -266,6 +266,12 @@ export const ADDED_BY_PATCH = ['hanuman chalisa', 'shiv tandav strotam', 'lunch'
 
 /** Supplements that build seeded without being asked for. Carried over only if actually used. */
 export const UNREQUESTED_SUPPLEMENTS = ['whey protein', 'multivitamin']
+
+/**
+ * Weekly days the first 6 October build seeded and a later one corrected to the layout's day,
+ * by role (0 = Monday). Vitamin D was seeded on Sundays and then moved to Mondays.
+ */
+export const SUPERSEDED_WEEKLY_DAY: Record<string, number> = { vitamin_d: 6 }
 
 export interface RoutineSeedStep {
   /** A role from LAYOUT, or null for a plain reminder line. */

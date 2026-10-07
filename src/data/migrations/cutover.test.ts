@@ -109,6 +109,7 @@ async function expectFinalShape(db: AppDb): Promise<void> {
   expect(now('Vitamin D').day).toEqual({ kind: 'weekdays', weekdays: [0] })
 
   expect(byName.get('Creatine')).toMatchObject({ kind: 'supplement', dose: { amount: 5, unit: 'g' } })
+  expect(byName.get('Fish oil')).toMatchObject({ kind: 'supplement', dose: { amount: 2, unit: 'capsules' } })
   expect(byName.get('Chia seeds')!.kind).toBe('supplement')
   expect(byName.get('Breakfast')).toMatchObject({ kind: 'meal', meal_slot: 'breakfast' })
   expect(byName.get('Dinner')).toMatchObject({ kind: 'meal', meal_slot: 'dinner' })
@@ -406,6 +407,114 @@ describe('a phone that had already run the 6 October build', () => {
   })
 })
 
+describe('a device that last ran one of the earlier 6 October builds', () => {
+  // The first build of that day seeded a supplements list and, in the same step, retired the
+  // Creatine habit the list replaced. It knew nothing about schedules, so it left no patch date.
+  const FIRST_SEED: [name: string, dose_text: string, schedule: string, weekly_day: number | null][] = [
+    ['Creatine', '5 g', 'daily', null],
+    ['Whey protein', '1 scoop', 'daily', null],
+    ['Multivitamin', '1 tablet', 'daily', null],
+    ['Omega-3', '2 capsules', 'daily', null],
+    ['Vitamin D', '60,000 IU', 'weekly', 6],
+  ]
+
+  async function seedSupplements(db: AppDb, day: string) {
+    await db.table('supplements').bulkAdd(
+      FIRST_SEED.map(([name, dose_text, schedule, weekly_day], i) => ({
+        name, dose_text, schedule, weekly_day, time_hint: 'anytime', servings_left: null, low_stock_at: null,
+        created_on: day, retired_on: null, sort_order: i,
+      })),
+    )
+  }
+
+  async function firstBuildOnly(day = PATCH_DAY) {
+    const made = freshDb()
+    await loadPhoneState(made.db)
+    await seedSupplements(made.db, day)
+    await made.db.table('habits').update(9, { retired_on: day })
+    return made
+  }
+
+  it('arrives in exactly the same layout', async () => {
+    const { db, backupName } = await firstBuildOnly()
+    expect(detectPatchDate((await db.table('habits').toArray()) as LegacyHabit[], CUTOVER_DAY)).toBeNull()
+    await migrate(db, backupName)
+    await expectFinalShape(db)
+  })
+
+  it('keeps every past day scoring exactly as it did', async () => {
+    const { db, backupName } = await firstBuildOnly()
+    const legacyRows = (await db.table('habits').toArray()) as LegacyHabit[]
+    const legacyDone = new Set(phoneEntries().filter((e) => e.done).map((e) => entryKey(e.habit_id, e.date)))
+    await migrate(db, backupName)
+    expect(await scoreDifferences(db, legacyRows, legacyDone, CUTOVER_DAY, null)).toEqual([])
+    const report = (await db.migrations.get('001-cutover'))!.notes as { parity: { days_checked: number; mismatches: unknown[] } }
+    expect(report.parity.days_checked).toBeGreaterThan(0)
+    expect(report.parity.mismatches).toEqual([])
+  })
+
+  it('brings creatine back as one supplement, with its history and the day it spent on the list', async () => {
+    const { db, backupName } = await firstBuildOnly()
+    await db.table('supplement_logs').add({ supplement_id: 1, date: PATCH_DAY, taken: true })
+    await migrate(db, backupName)
+
+    const creatine = (await db.habits.get(9))!
+    expect(creatine).toMatchObject({ kind: 'supplement', retired_on: null, dose: { amount: 5, unit: 'g' } })
+    expect(isDueOn(creatine, '2026-09-10')).toBe(true)
+    expect(isDueOn(creatine, PATCH_DAY)).toBe(false)
+    expect(isDueOn(creatine, CUTOVER_DAY)).toBe(true)
+    expect((await db.habits.toArray()).filter((h) => h.name === 'Creatine')).toHaveLength(1)
+    const onTheList = (await db.entries.where('habit_id').equals(9).toArray()).filter((e) => e.date === PATCH_DAY)
+    expect(onTheList.map((e) => e.done)).toEqual([true])
+    const report = (await db.migrations.get('001-cutover'))!.notes as { reactivated: string[] }
+    expect(report.reactivated).toContain('Creatine')
+  })
+
+  it('moves vitamin D to Mondays, as the later builds did', async () => {
+    const { db, backupName } = await firstBuildOnly()
+    await migrate(db, backupName)
+    expect(currentVersion((await habitsByName(db)).get('Vitamin D')!).day).toEqual({ kind: 'weekdays', weekdays: [0] })
+  })
+
+  it('keeps a vitamin D day the user had chosen themselves', async () => {
+    const { db, backupName } = await firstBuildOnly()
+    await db.table('supplements').update(5, { weekly_day: 3 })
+    await migrate(db, backupName)
+    expect(currentVersion((await habitsByName(db)).get('Vitamin D')!).day).toEqual({ kind: 'weekdays', weekdays: [3] })
+  })
+
+  it('calls the omega-3 capsules fish oil, at the dose they had', async () => {
+    const { db, backupName } = await firstBuildOnly()
+    await migrate(db, backupName)
+    const byName = await habitsByName(db)
+    expect(byName.get('Fish oil')!.dose).toEqual({ amount: 2, unit: 'capsules' })
+    expect(byName.has('Omega-3')).toBe(false)
+  })
+
+  it('leaves creatine retired when the user had retired it before any of that', async () => {
+    const { db, backupName } = freshDb()
+    await loadPhoneState(db)
+    await db.table('habits').update(9, { retired_on: '2026-09-20' })
+    // The seed only retired a habit that was still active, so this one kept its own date.
+    await seedSupplements(db, PATCH_DAY)
+    await migrate(db, backupName)
+
+    expect((await db.habits.get(9))!.retired_on).toBe('2026-09-20')
+    expect((await habitsByName(db)).has('Creatine')).toBe(false)
+  })
+
+  it('brings creatine back when the later build arrived on a different day', async () => {
+    const { db, backupName } = await firstBuildOnly('2026-10-05')
+    await legacyBoot(db, PATCH_DAY)
+    await migrate(db, backupName)
+    await expectFinalShape(db)
+
+    const creatine = (await db.habits.get(9))!
+    expect(isDueOn(creatine, '2026-10-04')).toBe(true)
+    expect(isDueOn(creatine, '2026-10-05')).toBe(false)
+    expect(isDueOn(creatine, CUTOVER_DAY)).toBe(true)
+  })
+})
 describe('a brand-new install', () => {
   it('starts with the seeded personal system and no history', async () => {
     const { db, backupName } = freshDb()

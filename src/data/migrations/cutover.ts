@@ -9,7 +9,7 @@ import { legacyDayScore } from '../../engine/legacy'
 import { dayScore } from '../../engine/score'
 import { appendVersion, habitProblems, type VersionPatch } from '../../engine/timeline'
 import {
-  ADDED_BY_PATCH, DAY_ROUTINE_SEED, LAYOUT, NAMES_BEFORE_PATCH, UNREQUESTED_SUPPLEMENTS, type LayoutRule,
+  ADDED_BY_PATCH, DAY_ROUTINE_SEED, LAYOUT, NAMES_BEFORE_PATCH, SUPERSEDED_WEEKLY_DAY, UNREQUESTED_SUPPLEMENTS, type LayoutRule,
 } from './layout'
 
 /**
@@ -112,6 +112,18 @@ export function parseDose(text: string): Dose | null {
   if (!match) return { amount: null, unit: trimmed }
   const amount = Number(match[1].replace(/,/g, ''))
   return Number.isFinite(amount) ? { amount, unit: match[2].trim() } : { amount: null, unit: trimmed }
+}
+
+/**
+ * The schedule a supplement had on the old list. A weekly day that is still the first build's
+ * seeded default was corrected by a later build; an install that never received that correction
+ * gets the layout's day here. Any other day was chosen by the user and is kept.
+ */
+function supplementDay(supplement: LegacySupplement, rule: LayoutRule | undefined): DayRule {
+  if (supplement.schedule === 'as_needed') return { kind: 'flexible' }
+  if (supplement.schedule !== 'weekly') return { kind: 'daily' }
+  if (rule && supplement.weekly_day === SUPERSEDED_WEEKLY_DAY[rule.role]) return rule.day
+  return { kind: 'weekdays', weekdays: [supplement.weekly_day ?? 0] }
 }
 
 /**
@@ -240,8 +252,14 @@ export function planCutover(input: CutoverInput): CutoverPlan {
 
   const nameBeforePatch = (row: LegacyHabit) =>
     patchDate !== null && row.created_on < patchDate ? NAMES_BEFORE_PATCH[lower(row.name)] ?? null : null
-  const retiredByPatch = (row: LegacyHabit) =>
-    patchDate !== null && row.retired_on !== null && row.retired_on === patchDate
+  // The earlier app retired a habit on its own in two situations, each on a day that can be
+  // read back: its last 6 October build did so on the day it first ran (the patch day), and its
+  // first one did so in the very step that seeded the supplements list, which then took over
+  // from the Creatine habit. A retirement dated to either day was the app's doing, not the
+  // user's. The two days differ on a device that received those builds on different days.
+  const supplementsSeededOn = input.supplements.map((supplement) => supplement.created_on).sort()[0] ?? null
+  const retiredByApp = (row: LegacyHabit) =>
+    row.retired_on !== null && (row.retired_on === patchDate || row.retired_on === supplementsSeededOn)
 
   // ── Which existing row fills which role ────────────────────────────────────────────────────
   const ruleForRow = new Map<number, LayoutRule>()
@@ -259,7 +277,7 @@ export function planCutover(input: CutoverInput): CutoverPlan {
     // must not be added back.
     rolesSeen.add(rule.role)
     const usable = candidates
-      .filter((row) => !row.retired_on || (rule.reactivate && retiredByPatch(row)))
+      .filter((row) => !row.retired_on || (rule.reactivate && retiredByApp(row)))
       .sort((a, b) => a.sort_order - b.sort_order || a.id! - b.id!)
     if (usable.length) ruleForRow.set(usable[0].id!, rule)
   }
@@ -310,7 +328,7 @@ export function planCutover(input: CutoverInput): CutoverPlan {
     }
     if (row.retired_on) events.push({ from: row.retired_on, patch: { active: false } })
 
-    const reactivate = !!rule?.reactivate && retiredByPatch(row)
+    const reactivate = !!rule?.reactivate && retiredByApp(row)
     const staysRetired = !!row.retired_on && !reactivate
     const applies = rule && !staysRetired
     if (applies) {
@@ -394,12 +412,7 @@ export function planCutover(input: CutoverInput): CutoverPlan {
     }
 
     const from = supplement.created_on > today ? today : supplement.created_on
-    const scheduled: DayRule =
-      supplement.schedule === 'weekly'
-        ? { kind: 'weekdays', weekdays: [supplement.weekly_day ?? 0] }
-        : supplement.schedule === 'as_needed'
-          ? { kind: 'flexible' }
-          : { kind: 'daily' }
+    const scheduled = supplementDay(supplement, rule)
     const base: HabitVersion = {
       from,
       active: true,

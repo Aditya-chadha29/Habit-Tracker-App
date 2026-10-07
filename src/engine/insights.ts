@@ -133,7 +133,11 @@ export interface WeekPoint {
   rate: number | null
 }
 
-/** Week-by-week completion for the last `weeks` weeks, oldest first, the running week last. */
+/**
+ * Week-by-week completion for the last `weeks` weeks, oldest first, the running week last. Like
+ * the ranges above, the running week is counted from its finished days only: today is still in
+ * progress, and counting it would make the line dip every morning.
+ */
 export function weeklySeries(
   habits: readonly Habit[],
   weeks: number,
@@ -147,7 +151,7 @@ export function weeklySeries(
   for (let i = weeks - 1; i >= 0; i--) {
     const start = addDays(current, -7 * i)
     const period: Period = { per: 'week', start, end: addDays(start, 6) }
-    const tally = weekTally(habits, period, today, index)
+    const tally = weekTally(habits, period, i === 0 ? addDays(today, -1) : today, index)
     const part = area ? (tally.by_area.get(area) ?? { done: 0, due: 0 }) : tally
     points.push({ week_start: start, done: part.done, due: part.due, rate: part.due >= 5 ? Math.round((part.done / part.due) * 100) : null })
   }

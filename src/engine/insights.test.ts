@@ -61,13 +61,29 @@ describe('rates and comparisons', () => {
 describe('weekly series', () => {
   it('lists weeks oldest first with the running week last', () => {
     const habits = Array.from({ length: 2 }, (_, i) => habit({ id: i + 1, from: '2026-09-21' }))
-    const index = indexOf({ entries: ticks(1, dateRange('2026-09-21', '2026-10-07')) })
-    const series = weeklySeries(habits, 4, '2026-10-07', 0, index)
+    const index = indexOf({ entries: ticks(1, dateRange('2026-09-21', '2026-10-08')) })
+    const series = weeklySeries(habits, 4, '2026-10-08', 0, index)
     expect(series.map((point) => point.week_start)).toEqual(['2026-09-14', '2026-09-21', '2026-09-28', '2026-10-05'])
     expect(series[0].rate).toBeNull() // before anything was tracked
     expect(series[1]).toMatchObject({ done: 7, due: 14, rate: 50 })
     expect(series[3]).toMatchObject({ done: 3, due: 6, rate: 50 })
     expect(pointsWithData(series)).toBe(3)
+  })
+
+  it('draws the running week from its finished days, so the line does not dip each morning', () => {
+    const habits = Array.from({ length: 3 }, (_, i) => habit({ id: i + 1, from: '2026-09-21' }))
+    const throughTuesday = indexOf({ entries: [1, 2, 3].flatMap((id) => ticks(id, dateRange('2026-09-21', '2026-10-06'))) })
+    // Wednesday morning, nothing ticked yet today: Monday and Tuesday were both complete.
+    const series = weeklySeries(habits, 2, '2026-10-07', 0, throughTuesday)
+    expect(series[1]).toMatchObject({ week_start: '2026-10-05', done: 6, due: 6, rate: 100 })
+  })
+
+  it('has no point yet for a week that has only just begun', () => {
+    const habits = Array.from({ length: 3 }, (_, i) => habit({ id: i + 1, from: '2026-09-21' }))
+    const index = indexOf({ entries: [1, 2, 3].flatMap((id) => ticks(id, dateRange('2026-09-21', '2026-10-05'))) })
+    const series = weeklySeries(habits, 2, '2026-10-05', 0, index)
+    expect(series[0]).toMatchObject({ week_start: '2026-09-28', rate: 100 })
+    expect(series[1]).toMatchObject({ week_start: '2026-10-05', due: 0, rate: null })
   })
 
   it('leaves earlier weeks unchanged when a habit changes frequency later', () => {

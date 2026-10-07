@@ -170,6 +170,7 @@ export default function ProgressScreen() {
               ) : (
                 <p className="py-6 text-[13.5px] text-ink-3">{NEED}. A trend line appears once two weeks have been tracked.</p>
               )}
+              {pointsWithData(series) >= 2 && <p className="text-[12px] text-ink-3">The last point is this week up to yesterday.</p>}
             </Card>
 
             <section className="flex flex-col gap-2">
