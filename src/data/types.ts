@@ -414,8 +414,9 @@ export interface TargetResult {
   per: 'week' | 'month'
   target: number
   done: number
-  /** 'partial' = tracked for only part of the period, so it is reported but not judged. */
-  outcome: 'met' | 'missed' | 'partial'
+  /** 'partial' = tracked for only part of the period, so it is reported but not judged.
+   *  'open' = the period is still running; never present in a frozen week. */
+  outcome: 'met' | 'missed' | 'partial' | 'open'
 }
 
 export interface HabitWeekResult {
