@@ -45,7 +45,7 @@ export async function lastPerformedSets(exerciseId: number, beforeDate: DateStr,
 
 /** The session that has been started and not finished, if there is one. */
 export async function openSession(database: AppDb = db): Promise<Session | undefined> {
-  const sessions = await database.sessions.orderBy('date').reverse().limit(30).toArray()
+  const sessions = (await database.sessions.orderBy('date').toArray()).reverse().slice(0, 30)
   return sessions.find((session) => session.ended_at === null)
 }
 

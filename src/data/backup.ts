@@ -111,7 +111,8 @@ export async function removeSnapshot(id: string, backupName: string = BACKUP_DB_
 export async function listSnapshots(backupName: string = BACKUP_DB_NAME): Promise<SnapshotSummary[]> {
   const backups = openBackups(backupName)
   try {
-    const rows = await backups.snapshots.orderBy('taken_at').reverse().toArray()
+    // Read whole and narrowed in code: Safari on the iPhone can fail to open an IndexedDB cursor.
+    const rows = (await backups.snapshots.toArray()).sort((a, b) => b.taken_at - a.taken_at)
     return rows.map(({ tables: _tables, ...summary }) => summary)
   } finally {
     backups.close()

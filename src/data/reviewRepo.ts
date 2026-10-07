@@ -67,7 +67,7 @@ async function loadWeek(period: Period, today: DateStr, settings: Settings, prev
     database.entries.where('date').between(period.start, period.end, true, true).toArray(),
     database.sessions.where('date').between(period.start, period.end, true, true).toArray(),
     database.learning_sessions.where('date').between(period.start, period.end, true, true).toArray(),
-    database.journal_entries.where('date').between(period.start, period.end, true, true).uniqueKeys(),
+    database.journal_entries.where('date').between(period.start, period.end, true, true).toArray().then((rows) => [...new Set(rows.map((row) => row.date))]),
     database.weight_entries.where('date').between(from, period.end, true, true).toArray(),
     database.set_logs.where('date').between(period.start, period.end, true, true).toArray(),
     database.exercises.toArray(),

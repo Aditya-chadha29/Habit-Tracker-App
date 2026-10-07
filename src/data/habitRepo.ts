@@ -176,7 +176,7 @@ export async function deleteHabitCreatedToday(id: number, today: DateStr, databa
     const habit = await database.habits.get(id)
     if (!habit) return
     if (habit.created_on !== today) throw new Error('Only a habit created today can be deleted. Retire it instead.')
-    await database.entries.where('habit_id').equals(id).delete()
+    await database.entries.bulkDelete(await database.entries.where('habit_id').equals(id).primaryKeys())
     await database.habits.delete(id)
     const routines = await database.day_routines.toArray()
     for (const routine of routines) {

@@ -19,7 +19,7 @@ const NONE: Session[] = []
 /** Every workout ever logged, week by week, with how many there were. */
 export default function HistoryScreen() {
   const { today, weekStart } = useCore()
-  const all = useLive(() => db.sessions.orderBy('date').reverse().toArray(), [], NONE)
+  const all = useLive(() => db.sessions.orderBy('date').toArray().then((rows) => rows.reverse()), [], NONE)
   const finished = useMemo(() => all.filter((session) => session.ended_at !== null), [all])
 
   const thisWeek = weekStartOf(today, weekStart)

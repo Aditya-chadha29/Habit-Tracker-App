@@ -90,6 +90,11 @@ top-level `name`, `short_name`, `retired_on` are copies of the newest chapter fo
 - **Retire, never delete**: `retired_on` / `active: false` / `archived_on`. Deleting is allowed
   only for something created today that no finished day depends on, and for a workout session or
   learning session inside the edit window (they are events, not denominators).
+- **No IndexedDB cursors.** Safari on the iPhone failed the first release at start-up with
+  "Unable to open cursor". Do not use Dexie calls that walk a cursor: `uniqueKeys`, `reverse()`,
+  `limit`/`offset`, `each`, `modify`, `anyOf`, `filter`/`and` on a collection, `keys()`. Read with
+  `toArray()`, `primaryKeys()`, `get`, `first()` or `count()` and narrow in code. The browser
+  scripts take `--no-cursors` to prove a change still works when every cursor fails.
 - **Never index a boolean** and never rely on a `retired_on` index to find active rows (it only
   holds non-null rows) — filter in code.
 - Schema changes: append a new `database.version(n)` listing only new tables; never edit a

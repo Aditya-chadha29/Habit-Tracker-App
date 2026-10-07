@@ -35,6 +35,10 @@ const browser = args.browser === 'webkit' ? await webkit.launch() : await chromi
 /** A brand-new install, started at `now`. */
 async function install(now) {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, colorScheme: 'dark', hasTouch: true })
+
+  // --no-cursors makes every IndexedDB cursor fail, as Safari on the iPhone has been seen to do.
+  const NO_CURSORS = () => { for (const proto of [IDBObjectStore.prototype, IDBIndex.prototype]) for (const name of ['openCursor', 'openKeyCursor']) proto[name] = function () { throw new DOMException('Unable to open cursor', 'UnknownError') } }
+  if (args['no-cursors']) await context.addInitScript(NO_CURSORS)
   const page = await context.newPage()
   const problems = []
   page.on('console', (message) => {

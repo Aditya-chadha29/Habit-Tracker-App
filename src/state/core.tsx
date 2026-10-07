@@ -54,7 +54,9 @@ export function CoreProvider({ children, splash = null }: { children: ReactNode;
     [],
   )
   // Keys only: which days have a journal entry, without loading what was written.
-  const journalDates = useLiveQuery(async () => (await db.journal_entries.orderBy('date').uniqueKeys()) as DateStr[], [])
+  // No cursor here (which uniqueKeys would use): Safari on the iPhone can fail to open one
+  // ("Unable to open cursor"), and this runs at every start.
+  const journalDates = useLiveQuery(async () => [...new Set((await db.journal_entries.toArray()).map((entry) => entry.date))] as DateStr[], [])
 
   const settings = useMemo(() => settingsFromRows(settingRows ?? []), [settingRows])
   const clock = useClock(settings.day_start_hour)

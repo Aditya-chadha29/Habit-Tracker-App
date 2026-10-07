@@ -195,6 +195,10 @@ try {
   if (oldProblems.length) console.log(`  (old releases logged ${oldProblems.length} console error(s); not judged here)`)
 
   // The current build, on top of all that.
+
+  // --no-cursors makes every IndexedDB cursor fail, as Safari on the iPhone has been seen to do.
+  const NO_CURSORS = () => { for (const proto of [IDBObjectStore.prototype, IDBIndex.prototype]) for (const name of ['openCursor', 'openKeyCursor']) proto[name] = function () { throw new DOMException('Unable to open cursor', 'UnknownError') } }
+  if (args['no-cursors']) await context.addInitScript(NO_CURSORS)
   served = resolve('dist')
   await context.clock.setFixedTime(newNow)
   await page.goto(base)

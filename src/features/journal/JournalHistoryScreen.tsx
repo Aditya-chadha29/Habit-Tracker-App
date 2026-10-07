@@ -34,7 +34,7 @@ function matches(entry: JournalEntry, needle: string): boolean {
 export default function JournalHistoryScreen() {
   const { today, settings } = useCore()
   const [query, setQuery] = useState('')
-  const entries = useLive(() => db.journal_entries.orderBy('date').reverse().toArray(), [], NONE)
+  const entries = useLive(() => db.journal_entries.orderBy('date').toArray().then((rows) => rows.reverse()), [], NONE)
 
   const months = useMemo(() => {
     const needle = query.trim().toLowerCase()
