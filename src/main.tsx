@@ -1,4 +1,4 @@
-import { StrictMode } from 'react'
+import { Component, StrictMode, type ReactNode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { registerSW } from 'virtual:pwa-register'
 import '@fontsource-variable/geist'
@@ -37,6 +37,26 @@ const root = createRoot(document.getElementById('root')!)
  *   3. run any pending data migration, each one atomic and preceded by a full backup copy;
  *   4. only then render the app.
  */
+/**
+ * The outermost catch. A crash above the screens (the live core, the frame, the navigation) would
+ * otherwise unmount everything and leave a blank page with no way to export. Safe mode instead.
+ */
+class StartGuard extends Component<{ children: ReactNode }, { error: unknown }> {
+  state: { error: unknown } = { error: null }
+
+  static getDerivedStateFromError(error: unknown): { error: unknown } {
+    return { error }
+  }
+
+  componentDidCatch(error: unknown): void {
+    console.error('The app crashed', error)
+  }
+
+  render(): ReactNode {
+    return this.state.error ? <SafeMode kind="failed" error={this.state.error} /> : this.props.children
+  }
+}
+
 /** Where start-up has got to, for the plain-HTML watchdog in index.html to report if it stalls. */
 function stage(name: string): void {
   const boot = (window as unknown as { __boot?: { stage: string } }).__boot
@@ -76,7 +96,9 @@ async function boot(): Promise<void> {
   stage('drawing the first screen')
   root.render(
     <StrictMode>
-      <App />
+      <StartGuard>
+        <App />
+      </StartGuard>
     </StrictMode>,
   )
 }
