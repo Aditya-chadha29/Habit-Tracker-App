@@ -14,6 +14,7 @@ import { Button, IconButton } from '../../ui/Button'
 import { Field, TextArea, TextInput } from '../../ui/Field'
 import { Drawer } from '../../ui/Overlay'
 import { Page } from '../../ui/Page'
+import { SceneBand } from '../../components/Scene'
 import { saveStateLabel, useAutosave } from '../../state/useAutosave'
 
 function EntryForm({ date, kind, prompts, initial }: { date: DateStr; kind: DailyKind; prompts: string[]; initial: JournalEntry | null }) {
@@ -127,6 +128,7 @@ export default function JournalScreen() {
       }
     >
       <div className="flex flex-col gap-5">
+        <SceneBand name="moonBlossom" position="50% 40%" />
         <DayNav date={date} onChange={setDate} />
         <DailyEntry date={date} kind={kind} prompts={settings.journal_prompts[kind]} />
       </div>

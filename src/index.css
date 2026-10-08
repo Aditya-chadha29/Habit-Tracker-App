@@ -35,6 +35,9 @@
   --color-cream: #f6ede8;
   --color-petal: #ffd6de;
   --color-peach: #ffd0b8;
+  /* The scenery is night in both themes: these two do not change with the theme. */
+  --color-night: #080f17;
+  --color-night-ink: #f6ede8;
   --color-ok: #f7a7b8;
   --color-warn: #f2c078;
   --color-risk: #ef6f6c;

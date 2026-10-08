@@ -3,13 +3,13 @@ import { useMemo } from 'react'
 import { Link } from '../../app/router'
 import { AttentionList } from '../../components/AttentionList'
 import { QuoteLine } from '../../components/QuoteLine'
+import { Scene } from '../../components/Scene'
 import { ScoreRing } from '../../components/ScoreRing'
 import { db } from '../../data/db'
 import { attentionItems } from '../../engine/attention'
 import { formatDayTitle } from '../../engine/dates'
 import { periodOf, shiftPeriod } from '../../engine/periods'
 import { dayScore, weekTally } from '../../engine/score'
-import sakuraQuote from '../../assets/sakura-quote.webp'
 import { useCore } from '../../state/core'
 import { hasCloudAccount } from '../../sync/state'
 import { Card } from '../../ui/Card'
@@ -22,17 +22,6 @@ import { useTodaysWorkout } from '../train/hooks'
 function greeting(hour: number, name: string): string {
   const part = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
   return name ? `${part}, ${name}` : part
-}
-
-/** The blossom behind the quote, held back by a gradient of the card colour so the words always
- *  sit on something dark. Decorative only: the card reads the same without it. */
-function Blossom() {
-  return (
-    <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-      <img src={sakuraQuote} alt="" className="absolute inset-y-0 right-0 h-full w-[78%] object-cover object-right opacity-90" />
-      <div className="absolute inset-0 bg-gradient-to-r from-surface from-30% via-surface/85 via-55% to-surface/10" />
-    </div>
-  )
 }
 
 /**
@@ -95,9 +84,9 @@ export default function HomeScreen() {
             </Card>
           )}
           {quote && (
-            <Card padded={false} className="relative order-1 overflow-hidden px-4 py-4 lg:order-none lg:p-7">
-              <Blossom />
-              <QuoteLine quote={quote} className="relative max-w-[64%] lg:max-w-[46ch]" />
+            <Card padded={false} className="relative order-1 flex min-h-[168px] flex-col justify-end overflow-hidden px-4 py-4 lg:order-none lg:min-h-[260px] lg:p-7">
+              <Scene name="mountain" fade="up" position="50% 38%" eager />
+              <QuoteLine quote={quote} onScene className="relative max-w-[34ch] lg:max-w-[46ch]" />
             </Card>
           )}
 

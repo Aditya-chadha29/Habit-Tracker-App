@@ -22,6 +22,7 @@ import { EmptyState } from '../../ui/EmptyState'
 import { Icon } from '../../ui/icons'
 import { MetricCard, TrendMark } from '../../ui/Metric'
 import { Page } from '../../ui/Page'
+import { SceneBand } from '../../components/Scene'
 import { Segmented } from '../../ui/Tabs'
 
 const RANGE_OPTIONS = RANGES.map((range) => ({ id: range.id, label: range.label }))
@@ -377,6 +378,7 @@ export default function ProgressScreen() {
             )}
           </section>
         )}
+        <SceneBand name="toriiWide" position="50% 55%" />
       </div>
     </Page>
   )
