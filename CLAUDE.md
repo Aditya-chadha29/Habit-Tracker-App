@@ -84,7 +84,11 @@ Decisions the user has already made, so they are not re-opened:
   live inside Settings. Learn is the pillars screen alone for now; its queue, library and reading
   screens are kept unlinked until the user decides what Learn should hold.
 - Gym is a daily habit with a 7-per-week target, completed only by a logged session (lifting or
-  cardio-only). Hair oiling is 2 per week. Vitamin D is weekly, on Mondays.
+  cardio-only). Hair oiling is 2 per week. Vitamin D is weekly, on Sundays (moved from Monday by the user on 2026-10-08).
+- The day-routine system (Morning routine, Evening routine and their steps) was removed on
+  2026-10-08, with Water on waking, Cardio and the three Daily 10s retired: exercise on Today is
+  Gym alone. Habit rows show no amount line ("2 capsules", "1 tbsp"). The journal is an evening
+  page.
 
 ## Working here
 

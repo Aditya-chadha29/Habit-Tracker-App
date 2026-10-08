@@ -1,14 +1,11 @@
 import { useMemo, useState } from 'react'
 import { goBack, Link, navigate, type RouteProps } from '../../app/router'
-import { db } from '../../data/db'
 import { changeHabit, createHabit, deleteHabitCreatedToday, retireHabit, restoreHabit, updateHabitDetails } from '../../data/habitRepo'
-import { setHabitInRoutine } from '../../data/routineRepo'
-import type { CompletionSource, DateStr, DayRoutine, DayRule, Habit, HabitKind, Measure, PeriodTarget } from '../../data/types'
+import type { CompletionSource, DateStr, DayRule, Habit, HabitKind, Measure, PeriodTarget } from '../../data/types'
 import { WEEKDAY_LONG } from '../../engine/dates'
 import { describeFrequency } from '../../engine/describe'
 import { currentVersion, isRetired } from '../../engine/timeline'
 import { useCore } from '../../state/core'
-import { useLive } from '../../state/live'
 import { Button } from '../../ui/Button'
 import { Card, SectionTitle } from '../../ui/Card'
 import { cx } from '../../ui/cx'
@@ -175,7 +172,7 @@ function freeMealSlot(name: string, habits: readonly Habit[]): string {
   return slot
 }
 
-function Editor({ habit, routines }: { habit: Habit | null; routines: DayRoutine[] }) {
+function Editor({ habit }: { habit: Habit | null }) {
   const { today, areas, habits } = useCore()
   const toast = useToast()
   const [form, setForm] = useState<Form>(() => (habit ? fromHabit(habit) : blank(areas[0]?.id ?? 'body')))
@@ -461,24 +458,6 @@ function Editor({ habit, routines }: { habit: Habit | null; routines: DayRoutine
           </p>
         </section>
 
-        {habit && routines.length > 0 && (
-          <section className="flex flex-col gap-2">
-            <SectionTitle>
-              In these routines
-            </SectionTitle>
-            <Card padded={false} className="divide-y divide-line overflow-hidden">
-              {routines.map((routine) => {
-                const member = routine.steps.some((step) => step.habit_id === habit.id)
-                return (
-                  <div key={routine.id} className="flex min-h-[48px] items-center gap-3 pr-1 pl-4">
-                    <span className="min-w-0 flex-1 text-[14px] text-ink">{routine.name}</span>
-                    <Tick checked={member} label={`In ${routine.name}`} onChange={(next) => void setHabitInRoutine(routine.id!, habit.id!, next)} />
-                  </div>
-                )
-              })}
-            </Card>
-          </section>
-        )}
 
         <p className="rounded-control bg-surface-2 px-3 py-2.5 text-[13px] leading-relaxed text-ink-2">
           {habit ? 'Saving applies from today. Earlier days keep the name, schedule and record they had.' : 'A new habit is tracked from today. Days before today are not counted against it.'}
@@ -535,15 +514,11 @@ function Editor({ habit, routines }: { habit: Habit | null; routines: DayRoutine
   )
 }
 
-const NO_ROUTINES: DayRoutine[] = []
-
 /** Create a habit (`/habits/new`) or change one. Everything that is part of a habit's history —
  *  name, pillar, schedule, target, what completes it — is saved as a new chapter starting today. */
 export default function HabitEditorScreen({ params }: RouteProps) {
   const { habits } = useCore()
-  const allRoutines = useLive(() => db.day_routines.orderBy('sort_order').toArray(), [], NO_ROUTINES)
-  const routines = useMemo(() => allRoutines.filter((routine) => routine.retired_on === null), [allRoutines])
-  if (params.id === 'new') return <Editor key="new" habit={null} routines={routines} />
+  if (params.id === 'new') return <Editor key="new" habit={null} />
   const habit = habits.find((candidate) => candidate.id === Number(params.id))
   if (!habit) {
     return (
@@ -552,5 +527,5 @@ export default function HabitEditorScreen({ params }: RouteProps) {
       </Page>
     )
   }
-  return <Editor key={habit.id} habit={habit} routines={routines} />
+  return <Editor key={habit.id} habit={habit} />
 }

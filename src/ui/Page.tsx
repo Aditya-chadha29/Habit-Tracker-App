@@ -63,7 +63,7 @@ export function Page({ title, subtitle, back, actions, tabs, width = 'default', 
           {back !== undefined ? (
             <IconButton icon="chevron-left" label="Back" onClick={() => goBack(back)} />
           ) : (
-            <IconButton icon="menu" label="More: journal, habits, routines, quotes, data, settings" onClick={openMenu} className="lg:hidden" />
+            <IconButton icon="menu" label="Menu: every part of the app" onClick={openMenu} className="lg:hidden" />
           )}
           <div className={cx('min-w-0 flex-1', back === undefined && 'lg:pl-0')}>
             <h1 className="truncate font-display text-[19px] leading-tight font-semibold tracking-[0.01em] text-cream lg:text-[26px]">{title}</h1>

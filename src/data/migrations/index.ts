@@ -1,4 +1,5 @@
 import type { AppDb } from '../db'
+import { changeHabit, retireHabit } from '../habitRepo'
 import { takeSnapshot } from '../backup'
 import { readSettings, saveSettings, DATA_FORMAT, DEFAULT_PROMPTS } from '../settingsRepo'
 import { EXERCISE_LIBRARY } from '../seed/exercises'
@@ -286,6 +287,58 @@ async function eveningJournal({ db }: MigrationContext): Promise<{ questions: nu
 }
 
 /**
+ * A simpler day, at the user's request of 2026-10-08: no day routines; Water on waking, Cardio and
+ * the three Daily 10s leave Today (exercise is Gym alone, and the rest is logged inside a
+ * workout); Creatine sits with the other supplements; Vitamin D is taken on Sundays. Habits are retired from today, never
+ * deleted, so every past day still reads as it did.
+ */
+const HAIR_RESET_FROM = "2026-10-04"
+const HAIR_RESET_TO = "2026-10-08"
+const RETIRED_FOR_SIMPLER_DAY = ['water on waking', 'cardio', '10 push-ups', '10 crunches', '10 pull-ups']
+
+async function simplerDay({ db, today }: MigrationContext): Promise<{ retired: string[]; routines: number; moved: string[]; hair_reset: number }> {
+  const retired: string[] = []
+  const moved: string[] = []
+  for (const habit of await db.habits.toArray()) {
+    if (habit.id === undefined || habit.retired_on !== null) continue
+    const name = habit.name.trim().toLowerCase()
+    if (RETIRED_FOR_SIMPLER_DAY.includes(name)) {
+      await retireHabit(habit.id, today, db)
+      retired.push(habit.name)
+      continue
+    }
+    const current = habit.versions[habit.versions.length - 1]
+    if (name === 'creatine' && (current.area !== 'body' || current.group !== 'Supplements')) {
+      await changeHabit(habit.id, { area: 'body', group: 'Supplements' }, today, db)
+      moved.push(habit.name)
+    }
+    // Vitamin D moves from Monday to Sunday (weekday 6), from today on.
+    if (name === 'vitamin d' && !(current.day.kind === 'weekdays' && current.day.weekdays.length === 1 && current.day.weekdays[0] === 6)) {
+      await changeHabit(habit.id, { day: { kind: 'weekdays', weekdays: [6] } }, today, db)
+      moved.push(habit.name)
+    }
+  }
+  // The user also asked for Hair oiling to go back to 0 for the week they asked in. The dates are
+  // fixed, so a device that first runs this in a later week does not lose that week's ticks.
+  let hairReset = 0
+  const hair = (await db.habits.toArray()).find((habit) => habit.name.trim().toLowerCase() === "hair oiling")
+  if (hair?.id !== undefined) {
+    const rows = await db.entries.where("habit_id").equals(hair.id).toArray()
+    const keys = rows.filter((row) => row.date >= HAIR_RESET_FROM && row.date <= HAIR_RESET_TO).map((row) => row.id!)
+    await db.entries.bulkDelete(keys)
+    hairReset = keys.length
+  }
+
+  let routines = 0
+  for (const routine of await db.day_routines.toArray()) {
+    if (routine.id === undefined || routine.retired_on !== null) continue
+    await db.day_routines.update(routine.id, { retired_on: today })
+    routines += 1
+  }
+  return { retired, routines, moved, hair_reset: hairReset }
+}
+
+/**
  * Removes the duplicate Breakfast habit, at the user's request. It was created and retired on the
  * same day in August, so it was never due on any day and no score has ever counted it; the
  * Breakfast that is in use is untouched. Done only when that is exactly the situation.
@@ -365,6 +418,7 @@ export const MIGRATIONS: Migration[] = [
   { id: '009-one-journal-page', run: oneJournalPage },
   { id: '010-drop-duplicate-breakfast', run: dropDuplicateBreakfast },
   { id: '011-evening-journal', run: eveningJournal },
+  { id: '012-simpler-day', run: simplerDay },
 ]
 
 export async function pendingMigrations(db: AppDb, migrations: Migration[] = MIGRATIONS): Promise<Migration[]> {

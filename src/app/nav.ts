@@ -21,6 +21,5 @@ export const PRIMARY_NAV: NavItem[] = [
 export const SECONDARY_NAV: NavItem[] = [
   { id: 'journal', label: 'Journal', to: '/journal', icon: 'journal' },
   { id: 'habits', label: 'Habits', to: '/habits', icon: 'habits' },
-  { id: 'routines', label: 'Routines', to: '/routines', icon: 'routines' },
   { id: 'settings', label: 'Settings', to: '/settings', icon: 'settings' },
 ]

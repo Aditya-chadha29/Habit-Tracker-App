@@ -39,7 +39,7 @@ const port = Number(args.port ?? 5311)
 const base = `http://localhost:${port}`
 const DB = 'habit-tracker'
 const BACKUPS = 'habit-tracker-backups'
-const LEDGER = ['001-cutover', '002-training-library', '003-quotes', '004-learning-pillars', '005-weekly-records', '006-more-quotes', '007-four-pillars', '008-week-starts-sunday', '009-one-journal-page', '010-drop-duplicate-breakfast', '011-evening-journal']
+const LEDGER = ['001-cutover', '002-training-library', '003-quotes', '004-learning-pillars', '005-weekly-records', '006-more-quotes', '007-four-pillars', '008-week-starts-sunday', '009-one-journal-page', '010-drop-duplicate-breakfast', '011-evening-journal', '012-simpler-day']
 
 const env = { ...process.env, PATH: `C:\\Program Files\\Git\\cmd;${process.env.PATH ?? ''}` }
 
@@ -227,6 +227,10 @@ try {
 
   // One habit is removed on purpose: a duplicate that was created and retired on the same day.
   const dropped = new Set((after.tables.migrations ?? []).find((row) => row.id === '010-drop-duplicate-breakfast')?.notes?.removed ?? [])
+  // And the user asked for Hair oiling to be taken back to 0 for the week of 4 October: the 012 step
+  // removes those ticks on purpose, so they are not counted as lost.
+  const hairIds = new Set((before.tables.habits ?? []).filter((habit) => /^hair (oiling|care)$/i.test(String(habit.name).trim())).map((habit) => habit.id))
+  const hairReset = (row) => hairIds.has(row.habit_id) && row.date >= "2026-10-04" && row.date <= "2026-10-08"
   const key = (row) => `${row.habit_id}|${row.date}`
   const afterEntries = new Map()
   let duplicates = 0
@@ -234,14 +238,15 @@ try {
     if (afterEntries.has(key(row))) duplicates += 1
     afterEntries.set(key(row), row)
   }
-  const beforeEntries = (before.tables.entries ?? []).filter((row) => !dropped.has(row.habit_id))
+  const beforeEntries = (before.tables.entries ?? []).filter((row) => !dropped.has(row.habit_id) && !hairReset(row))
   const lostDone = beforeEntries.filter((row) => row.done && !afterEntries.get(key(row))?.done).length
   const flipped = beforeEntries.filter((row) => !row.done && afterEntries.get(key(row))?.done).length
   check('every tick is still a tick', lostDone === 0, `${beforeEntries.filter((row) => row.done).length} ticks before, ${lostDone} lost`)
   check('no day has two rows for one habit', duplicates === 0, `${duplicates} duplicates`)
   console.log(`  entries: ${beforeEntries.length} before, ${(after.tables.entries ?? []).length} after; ${flipped} not-done rows became done`)
 
-  const exportTicks = (exported.entries ?? []).filter((row) => row.done && !dropped.has(row.habit_id))
+  const exportHair = new Set((exported.habits ?? []).filter((habit) => /^hair (oiling|care)$/i.test(String(habit.name).trim())).map((habit) => habit.id))
+  const exportTicks = (exported.entries ?? []).filter((row) => row.done && !dropped.has(row.habit_id) && !(exportHair.has(row.habit_id) && row.date >= "2026-10-04" && row.date <= "2026-10-08"))
   const lostFromExport = exportTicks.filter((row) => !afterEntries.get(key(row))?.done).length
   check('every tick in the export survived the whole chain', lostFromExport === 0, `${exportTicks.length} ticks in the export, ${lostFromExport} lost`)
 
@@ -274,7 +279,8 @@ try {
   // show for a past day against the old rule applied to the original rows. Only days well before
   // any of the 6 October releases, where the old rule is simply done / active.
   const habits = original.tables.habits ?? []
-  const ticked = new Set((original.tables.entries ?? []).filter((row) => row.done).map(key))
+  const originalHair = new Set(habits.filter((habit) => /^hair (oiling|care)$/i.test(String(habit.name).trim())).map((habit) => habit.id))
+  const ticked = new Set((original.tables.entries ?? []).filter((row) => row.done && !(originalHair.has(row.habit_id) && row.date >= "2026-10-04" && row.date <= "2026-10-08")).map(key))
   // Today shows only the days that can still be corrected: the six before the first run.
   const shownFrom = new Date(Date.UTC(newNow.getFullYear(), newNow.getMonth(), newNow.getDate() - 6)).toISOString().slice(0, 10)
   const sample = [...new Set((original.tables.entries ?? []).map((row) => row.date))].filter((date) => date >= shownFrom && date <= '2026-10-05').sort()

@@ -16,7 +16,7 @@ async function before(): Promise<{ db: AppDb; backups: string }> {
   const db = createDb(`evening-journal-${counter}`)
   open.push(db)
   const backups = `evening-journal-backups-${counter}`
-  const earlier = MIGRATIONS.filter((step) => step.id !== "011-evening-journal")
+  const earlier = MIGRATIONS.filter((step) => step.id < "011")
   await runMigrations({ db, today: "2026-10-07", now: 1, theme: "system" }, { migrations: earlier, backupName: backups })
   return { db, backups }
 }

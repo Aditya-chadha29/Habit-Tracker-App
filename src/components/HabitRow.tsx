@@ -4,7 +4,7 @@ import { toggleHabit } from '../data/habitRepo'
 import type { DateStr, Habit } from '../data/types'
 import { completedBy } from '../engine/completion'
 import { clockHHMM, formatMediumDate } from '../engine/dates'
-import { describeAmount, describeSource, routeForSources } from '../engine/describe'
+import { describeSource, routeForSources } from '../engine/describe'
 import { isEditable } from '../engine/lock'
 import { dayStatus, statusLabel, type DayStatus } from '../engine/status'
 import { versionOn } from '../engine/timeline'
@@ -62,15 +62,12 @@ export function HabitRow({ habit, date, lead, sub, hint, trailing, quiet = false
   const tickable = version.sources.includes('manual')
   const destination = routeForSources(version.sources)
   const measured = habit.measure.type !== 'boolean' && habit.measure.type !== 'session'
-  const amount = describeAmount(habit)
 
   const own =
     sub ??
     (done && via !== 'manual' && via !== null
       ? describeSource(via)
-      : !tickable && destination
-        ? 'Completed by logging a session'
-        : amount)
+      : null)
   const secondLine = hint && (!own || typeof own === 'string') ? [own, hint].filter(Boolean).join(' · ') : own
 
   const activate = () => {

@@ -33,7 +33,8 @@ afterEach(async () => {
 })
 
 async function migrate(db: AppDb, backupName: string, today = CUTOVER_DAY) {
-  return runMigrations({ db, today, now: 1_000, theme: 'dark' }, { backupName })
+  // These tests describe the layout the cutover produced; the later simplification is tested apart.
+  return runMigrations({ db, today, now: 1_000, theme: 'dark' }, { backupName, migrations: MIGRATIONS.filter((step) => step.id < '012') })
 }
 
 async function habitsByName(db: AppDb): Promise<Map<string, Habit>> {
@@ -153,7 +154,7 @@ describe('a phone that never saw the 6 October build', () => {
     const legacyDone = new Set(phoneEntries().filter((e) => e.done).map((e) => entryKey(e.habit_id, e.date)))
 
     const result = await migrate(db, backupName)
-    expect(result.ran).toEqual(MIGRATIONS.map((m) => m.id))
+    expect(result.ran).toEqual(MIGRATIONS.filter((step) => step.id < '012').map((m) => m.id))
 
     expect(await scoreDifferences(db, legacyRows, legacyDone, CUTOVER_DAY, null)).toEqual([])
     const ledger = await db.migrations.get('001-cutover')
@@ -550,7 +551,7 @@ describe('running safely', () => {
     expect(second).toEqual({ ran: [], snapshot: null })
     expect(await db.habits.toArray()).toEqual(habits)
     expect(await db.entries.count()).toBe(entries)
-    expect(await pendingMigrations(db)).toEqual([])
+    expect(await pendingMigrations(db, MIGRATIONS.filter((step) => step.id < '012'))).toEqual([])
   })
 
   it('a step that fails leaves the database exactly as it was and is retried next time', async () => {

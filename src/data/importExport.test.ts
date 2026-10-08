@@ -15,6 +15,8 @@ afterEach(async () => {
 })
 
 const TODAY = '2026-10-07'
+/** Hair care in the phone fixture. Its ticks of 4 to 8 October are removed by the 012 step, at the user's request. */
+const HAIR_OILING_ID = 12
 
 async function install(): Promise<{ db: AppDb; backups: string }> {
   counter += 1
@@ -34,7 +36,7 @@ describe('export', () => {
     expect(file).toMatchObject({ app: 'personal-os', export_format: 3, exported_at: TODAY })
     for (const table of db.tables) expect(Array.isArray(file[table.name]), table.name).toBe(true)
     expect((file.habits as unknown[]).length).toBeGreaterThan(15)
-    expect((file.migrations as unknown[]).length).toBe(11)
+    expect((file.migrations as unknown[]).length).toBe(12)
   })
 
   it('round-trips: export, wipe, import gives the same data back', async () => {
@@ -156,7 +158,7 @@ describe('a file from a different history', () => {
 
     // Replacing is still possible, and is the right way to move onto a new device.
     await applyImport(db, prepared, 'replace', TODAY, 5, backups)
-    expect(await db.entries.count()).toBe(phoneEntries().length)
+    expect(await db.entries.count()).toBe(phoneEntries().filter((entry) => !(entry.habit_id === HAIR_OILING_ID && entry.date >= '2026-10-04' && entry.date <= '2026-10-08')).length)
   })
 
   it('is recognised for workouts, exercises and learning too', async () => {
@@ -228,7 +230,7 @@ describe('an export from the earlier Habit Tracker', () => {
     const prepared = await prepareImport(legacyFile(), db, TODAY, 4)
     expect(prepared.ok).toBe(true)
     expect(prepared.upgraded).toBe(true)
-    expect(prepared.counts.entries).toBe(phoneEntries().length)
+    expect(prepared.counts.entries).toBe(phoneEntries().filter((entry) => !(entry.habit_id === HAIR_OILING_ID && entry.date >= '2026-10-04' && entry.date <= '2026-10-08')).length)
     const names = (prepared.tables.habits as { name: string; retired_on: string | null }[]).filter((h) => h.retired_on === null).map((h) => h.name)
     expect(names).toContain('Hair oiling')
     expect(names).toContain('Gym')
@@ -238,7 +240,7 @@ describe('an export from the earlier Habit Tracker', () => {
     const gym = (await db.habits.toArray()).find((habit) => habit.name === 'Gym')!
     expect(gym.id).toBe(8)
     expect(gym.versions[0].name).toBe('Gym / Exercise')
-    expect(await db.entries.count()).toBe(phoneEntries().length)
+    expect(await db.entries.count()).toBe(phoneEntries().filter((entry) => !(entry.habit_id === HAIR_OILING_ID && entry.date >= '2026-10-04' && entry.date <= '2026-10-08')).length)
     expect(await db.weight_entries.count()).toBe(8)
     // The staging database used for the upgrade leaves nothing behind.
     const leftovers = (await indexedDB.databases()).filter((d) => d.name?.startsWith('import-staging-'))

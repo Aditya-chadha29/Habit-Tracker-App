@@ -184,7 +184,6 @@ export default function SettingsScreen() {
 
         <Group title="Set up">
           <NavRow to="/habits" icon="habits" title="Habits" hint="Add, change, reorder, retire" />
-          <NavRow to="/routines" icon="routines" title="Routines" hint="The order of a normal day" />
           <NavRow to="/journal" icon="journal" title="Journal" hint="Its prompts are changed from the journal itself" />
         </Group>
       </div>

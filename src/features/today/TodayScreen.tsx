@@ -20,18 +20,20 @@ import { Page } from '../../ui/Page'
 import { ProgressBar } from '../../ui/Progress'
 import { useToast } from '../../ui/Toast'
 import { buildDayView, type DaySection } from './sections'
-import { useDayRoutines } from './useDayRoutines'
 
 
 
 /**
  * Today answers "what happened today?" and is built for doing: every habit due today, grouped
- * into the day's routines and pillars, each one tap away from done. Meals are logged in place.
+ * by pillar, each one tap away from done. Meals are logged in place.
  * It can step back through the days that are still open to correction.
  */
+/** The day-routine system was removed at the user's request on 2026-10-08; Today is grouped by
+ *  pillar and group only. */
+const NO_ROUTINES: never[] = []
+
 export default function TodayScreen() {
   const { today, settings, weekStart, areas, habits, index, write } = useCore()
-  const routines = useDayRoutines()
   const toast = useToast()
   const [rawDate, setDate] = useQueryState('d', today)
 
@@ -40,7 +42,7 @@ export default function TodayScreen() {
   const isToday = date === today
 
   const score = useMemo(() => dayScore(habits, date, index), [habits, date, index])
-  const view = useMemo(() => buildDayView(habits, routines, areas, date, index), [habits, routines, areas, date, index])
+  const view = useMemo(() => buildDayView(habits, NO_ROUTINES, areas, date, index), [habits, areas, date, index])
   const week = useMemo(() => periodOf('week', date, weekStart), [date, weekStart])
   const sections = view.sections
   const showFlexible = view.flexible.length > 0
