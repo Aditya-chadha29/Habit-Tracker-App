@@ -37,7 +37,7 @@ export function Tick({ checked, onChange, label, size = 'md', tone = 'ok', disab
   const box = (
     <span
       className={cx(
-        'flex items-center justify-center rounded-[7px] transition-colors duration-100',
+        'flex items-center justify-center rounded-full transition-colors duration-100',
         size === 'lg' ? 'h-[30px] w-[30px]' : 'h-6 w-6',
         checked
           ? tone === 'accent'

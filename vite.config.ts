@@ -15,8 +15,8 @@ export default defineConfig({
         name: 'IKIKATA',
         short_name: 'IKIKATA',
         description: 'A private personal operating system: routine, learning, training, review.',
-        theme_color: '#0a0f1a',
-        background_color: '#0a0f1a',
+        theme_color: '#080f17',
+        background_color: '#080f17',
         display: 'standalone',
         start_url: '/',
         scope: '/',
@@ -33,7 +33,7 @@ export default defineConfig({
       },
       workbox: {
         // Everything the app needs is precached, fonts included, so it opens with no network.
-        globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,webp,ico,woff2}'],
       },
     }),
   ],

@@ -66,7 +66,7 @@ export function Page({ title, subtitle, back, actions, tabs, width = 'default', 
             <IconButton icon="menu" label="More: journal, habits, routines, quotes, data, settings" onClick={openMenu} className="lg:hidden" />
           )}
           <div className={cx('min-w-0 flex-1', back === undefined && 'lg:pl-0')}>
-            <h1 className="truncate text-[18px] leading-tight font-semibold tracking-tight text-ink lg:text-[24px]">{title}</h1>
+            <h1 className="truncate font-display text-[19px] leading-tight font-semibold tracking-[0.01em] text-cream lg:text-[26px]">{title}</h1>
             {subtitle && <div className="mt-0.5 truncate text-[12.5px] text-ink-3 lg:text-[13.5px]">{subtitle}</div>}
           </div>
           {actions && <div className="flex shrink-0 items-center gap-1.5 pr-2 lg:pr-0">{actions}</div>}

@@ -19,12 +19,8 @@ export function useShell(): ShellValue {
 function Brand() {
   return (
     <div className="flex items-center gap-2.5 px-3">
-      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent text-on-accent">
-        <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
-          <path d="M5 19 L11 7 L14 13 L16.5 9.5 L20 19 Z" fill="currentColor" />
-        </svg>
-      </span>
-      <span className="text-[14px] font-semibold tracking-tight text-ink">IKIKATA</span>
+      <img src="/favicon.png" alt="" width="28" height="28" className="h-7 w-7 rounded-lg" />
+      <span className="font-display text-[15px] font-semibold tracking-[0.24em] text-cream">IKIKATA</span>
     </div>
   )
 }

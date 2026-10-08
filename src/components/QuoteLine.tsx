@@ -10,8 +10,8 @@ export function QuoteLine({ quote, className, linked = true }: { quote: Quote | 
   if (!quote) return null
   const body = (
     <figure className={cx('max-w-[62ch]', className)}>
-      <blockquote className="text-[15px] leading-relaxed text-ink-2 lg:text-[16px]">“{quote.text}”</blockquote>
-      {quote.author && <figcaption className="mt-1 text-[12.5px] text-ink-3">— {quote.author}</figcaption>}
+      <blockquote className="font-display text-[16px] leading-relaxed font-medium text-cream lg:text-[18px]">“{quote.text}”</blockquote>
+      {quote.author && <figcaption className="mt-1.5 flex items-center gap-2 text-[12px] tracking-[0.04em] text-ink-2"><span aria-hidden="true" className="h-px w-5 bg-accent" />{quote.author}</figcaption>}
     </figure>
   )
   if (!linked) return body

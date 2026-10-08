@@ -35,7 +35,7 @@ export function CardHeader({ title, subtitle, icon, iconClassName, action, class
     <div className={cx('flex items-center gap-3', className)}>
       {icon && <Icon name={icon} size={18} className={iconClassName ?? 'text-ink-3'} />}
       <div className="min-w-0 flex-1">
-        <h2 className="truncate text-[15px] leading-tight font-semibold text-ink">{title}</h2>
+        <h2 className="truncate font-display text-[16px] leading-tight font-semibold text-ink">{title}</h2>
         {subtitle && <p className="mt-0.5 truncate text-[12.5px] text-ink-3">{subtitle}</p>}
       </div>
       {action && <div className="shrink-0 text-[13px] text-ink-2">{action}</div>}

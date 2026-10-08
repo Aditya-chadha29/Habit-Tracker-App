@@ -57,7 +57,11 @@ localStorage) · Chart.js (the only charting library) · Vitest · Playwright ·
 
 ## Design and tone
 
-Dark navy, premium, calm, slightly technical; light theme is the same design with the tokens
+Sakura at dusk (the user's theme brief of 2026-10-08, which replaced the blue-on-navy look): deep
+navy and charcoal surfaces, one sakura pink used sparingly, warm cream for editorial text; Shippori
+Mincho for titles, quotes and the wordmark, Zen Kaku Gothic New for everything functional, Geist
+for numbers. Done is pink, not green. English only: no Japanese characters anywhere in the UI. No
+Meditation, Calendar or Profile screens. Light theme is the same design with the tokens
 re-pointed. Colours come only from the tokens in `src/index.css`. Phone first at 390 px with no
 bottom bar: every destination (Home, Learn, Train, Review, Journal, Habits, Routines, Settings) is in
 the menu behind the grid button at the top left, as the user asked on 2026-10-07; a sidebar and genuinely wider layouts
@@ -73,7 +77,7 @@ Decisions the user has already made, so they are not re-opened:
   acknowledgement; do not add flying, XP-style or celebratory effects.
 - Extra style themes (Cybercore, Scrapbook, Glassmorphism, Wabi-sabi) were built and then removed
   at the user's request. Themes are System / Light / Dark only.
-- The palette is blue on navy; the earlier brown palette was rejected.
+- The palette is sakura pink on deep navy (see above); the earlier brown palette was rejected.
 - Home shows only the date, the quote, the Today and This week rings, the four pillars and what needs attention. The
   user removed the weekly targets list, Next, Still open today and the trend from it. The quote
   appears on Home only. Review and Progress are one place with a two-way switch. Quotes and Data

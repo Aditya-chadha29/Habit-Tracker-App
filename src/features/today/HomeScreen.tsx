@@ -9,6 +9,7 @@ import { attentionItems } from '../../engine/attention'
 import { formatDayTitle } from '../../engine/dates'
 import { periodOf, shiftPeriod } from '../../engine/periods'
 import { dayScore, weekTally } from '../../engine/score'
+import sakuraQuote from '../../assets/sakura-quote.webp'
 import { useCore } from '../../state/core'
 import { hasCloudAccount } from '../../sync/state'
 import { Card } from '../../ui/Card'
@@ -23,19 +24,14 @@ function greeting(hour: number, name: string): string {
   return name ? `${part}, ${name}` : part
 }
 
-/** A faint ridge line behind the quote: a nod to the mountains in the reference design, drawn
- *  rather than photographed so it costs nothing and works offline in both themes. */
-function Ridge() {
+/** The blossom behind the quote, held back by a gradient of the card colour so the words always
+ *  sit on something dark. Decorative only: the card reads the same without it. */
+function Blossom() {
   return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 600 160"
-      preserveAspectRatio="xMaxYMax slice"
-      className="pointer-events-none absolute inset-0 h-full w-full text-accent-ink"
-    >
-      <path d="M0 160 L0 120 L70 84 L120 108 L190 52 L250 100 L300 70 L372 124 L430 90 L500 132 L560 104 L600 122 L600 160 Z" fill="currentColor" opacity="0.05" />
-      <path d="M180 160 L300 96 L352 128 L428 60 L492 116 L540 92 L600 136 L600 160 Z" fill="currentColor" opacity="0.06" />
-    </svg>
+    <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+      <img src={sakuraQuote} alt="" className="absolute inset-y-0 right-0 h-full w-[78%] object-cover object-right opacity-90" />
+      <div className="absolute inset-0 bg-gradient-to-r from-surface from-30% via-surface/85 via-55% to-surface/10" />
+    </div>
   )
 }
 
@@ -99,9 +95,9 @@ export default function HomeScreen() {
             </Card>
           )}
           {quote && (
-            <Card padded={false} className="relative order-1 overflow-hidden px-4 py-3 lg:order-none lg:p-6">
-              <Ridge />
-              <QuoteLine quote={quote} className="relative" />
+            <Card padded={false} className="relative order-1 overflow-hidden px-4 py-4 lg:order-none lg:p-7">
+              <Blossom />
+              <QuoteLine quote={quote} className="relative max-w-[64%] lg:max-w-[46ch]" />
             </Card>
           )}
 

@@ -3,101 +3,124 @@
 /*
  * Design tokens. Every colour in the app comes from here: screens use the Tailwind utilities
  * these generate (bg-surface, text-ink-2, border-line, text-ok …) and never a literal colour.
- * Dark is the bare default; light re-points the same tokens, so the two themes are one design.
+ *
+ * The look is sakura at dusk: deep navy and charcoal surfaces, one precious pink, warm cream for
+ * editorial text. Dark is the bare default and the design's home; light re-points the same
+ * tokens to a blossom-paper version so the two are one design.
  *
  *   ground      the page behind everything
  *   surface     cards            surface-2  insets, inputs, hovered rows     surface-3  pressed
  *   line        hairlines        line-strong  input borders, dividers that must be seen
  *   ink         primary text     ink-2  secondary     ink-3  muted (still AA on surface)
- *   accent      filled controls (white text sits on it)     accent-ink  accent-coloured TEXT
+ *   accent      filled controls (on-accent text sits on it)     accent-ink  accent-coloured TEXT
+ *   cream / petal / peach   editorial text and rare warm highlights, never status
  *   ok / warn / risk   status. Never the only signal: always paired with a word or an icon.
+ *                      Done is pink, not green, so status reads as part of the palette.
  *   mind / body / learning / exercise   the four pillars
  */
 @theme {
-  --color-ground: #0a0f1a;
-  --color-surface: #111a2b;
-  --color-surface-2: #172236;
-  --color-surface-3: #1e2b43;
-  --color-line: #1f2b41;
-  --color-line-strong: #2d3d59;
-  --color-ink: #e9eef7;
-  --color-ink-2: #a9b5c9;
-  --color-ink-3: #7d8ca7;
-  --color-accent: #2f6feb;
-  --color-accent-pressed: #2459c4;
-  --color-accent-ink: #7fb0ff;
-  --color-on-accent: #ffffff;
-  --color-ok: #3ecf8e;
-  --color-warn: #f2b84b;
-  --color-risk: #f47c73;
-  --color-danger: #f47c73;
-  --color-mind: #a98bfa;
-  --color-body: #f2a94b;
-  --color-learning: #5aa9ff;
-  --color-exercise: #3ecf8e;
+  --color-ground: #080f17;
+  --color-surface: #111827;
+  --color-surface-2: #17202e;
+  --color-surface-3: #202a3a;
+  --color-line: #222c3b;
+  --color-line-strong: #3a4759;
+  --color-ink: #f5f1ee;
+  --color-ink-2: #b7bfcb;
+  --color-ink-3: #8993a2;
+  --color-accent: #f7a7b8;
+  --color-accent-pressed: #e8879a;
+  --color-accent-ink: #f9b4c3;
+  --color-on-accent: #23101a;
+  --color-cream: #f6ede8;
+  --color-petal: #ffd6de;
+  --color-peach: #ffd0b8;
+  --color-ok: #f7a7b8;
+  --color-warn: #f2c078;
+  --color-risk: #ef6f6c;
+  --color-danger: #ef6f6c;
+  --color-mind: #c3b1f0;
+  --color-body: #ffd0b8;
+  --color-learning: #a9c4ee;
+  --color-exercise: #a7d7be;
 
-  --font-sans: 'Geist Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  /* Functional text is a clean gothic; titles, quotes and the wordmark are a Mincho serif. The
+     pairing carries the Japanese editorial feel while every word stays English. */
+  --font-sans: 'Zen Kaku Gothic New', 'Noto Sans JP', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Shippori Mincho', 'Noto Serif JP', 'Zen Old Mincho', Georgia, 'Times New Roman', serif;
+  --font-num: 'Geist Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 
-  --radius-card: 14px;
-  --radius-control: 10px;
+  --radius-card: 16px;
+  --radius-control: 12px;
 
   --shadow-card: 0 0 0 1px var(--color-line);
   --shadow-pop: 0 18px 50px -12px rgb(0 0 0 / 0.6), 0 0 0 1px var(--color-line-strong);
+  --shadow-glow: 0 8px 22px -10px rgb(247 167 184 / 0.55);
 }
 
 /* The light values, written once and applied by either route below. */
 @layer base {
   @media (prefers-color-scheme: light) {
     :root:not([data-theme='dark']) {
-      --color-ground: #f3f5f9;
-      --color-surface: #ffffff;
-      --color-surface-2: #eef1f6;
-      --color-surface-3: #e3e8f0;
-      --color-line: #e1e6ee;
-      --color-line-strong: #c8d0dd;
-      --color-ink: #101828;
-      --color-ink-2: #475467;
-      --color-ink-3: #667085;
-      --color-accent: #2563eb;
-      --color-accent-pressed: #1d4fc4;
-      --color-accent-ink: #1d4ed8;
-      --color-ok: #0f7f55;
-      --color-warn: #9a5a07;
-      --color-risk: #c0392f;
-      --color-danger: #c0392f;
-      --color-mind: #6d3fe0;
-      --color-body: #a85b07;
-      --color-learning: #1d5fd0;
-      --color-exercise: #0b7a53;
-      --shadow-card: 0 1px 2px rgb(16 24 40 / 0.05), 0 0 0 1px var(--color-line);
-      --shadow-pop: 0 18px 50px -12px rgb(16 24 40 / 0.25), 0 0 0 1px var(--color-line-strong);
+      --color-ground: #f7f1ee;
+      --color-surface: #fffbf9;
+      --color-surface-2: #f3e9e5;
+      --color-surface-3: #e9dcd7;
+      --color-line: #eadfda;
+      --color-line-strong: #cdbbb5;
+      --color-ink: #1b1620;
+      --color-ink-2: #4d4450;
+      --color-ink-3: #6f6470;
+      --color-accent: #b8456a;
+      --color-accent-pressed: #9e3857;
+      --color-accent-ink: #a33a5d;
+      --color-on-accent: #ffffff;
+      --color-cream: #2a1a1f;
+      --color-petal: #a33a5d;
+      --color-peach: #9a5a2a;
+      --color-ok: #a33a5d;
+      --color-warn: #8a5a00;
+      --color-risk: #b3261e;
+      --color-danger: #b3261e;
+      --color-mind: #6b4fc0;
+      --color-body: #a2571a;
+      --color-learning: #2f5fb0;
+      --color-exercise: #2e6b4a;
+      --shadow-card: 0 1px 2px rgb(42 26 31 / 0.05), 0 0 0 1px var(--color-line);
+      --shadow-pop: 0 18px 50px -12px rgb(42 26 31 / 0.25), 0 0 0 1px var(--color-line-strong);
+      --shadow-glow: 0 8px 20px -10px rgb(184 69 106 / 0.55);
       color-scheme: light;
     }
   }
 
   :root[data-theme='light'] {
-    --color-ground: #f3f5f9;
-    --color-surface: #ffffff;
-    --color-surface-2: #eef1f6;
-    --color-surface-3: #e3e8f0;
-    --color-line: #e1e6ee;
-    --color-line-strong: #c8d0dd;
-    --color-ink: #101828;
-    --color-ink-2: #475467;
-    --color-ink-3: #667085;
-    --color-accent: #2563eb;
-    --color-accent-pressed: #1d4fc4;
-    --color-accent-ink: #1d4ed8;
-    --color-ok: #0f7f55;
-    --color-warn: #9a5a07;
-    --color-risk: #c0392f;
-    --color-danger: #c0392f;
-    --color-mind: #6d3fe0;
-    --color-body: #a85b07;
-    --color-learning: #1d5fd0;
-    --color-exercise: #0b7a53;
-    --shadow-card: 0 1px 2px rgb(16 24 40 / 0.05), 0 0 0 1px var(--color-line);
-    --shadow-pop: 0 18px 50px -12px rgb(16 24 40 / 0.25), 0 0 0 1px var(--color-line-strong);
+    --color-ground: #f7f1ee;
+    --color-surface: #fffbf9;
+    --color-surface-2: #f3e9e5;
+    --color-surface-3: #e9dcd7;
+    --color-line: #eadfda;
+    --color-line-strong: #cdbbb5;
+    --color-ink: #1b1620;
+    --color-ink-2: #4d4450;
+    --color-ink-3: #6f6470;
+    --color-accent: #b8456a;
+    --color-accent-pressed: #9e3857;
+    --color-accent-ink: #a33a5d;
+    --color-on-accent: #ffffff;
+    --color-cream: #2a1a1f;
+    --color-petal: #a33a5d;
+    --color-peach: #9a5a2a;
+    --color-ok: #a33a5d;
+    --color-warn: #8a5a00;
+    --color-risk: #b3261e;
+    --color-danger: #b3261e;
+    --color-mind: #6b4fc0;
+    --color-body: #a2571a;
+    --color-learning: #2f5fb0;
+    --color-exercise: #2e6b4a;
+    --shadow-card: 0 1px 2px rgb(42 26 31 / 0.05), 0 0 0 1px var(--color-line);
+    --shadow-pop: 0 18px 50px -12px rgb(42 26 31 / 0.25), 0 0 0 1px var(--color-line-strong);
+    --shadow-glow: 0 8px 20px -10px rgb(184 69 106 / 0.55);
     color-scheme: light;
   }
 
@@ -117,7 +140,7 @@
     color: var(--color-ink);
     font-family: var(--font-sans);
     font-size: 15px;
-    line-height: 1.45;
+    line-height: 1.5;
     -webkit-font-smoothing: antialiased;
     -webkit-tap-highlight-color: transparent;
     overscroll-behavior-y: none;
@@ -163,6 +186,7 @@
 
 /* Digits that line up in columns: scores, weights, timers. */
 @utility tnum {
+  font-family: var(--font-num);
   font-variant-numeric: tabular-nums;
 }
 
@@ -170,7 +194,7 @@
 @utility eyebrow {
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--color-ink-3);
 }
