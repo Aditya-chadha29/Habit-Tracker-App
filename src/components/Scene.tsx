@@ -1,5 +1,6 @@
 import moonBlossom from '../assets/scene-moon-blossom.webp'
 import mountain from '../assets/scene-mountain-moon.webp'
+import pagoda from '../assets/scene-pagoda-valley.webp'
 import torii from '../assets/scene-torii-lake.webp'
 import toriiWide from '../assets/scene-torii-lake-wide.webp'
 import { cx } from '../ui/cx'
@@ -12,7 +13,7 @@ import { cx } from '../ui/cx'
  * A scene is night in both themes. Whatever sits on it uses the night tokens, not the theme's
  * ink, so the words stay light on dark even when the rest of the app is on paper.
  */
-const SCENES = { mountain, torii, toriiWide, moonBlossom }
+const SCENES = { mountain, torii, toriiWide, moonBlossom, pagoda }
 export type SceneName = keyof typeof SCENES
 
 const FADES = {

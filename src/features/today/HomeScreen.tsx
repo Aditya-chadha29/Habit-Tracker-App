@@ -85,7 +85,7 @@ export default function HomeScreen() {
           )}
           {quote && (
             <Card padded={false} className="relative order-1 flex min-h-[168px] flex-col justify-end overflow-hidden px-4 py-4 lg:order-none lg:min-h-[260px] lg:p-7">
-              <Scene name="mountain" fade="up" position="50% 38%" eager />
+              <Scene name="mountain" fade="up" position="60% 30%" eager />
               <QuoteLine quote={quote} onScene className="relative max-w-[34ch] lg:max-w-[46ch]" />
             </Card>
           )}

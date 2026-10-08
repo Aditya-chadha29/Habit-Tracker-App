@@ -128,7 +128,7 @@ export default function JournalScreen() {
       }
     >
       <div className="flex flex-col gap-5">
-        <SceneBand name="moonBlossom" position="50% 40%" />
+        <SceneBand name="moonBlossom" position="30% 40%" />
         <DayNav date={date} onChange={setDate} />
         <DailyEntry date={date} kind={kind} prompts={settings.journal_prompts[kind]} />
       </div>

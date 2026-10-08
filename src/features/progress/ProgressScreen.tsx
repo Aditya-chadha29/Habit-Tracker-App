@@ -378,7 +378,7 @@ export default function ProgressScreen() {
             )}
           </section>
         )}
-        <SceneBand name="toriiWide" position="50% 55%" />
+        <SceneBand name="toriiWide" position="50% 45%" />
       </div>
     </Page>
   )

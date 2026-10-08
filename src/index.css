@@ -19,33 +19,33 @@
  *   mind / body / learning / exercise   the four pillars
  */
 @theme {
-  --color-ground: #080f17;
-  --color-surface: #111827;
-  --color-surface-2: #17202e;
-  --color-surface-3: #202a3a;
-  --color-line: #222c3b;
-  --color-line-strong: #3a4759;
-  --color-ink: #f5f1ee;
-  --color-ink-2: #b7bfcb;
-  --color-ink-3: #8993a2;
-  --color-accent: #f7a7b8;
-  --color-accent-pressed: #e8879a;
-  --color-accent-ink: #f9b4c3;
+  --color-ground: #0b0f1a;
+  --color-surface: #141a26;
+  --color-surface-2: #1c2331;
+  --color-surface-3: #2f3348;
+  --color-line: #232a39;
+  --color-line-strong: #3d4458;
+  --color-ink: #f5f0ea;
+  --color-ink-2: #b7c0cd;
+  --color-ink-3: #8b94a3;
+  --color-accent: #f4c2c2;
+  --color-accent-pressed: #e9a4b0;
+  --color-accent-ink: #f4c2c2;
   --color-on-accent: #23101a;
-  --color-cream: #f6ede8;
-  --color-petal: #ffd6de;
-  --color-peach: #ffd0b8;
+  --color-cream: #eeddcc;
+  --color-petal: #f4c2c2;
+  --color-peach: #fec8a6;
   /* The scenery is night in both themes: these two do not change with the theme. */
-  --color-night: #080f17;
-  --color-night-ink: #f6ede8;
-  --color-ok: #f7a7b8;
-  --color-warn: #f2c078;
+  --color-night: #0b0f1a;
+  --color-night-ink: #f5f0ea;
+  --color-ok: #f4c2c2;
+  --color-warn: #fec8a6;
   --color-risk: #ef6f6c;
   --color-danger: #ef6f6c;
-  --color-mind: #c3b1f0;
-  --color-body: #ffd0b8;
+  --color-mind: #c9b8ee;
+  --color-body: #fec8a6;
   --color-learning: #a9c4ee;
-  --color-exercise: #a7d7be;
+  --color-exercise: #a7e3a1;
 
   /* Functional text is a clean gothic; titles, quotes and the wordmark are a Mincho serif. The
      pairing carries the Japanese editorial feel while every word stays English. */
@@ -58,7 +58,7 @@
 
   --shadow-card: 0 0 0 1px var(--color-line);
   --shadow-pop: 0 18px 50px -12px rgb(0 0 0 / 0.6), 0 0 0 1px var(--color-line-strong);
-  --shadow-glow: 0 8px 22px -10px rgb(247 167 184 / 0.55);
+  --shadow-glow: 0 8px 22px -10px rgb(244 194 194 / 0.5);
 }
 
 /* The light values, written once and applied by either route below. */
