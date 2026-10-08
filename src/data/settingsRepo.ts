@@ -14,8 +14,8 @@ export const DEFAULT_AREAS: AreaConfig[] = [
 export const DEFAULT_PROMPTS: JournalPrompts = {
   morning: ['What matters today?', 'What am I going to focus on?', 'What must not be neglected?'],
   evening: ['What went well?', 'What didn’t?', 'What did I learn?', 'What should I improve tomorrow?'],
-  // The one journal page a day asks the morning questions and then the evening ones.
-  daily: ['What matters today?', 'What am I going to focus on?', 'What must not be neglected?', 'What went well?', 'What didn’t?', 'What did I learn?', 'What should I improve tomorrow?'],
+  // The one journal page a day is written in the evening: it looks back and prepares tomorrow.
+  daily: ['What went well?', 'What didn’t?', 'What did I learn?', 'What should I improve tomorrow?'],
   weekly: ['What went well?', 'What went badly?', 'What did I learn?', 'What will I change next week?'],
 }
 

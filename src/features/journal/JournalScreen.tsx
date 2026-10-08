@@ -118,7 +118,7 @@ export default function JournalScreen() {
   return (
     <Page
       title="Journal"
-      subtitle="Counts as the day’s writing"
+      subtitle="Written in the evening. Counts as the day’s writing"
       width="narrow"
       actions={
         <>

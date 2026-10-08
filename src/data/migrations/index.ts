@@ -1,6 +1,6 @@
 import type { AppDb } from '../db'
 import { takeSnapshot } from '../backup'
-import { readSettings, saveSettings, DATA_FORMAT } from '../settingsRepo'
+import { readSettings, saveSettings, DATA_FORMAT, DEFAULT_PROMPTS } from '../settingsRepo'
 import { EXERCISE_LIBRARY } from '../seed/exercises'
 import { LEARNING_PILLAR_SEED } from '../seed/learning'
 import { SEED_QUOTES } from '../seed/quotes'
@@ -272,6 +272,20 @@ async function oneJournalPage({ db }: MigrationContext): Promise<{ questions: nu
 }
 
 /**
+ * The journal is written in the evening, to look back and prepare tomorrow (the user's request of
+ * 2026-10-08). The morning questions come off the daily page; anything else the user put there
+ * stays. Entries already written keep every answer they hold.
+ */
+async function eveningJournal({ db }: MigrationContext): Promise<{ questions: number }> {
+  const prompts = (await readSettings(db)).journal_prompts
+  const morning = new Set([...prompts.morning, ...DEFAULT_PROMPTS.morning].map((prompt) => prompt.trim()))
+  const kept = prompts.daily.map((prompt) => prompt.trim()).filter((prompt) => prompt && !morning.has(prompt))
+  const daily = kept.length ? kept : DEFAULT_PROMPTS.evening
+  await saveSettings({ journal_prompts: { ...prompts, daily } }, db)
+  return { questions: daily.length }
+}
+
+/**
  * Removes the duplicate Breakfast habit, at the user's request. It was created and retired on the
  * same day in August, so it was never due on any day and no score has ever counted it; the
  * Breakfast that is in use is untouched. Done only when that is exactly the situation.
@@ -350,6 +364,7 @@ export const MIGRATIONS: Migration[] = [
   { id: '008-week-starts-sunday', run: weekStartsSunday },
   { id: '009-one-journal-page', run: oneJournalPage },
   { id: '010-drop-duplicate-breakfast', run: dropDuplicateBreakfast },
+  { id: '011-evening-journal', run: eveningJournal },
 ]
 
 export async function pendingMigrations(db: AppDb, migrations: Migration[] = MIGRATIONS): Promise<Migration[]> {
