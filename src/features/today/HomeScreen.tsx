@@ -10,6 +10,7 @@ import { formatDayTitle } from '../../engine/dates'
 import { periodOf, shiftPeriod } from '../../engine/periods'
 import { dayScore, weekTally } from '../../engine/score'
 import { useCore } from '../../state/core'
+import { hasCloudAccount } from '../../sync/state'
 import { Card } from '../../ui/Card'
 import { areaTone } from '../../ui/Chip'
 import { Page } from '../../ui/Page'
@@ -86,6 +87,17 @@ export default function HomeScreen() {
     <Page title={formatDayTitle(today)} subtitle={greeting(hour, settings.name)} width="wide">
       <div className="flex flex-col gap-4 lg:grid lg:grid-cols-12 lg:items-start lg:gap-6">
         <div className="contents lg:col-span-7 lg:flex lg:flex-col lg:gap-5 xl:col-span-8">
+          {!hasCloudAccount() && (
+            <Card className="flex flex-col gap-3">
+              <p className="text-[14px] font-medium text-ink">Sign in to your cloud copy</p>
+              <p className="text-[13.5px] leading-relaxed text-ink-2">
+                Your record is kept in your cloud account. Sign in to bring it to this device, or to save what is here.
+              </p>
+              <Link to="/data" className="inline-flex h-11 items-center justify-center rounded-control bg-accent px-4 text-[14px] font-medium text-on-accent">
+                Sign in
+              </Link>
+            </Card>
+          )}
           {quote && (
             <Card padded={false} className="relative order-1 overflow-hidden px-4 py-3 lg:order-none lg:p-6">
               <Ridge />
