@@ -10,6 +10,7 @@ import { Card, SectionTitle } from '../../ui/Card'
 import { Page } from '../../ui/Page'
 import { useToast } from '../../ui/Toast'
 import { BackupsCard } from './BackupsCard'
+import { CloudCard } from './CloudCard'
 import { ImportCard } from './ImportCard'
 import { canShareFiles, downloadJson, formatBytes, shareJson } from './transfer'
 
@@ -88,7 +89,7 @@ function ExportCard() {
       </p>
       <div className="flex flex-wrap gap-2">{shareable ? (touch ? [share, download] : [download, share]) : download}</div>
       <p className="text-[12.5px] leading-relaxed text-ink-3">
-        Everything lives on this device only. Keep an export somewhere else — a cloud drive, an email to yourself — so losing the phone does not lose the record.
+        Without the cloud copy, everything lives on this device only. An export kept somewhere else — a cloud drive, an email to yourself — is a second way back.
       </p>
     </Card>
   )
@@ -163,8 +164,13 @@ export default function DataScreen() {
   const changed = () => setRefreshKey((key) => key + 1)
 
   return (
-    <Page title="Data" subtitle="Yours, on this device" back="/settings" width="narrow">
+    <Page title="Data" subtitle="On this device and in your cloud copy" back="/settings" width="narrow">
       <div className="flex flex-col gap-7">
+        <section className="flex flex-col gap-2">
+          <SectionTitle>Cloud copy</SectionTitle>
+          <CloudCard />
+        </section>
+
         <section className="flex flex-col gap-2">
           <SectionTitle>Export</SectionTitle>
           <ExportCard />

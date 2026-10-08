@@ -1,4 +1,5 @@
-import Dexie, { type EntityTable, type Table } from 'dexie'
+import Dexie, { type DBCore, type EntityTable, type Table } from 'dexie'
+import { notifyLocalChange } from './changes'
 import type {
   DailyNote, DayRoutine, Entry, Exercise, Habit, JournalEntry, LearningPillar, LearningResource,
   LearningSession, LegacySupplement, LegacySupplementLog, Meal, MigrationRow, Quote, QuoteDay,
@@ -96,6 +97,29 @@ export function createDb(name: string = DB_NAME): AppDb {
 
   // Another tab still holding the old schema open blocks this tab's upgrade indefinitely. Closing
   // and reloading is the documented way out; the reloaded tab opens at the new version.
+  // The cloud copy needs to know when the record changes. Only the real database reports; the
+  // throwaway ones used for tests and for checking an import do not.
+  if (name === DB_NAME) {
+    database.use({
+      stack: 'dbcore',
+      name: 'change-notices',
+      create: (down: DBCore): DBCore => ({
+        ...down,
+        table(tableName: string) {
+          const table = down.table(tableName)
+          return {
+            ...table,
+            mutate: (request) =>
+              table.mutate(request).then((result) => {
+                notifyLocalChange(tableName)
+                return result
+              }),
+          }
+        },
+      }),
+    })
+  }
+
   database.on('versionchange', () => {
     database.close()
     if (typeof location !== 'undefined' && typeof location.reload === 'function') location.reload()

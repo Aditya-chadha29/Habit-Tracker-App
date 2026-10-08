@@ -26,7 +26,12 @@ name (`habit-tracker`), which must never be renamed.
   timestamp. The user is in IST (UTC+5:30): UTC moves everything before 05:30 into the previous
   day, which breaks the 4 AM wake-up habit specifically. The week starts on Sunday (changed from Monday by the user on
   2026-10-07) unless the setting says otherwise.
-- **Local-first, quiet, not a work tool.** No accounts, sync, analytics, external APIs,
+- **Local-first, quiet, not a work tool.** The device's own database is the working copy and the
+  app must open and work with no connection. The one exception to "no accounts, no sync" is the
+  **cloud copy** the user asked for on 2026-10-08 (after a re-added home-screen icon started
+  empty): the whole record saved to their own Firebase project (`src/sync`), signed in with
+  Google or email. It replaces a device's record only when that device has nothing of its own or
+  has not changed; otherwise it asks. No analytics, other external APIs,
   notifications, gamification, confetti, streak flames, AI coach, tasks, projects or CRM.
 - **Polarity.** For an `abstain` habit, done means "held" and a miss is "broken" — never
   completed / missed.

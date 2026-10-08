@@ -86,7 +86,7 @@ export default function SettingsScreen() {
       <div className="flex flex-col gap-7">
         <Group title="Quotes and data">
           <NavRow to="/quotes" icon="quotes" title="Quotes" hint="The library and how the daily quote is chosen" />
-          <NavRow to="/data" icon="data" title="Data" hint="Export, import, automatic copies" />
+          <NavRow to="/data" icon="data" title="Data" hint="Cloud copy, export, import, automatic copies" />
         </Group>
 
         <Group title="Appearance">

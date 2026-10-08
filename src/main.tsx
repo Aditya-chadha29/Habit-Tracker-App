@@ -10,6 +10,7 @@ import { runMigrations } from './data/migrations'
 import { DATA_FORMAT } from './data/settingsRepo'
 import { toLocalDateStr } from './engine/dates'
 import { readStoredTheme } from './state/theme'
+import { hasCloudAccount } from './sync/state'
 
 // autoUpdate mode (skipWaiting + clientsClaim, set in vite.config.ts) only auto-reloads once the
 // browser actually runs an update check, which normally requires a fresh navigation. An installed
@@ -101,6 +102,12 @@ async function boot(): Promise<void> {
       </StartGuard>
     </StrictMode>,
   )
+
+  // The cloud copy is loaded after the first screen, and only on a device that has signed in to
+  // one before. If it cannot load, the app carries on from what is on the device.
+  if (hasCloudAccount()) {
+    void import('./sync/engine').then((cloud) => cloud.startSync()).catch((error: unknown) => console.error('Cloud copy could not start', error))
+  }
 }
 
 void boot()
