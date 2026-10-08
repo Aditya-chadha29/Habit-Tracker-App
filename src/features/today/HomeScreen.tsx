@@ -84,9 +84,11 @@ export default function HomeScreen() {
             </Card>
           )}
           {quote && (
-            <Card padded={false} className="relative order-1 flex min-h-[168px] flex-col justify-end overflow-hidden px-4 py-4 lg:order-none lg:min-h-[260px] lg:p-7">
-              <Scene name="mountain" fade="up" position="60% 30%" eager />
-              <QuoteLine quote={quote} onScene className="relative max-w-[34ch] lg:max-w-[46ch]" />
+            <Card padded={false} className="relative order-1 flex min-h-[248px] flex-col justify-end overflow-hidden p-3 lg:order-none lg:min-h-[340px] lg:p-6">
+              <Scene name="mountain" fade="soft" position="62% 30%" eager />
+              <div className="relative rounded-control bg-night/70 px-4 py-3.5 shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--color-night-ink)_10%,transparent)] backdrop-blur-sm lg:max-w-[52ch]">
+                <QuoteLine quote={quote} onScene />
+              </div>
             </Card>
           )}
 

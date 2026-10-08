@@ -7,7 +7,7 @@ const STORAGE_KEY = 'habit-tracker-theme'
 const DARK_MEDIA = '(prefers-color-scheme: dark)'
 
 /** Browser chrome colour per theme: the `ground` token's value. */
-export const GROUND: Record<'dark' | 'light', string> = { dark: '#0b0f1a', light: '#f7f1ee' }
+export const GROUND: Record<'dark' | 'light', string> = { dark: '#0c0b10', light: '#f7f1ee' }
 
 export function readStoredTheme(): ThemePreference {
   try {

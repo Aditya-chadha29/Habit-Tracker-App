@@ -19,31 +19,32 @@
  *   mind / body / learning / exercise   the four pillars
  */
 @theme {
-  --color-ground: #0b0f1a;
-  --color-surface: #141a26;
-  --color-surface-2: #1c2331;
-  --color-surface-3: #2f3348;
-  --color-line: #232a39;
-  --color-line-strong: #3d4458;
-  --color-ink: #f5f0ea;
-  --color-ink-2: #b7c0cd;
-  --color-ink-3: #8b94a3;
-  --color-accent: #f4c2c2;
-  --color-accent-pressed: #e9a4b0;
-  --color-accent-ink: #f4c2c2;
-  --color-on-accent: #23101a;
-  --color-cream: #eeddcc;
-  --color-petal: #f4c2c2;
-  --color-peach: #fec8a6;
+  --color-ground: #0c0b10;
+  --color-surface: #15131a;
+  --color-surface-2: #1e1b24;
+  --color-surface-3: #2b2733;
+  --color-line: #2a2430;
+  --color-line-strong: #4a3f4d;
+  --color-ink: #f6eee9;
+  --color-ink-2: #c4bac1;
+  --color-ink-3: #968c95;
+  --color-accent: #f59ca8;
+  --color-accent-pressed: #e88c97;
+  --color-accent-ink: #ffb6c1;
+  --color-on-accent: #2a0f16;
+  --color-cream: #f6e8ea;
+  --color-petal: #f8d1d4;
+  --color-peach: #ffc9b0;
   /* The scenery is night in both themes: these two do not change with the theme. */
-  --color-night: #0b0f1a;
-  --color-night-ink: #f5f0ea;
-  --color-ok: #f4c2c2;
-  --color-warn: #fec8a6;
-  --color-risk: #ef6f6c;
-  --color-danger: #ef6f6c;
-  --color-mind: #c9b8ee;
-  --color-body: #fec8a6;
+  --color-night: #0c0b10;
+  --color-night-ink: #f6eee9;
+  --color-ok: #f59ca8;
+  --color-warn: #f5c58a;
+  /* Missed is an orange-red, well away from the pink, and always carries its word. */
+  --color-risk: #ff7a59;
+  --color-danger: #ff7a59;
+  --color-mind: #cdb8f0;
+  --color-body: #ffc9b0;
   --color-learning: #a9c4ee;
   --color-exercise: #a7e3a1;
 
@@ -58,7 +59,9 @@
 
   --shadow-card: 0 0 0 1px var(--color-line);
   --shadow-pop: 0 18px 50px -12px rgb(0 0 0 / 0.6), 0 0 0 1px var(--color-line-strong);
-  --shadow-glow: 0 8px 22px -10px rgb(244 194 194 / 0.5);
+  --shadow-glow: 0 10px 24px -10px rgb(245 156 168 / 0.6);
+  /* How strongly the blossom shows in a screen's corner. Night only: on paper it is hidden. */
+  --blossom-opacity: 0.9;
 }
 
 /* The light values, written once and applied by either route below. */
@@ -92,6 +95,7 @@
       --shadow-card: 0 1px 2px rgb(42 26 31 / 0.05), 0 0 0 1px var(--color-line);
       --shadow-pop: 0 18px 50px -12px rgb(42 26 31 / 0.25), 0 0 0 1px var(--color-line-strong);
       --shadow-glow: 0 8px 20px -10px rgb(184 69 106 / 0.55);
+      --blossom-opacity: 0;
       color-scheme: light;
     }
   }
@@ -124,6 +128,7 @@
     --shadow-card: 0 1px 2px rgb(42 26 31 / 0.05), 0 0 0 1px var(--color-line);
     --shadow-pop: 0 18px 50px -12px rgb(42 26 31 / 0.25), 0 0 0 1px var(--color-line-strong);
     --shadow-glow: 0 8px 20px -10px rgb(184 69 106 / 0.55);
+    --blossom-opacity: 0;
     color-scheme: light;
   }
 
@@ -191,6 +196,15 @@
 @utility tnum {
   font-family: var(--font-num);
   font-variant-numeric: tabular-nums;
+}
+
+/* The blossom branch in the top corner of a screen. Blended so its dark ground disappears into
+   the page, and faded toward the text so nothing is ever read through petals. */
+@utility blossom-corner {
+  opacity: var(--blossom-opacity);
+  mix-blend-mode: lighten;
+  mask-image: linear-gradient(to left, black 35%, transparent 96%), linear-gradient(to bottom, black 55%, transparent);
+  mask-composite: intersect;
 }
 
 /* The small uppercase label above a group of things. */

@@ -41,7 +41,7 @@ export function Segmented<T extends string>({ options, value, onChange, label, s
       aria-label={label}
       onKeyDown={onKeyDown}
       className={cx(
-        'flex gap-1 overflow-x-auto rounded-control bg-surface-2 p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
+        'flex gap-1 overflow-x-auto rounded-full bg-surface-2 p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
         block ? 'w-full' : 'w-fit max-w-full',
         className,
       )}
@@ -57,7 +57,7 @@ export function Segmented<T extends string>({ options, value, onChange, label, s
             tabIndex={selected ? 0 : -1}
             onClick={() => onChange(option.id)}
             className={cx(
-              'cursor-pointer rounded-[7px] px-3.5 font-medium whitespace-nowrap transition-colors duration-100',
+              'cursor-pointer rounded-full px-4 font-medium whitespace-nowrap transition-colors duration-100',
               size === 'md' ? 'h-9 text-[13.5px]' : 'h-7 text-[12.5px]',
               block && 'min-w-0 flex-1',
               selected ? 'bg-accent text-on-accent' : 'text-ink-2 hover:bg-surface-3 hover:text-ink',

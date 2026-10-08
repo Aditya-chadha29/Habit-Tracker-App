@@ -1,3 +1,4 @@
+import sakuraCorner from '../assets/sakura-corner.webp'
 import { useLayoutEffect, useRef, type ReactNode } from 'react'
 import { goBack, useLocation } from '../app/router'
 import { useShell } from '../app/Shell'
@@ -58,20 +59,24 @@ export function Page({ title, subtitle, back, actions, tabs, width = 'default', 
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <header className="shrink-0 border-b border-line bg-ground">
-        <div className={cx('mx-auto flex w-full items-center gap-2 px-2 py-2 lg:px-8 lg:py-5', WIDTH[width])}>
+      <header className="relative shrink-0 overflow-hidden border-b border-line bg-ground">
+        {/* Held back where buttons sit in the corner, so they are never lost among petals. */}
+        <div aria-hidden="true" className={cx("pointer-events-none absolute top-0 right-0", actions ? "opacity-45" : undefined)}>
+          <img src={sakuraCorner} alt="" className="blossom-corner h-[118px] w-[150px] object-cover object-[78%_18%] lg:h-[150px] lg:w-[210px]" />
+        </div>
+        <div className={cx('relative mx-auto flex w-full items-center gap-2 px-2 py-3 lg:px-8 lg:py-5', WIDTH[width])}>
           {back !== undefined ? (
             <IconButton icon="chevron-left" label="Back" onClick={() => goBack(back)} />
           ) : (
             <IconButton icon="menu" label="Menu: every part of the app" onClick={openMenu} className="lg:hidden" />
           )}
           <div className={cx('min-w-0 flex-1', back === undefined && 'lg:pl-0')}>
-            <h1 className="truncate font-display text-[19px] leading-tight font-semibold tracking-[0.01em] text-cream lg:text-[26px]">{title}</h1>
+            <h1 className="truncate font-display text-[24px] leading-tight font-medium tracking-[0.01em] text-cream lg:text-[30px]">{title}</h1>
             {subtitle && <div className="mt-0.5 truncate text-[12.5px] text-ink-3 lg:text-[13.5px]">{subtitle}</div>}
           </div>
           {actions && <div className="flex shrink-0 items-center gap-1.5 pr-2 lg:pr-0">{actions}</div>}
         </div>
-        {tabs && <div className={cx('mx-auto w-full px-4 pb-3 lg:px-8', WIDTH[width])}>{tabs}</div>}
+        {tabs && <div className={cx('relative mx-auto w-full px-4 pb-3 lg:px-8', WIDTH[width])}>{tabs}</div>}
       </header>
       <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto">
         <div className={cx(// The screen runs to the very bottom of the phone; the last of it clears the home indicator.
