@@ -3,7 +3,6 @@ import { useMemo } from 'react'
 import { Link } from '../../app/router'
 import { AttentionList } from '../../components/AttentionList'
 import { QuoteLine } from '../../components/QuoteLine'
-import { Scene } from '../../components/Scene'
 import { ScoreRing } from '../../components/ScoreRing'
 import { db } from '../../data/db'
 import { attentionItems } from '../../engine/attention'
@@ -12,7 +11,6 @@ import { periodOf, shiftPeriod } from '../../engine/periods'
 import { dayScore, weekTally } from '../../engine/score'
 import { useCore } from '../../state/core'
 import { hasCloudAccount } from '../../sync/state'
-import { Card } from '../../ui/Card'
 import { areaTone } from '../../ui/Chip'
 import { Page } from '../../ui/Page'
 import { useLearningNow } from '../learn/hooks'
@@ -69,29 +67,25 @@ export default function HomeScreen() {
 
 
   return (
-    <Page title={formatDayTitle(today)} subtitle={greeting(hour, settings.name)} width="wide">
+    <Page title={formatDayTitle(today)} subtitle={greeting(hour, settings.name)} width="wide" backdrop={{ scene: 'mountain', at: 'top', position: '62% 22%' }}>
       <div className="flex flex-col gap-4 lg:grid lg:grid-cols-12 lg:items-start lg:gap-6">
         <div className="contents lg:col-span-7 lg:flex lg:flex-col lg:gap-5 xl:col-span-8">
-          {!hasCloudAccount() && (
-            <Card className="flex flex-col gap-3">
-              <p className="text-[14px] font-medium text-ink">Sign in to your cloud copy</p>
-              <p className="text-[13.5px] leading-relaxed text-ink-2">
-                Your record is kept in your cloud account. Sign in to bring it to this device, or to save what is here.
-              </p>
-              <Link to="/data" className="inline-flex h-11 items-center justify-center rounded-control bg-accent px-4 text-[14px] font-medium text-on-accent">
-                Sign in
-              </Link>
-            </Card>
-          )}
           {quote && (
-            <Card padded={false} className="relative order-1 flex min-h-[248px] flex-col justify-end overflow-hidden p-3 lg:order-none lg:min-h-[340px] lg:p-6">
-              <Scene name="mountain" fade="soft" position="62% 30%" eager />
-              <div className="relative rounded-control bg-night/70 px-4 py-3.5 shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--color-night-ink)_10%,transparent)] backdrop-blur-sm lg:max-w-[52ch]">
+            <div className="order-1 flex flex-col lg:order-none">
+              {/* Room for the scene to be seen before anything sits on it. */}
+              <div aria-hidden="true" className="h-[118px] lg:h-[190px]" />
+              <div className="rounded-card bg-night/60 px-4 py-4 shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--color-night-ink)_12%,transparent)] backdrop-blur-md lg:max-w-[56ch] lg:p-6">
                 <QuoteLine quote={quote} onScene />
               </div>
-            </Card>
+            </div>
           )}
 
+          {!hasCloudAccount() && (
+            <Link to="/data" className="order-1 flex min-h-[48px] items-center justify-between gap-3 rounded-card bg-surface px-4 py-2.5 shadow-card lg:order-none">
+              <span className="min-w-0 text-[13.5px] leading-snug text-ink-2">Your record is not saved to the cloud from this device yet.</span>
+              <span className="shrink-0 text-[13.5px] font-medium text-accent-ink">Sign in</span>
+            </Link>
+          )}
           <nav aria-label="Scores" className="order-2 grid grid-cols-2 gap-2.5 lg:order-none lg:gap-4">
             <Link to="/today" className="block rounded-card transition-opacity duration-100 active:opacity-80">
               <ScoreRing compact lead title="Today" tally={day} caption={day.due === 0 ? 'nothing due' : 'so far'} />

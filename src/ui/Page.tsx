@@ -2,6 +2,7 @@ import sakuraCorner from '../assets/sakura-corner.webp'
 import { useLayoutEffect, useRef, type ReactNode } from 'react'
 import { goBack, useLocation } from '../app/router'
 import { useShell } from '../app/Shell'
+import { Scene, type SceneName } from '../components/Scene'
 import { IconButton } from './Button'
 import { cx } from './cx'
 
@@ -34,6 +35,8 @@ interface PageProps {
   children: ReactNode
   /** Extra classes for the content container (e.g. a grid). */
   className?: string
+  /** Scenery behind the screen itself: across the top (under the header) or along the bottom. */
+  backdrop?: { scene: SceneName; at: 'top' | 'bottom'; position?: string }
 }
 
 /**
@@ -43,8 +46,9 @@ interface PageProps {
  * button that opens Journal, Habits, Routines, Quotes, Data and Settings. On a wide screen those
  * live in the sidebar, so the header is just the title.
  */
-export function Page({ title, subtitle, back, actions, tabs, width = 'default', children, className }: PageProps) {
+export function Page({ title, subtitle, back, actions, tabs, width = 'default', children, className, backdrop }: PageProps) {
   const { openMenu } = useShell()
+  const onScene = backdrop?.at === 'top'
   const { path } = useLocation()
   const scroller = useRef<HTMLDivElement>(null)
 
@@ -58,27 +62,41 @@ export function Page({ title, subtitle, back, actions, tabs, width = 'default', 
   }, [path])
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <header className="relative shrink-0 overflow-hidden border-b border-line bg-ground">
-        {/* Held back where buttons sit in the corner, so they are never lost among petals. */}
-        <div aria-hidden="true" className={cx("pointer-events-none absolute top-0 right-0", actions ? "opacity-45" : undefined)}>
-          <img src={sakuraCorner} alt="" className="blossom-corner h-[118px] w-[150px] object-cover object-[78%_18%] lg:h-[150px] lg:w-[210px]" />
+    <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+      {/* The scenery behind the screen itself. At the top it runs under the header, which then
+          carries night colours; at the bottom it sits behind the last of the page (night only). */}
+      {backdrop?.at === 'top' && (
+        <div className="absolute inset-x-0 top-0 h-[46%] min-h-[320px] lg:h-[60%]">
+          <Scene name={backdrop.scene} fade="top" position={backdrop.position} eager />
         </div>
+      )}
+      {backdrop?.at === 'bottom' && (
+        <div className="scene-night-only absolute inset-x-0 bottom-0 h-[58%]">
+          <Scene name={backdrop.scene} fade="bottom" position={backdrop.position} />
+        </div>
+      )}
+      <header className={cx('relative shrink-0 overflow-hidden', onScene ? 'bg-transparent' : 'border-b border-line bg-ground')}>
+        {/* Held back where buttons sit in the corner, so they are never lost among petals. */}
+        {!onScene && (
+          <div aria-hidden="true" className={cx('pointer-events-none absolute top-0 right-0', actions ? 'opacity-45' : undefined)}>
+            <img src={sakuraCorner} alt="" className="blossom-corner h-[118px] w-[150px] object-cover object-[78%_18%] lg:h-[150px] lg:w-[210px]" />
+          </div>
+        )}
         <div className={cx('relative mx-auto flex w-full items-center gap-2 px-2 py-3 lg:px-8 lg:py-5', WIDTH[width])}>
           {back !== undefined ? (
-            <IconButton icon="chevron-left" label="Back" onClick={() => goBack(back)} />
+            <IconButton icon="chevron-left" label="Back" onClick={() => goBack(back)} className={onScene ? 'text-night-ink' : undefined} />
           ) : (
-            <IconButton icon="menu" label="Menu: every part of the app" onClick={openMenu} className="lg:hidden" />
+            <IconButton icon="menu" label="Menu: every part of the app" onClick={openMenu} className={cx('lg:hidden', onScene && 'text-night-ink')} />
           )}
           <div className={cx('min-w-0 flex-1', back === undefined && 'lg:pl-0')}>
-            <h1 className="truncate font-display text-[24px] leading-tight font-medium tracking-[0.01em] text-cream lg:text-[30px]">{title}</h1>
-            {subtitle && <div className="mt-0.5 truncate text-[12.5px] text-ink-3 lg:text-[13.5px]">{subtitle}</div>}
+            <h1 className={cx('truncate font-display text-[24px] leading-tight font-medium tracking-[0.01em] lg:text-[30px]', onScene ? 'text-night-ink' : 'text-cream')}>{title}</h1>
+            {subtitle && <div className={cx('mt-0.5 truncate text-[12.5px] lg:text-[13.5px]', onScene ? 'text-night-ink/80' : 'text-ink-3')}>{subtitle}</div>}
           </div>
           {actions && <div className="flex shrink-0 items-center gap-1.5 pr-2 lg:pr-0">{actions}</div>}
         </div>
         {tabs && <div className={cx('relative mx-auto w-full px-4 pb-3 lg:px-8', WIDTH[width])}>{tabs}</div>}
       </header>
-      <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto">
+      <div ref={scroller} className="relative min-h-0 flex-1 overflow-y-auto">
         <div className={cx(// The screen runs to the very bottom of the phone; the last of it clears the home indicator.
           'mx-auto w-full px-4 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] lg:px-8 lg:py-6', WIDTH[width], className)}>{children}</div>
       </div>

@@ -14,7 +14,6 @@ import { Button, IconButton } from '../../ui/Button'
 import { Field, TextArea, TextInput } from '../../ui/Field'
 import { Drawer } from '../../ui/Overlay'
 import { Page } from '../../ui/Page'
-import { SceneBand } from '../../components/Scene'
 import { saveStateLabel, useAutosave } from '../../state/useAutosave'
 
 function EntryForm({ date, kind, prompts, initial }: { date: DateStr; kind: DailyKind; prompts: string[]; initial: JournalEntry | null }) {
@@ -118,8 +117,9 @@ export default function JournalScreen() {
   return (
     <Page
       title="Journal"
-      subtitle="Written in the evening. Counts as the day’s writing"
+      subtitle="Written in the evening"
       width="narrow"
+      backdrop={{ scene: 'balcony', at: 'bottom', position: '40% 60%' }}
       actions={
         <>
           <IconButton icon="sliders" label="Edit the questions" onClick={() => setEditingPrompts(true)} />
@@ -128,7 +128,6 @@ export default function JournalScreen() {
       }
     >
       <div className="flex flex-col gap-5">
-        <SceneBand name="moonBlossom" position="30% 40%" />
         <DayNav date={date} onChange={setDate} />
         <DailyEntry date={date} kind={kind} prompts={settings.journal_prompts[kind]} />
       </div>

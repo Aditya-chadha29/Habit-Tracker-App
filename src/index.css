@@ -207,6 +207,11 @@
   mask-composite: intersect;
 }
 
+/* Scenery that sits behind theme-coloured text shows at night only; on paper it is hidden. */
+@utility scene-night-only {
+  opacity: var(--blossom-opacity);
+}
+
 /* The small uppercase label above a group of things. */
 @utility eyebrow {
   font-size: 11px;
