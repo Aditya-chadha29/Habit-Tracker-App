@@ -121,7 +121,7 @@ export default function PillarsScreen() {
       }
     >
       <div className="flex flex-col gap-6">
-        <SceneBand name="toriiWide" position="50% 45%" />
+        <SceneBand name="balcony" position="55% 45%" />
         {active.length === 0 ? (
           <EmptyState
             icon="learn"
