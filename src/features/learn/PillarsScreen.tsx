@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react'
+import { HabitRow } from '../../components/HabitRow'
 import { moved, Reorderable } from '../../components/SortableList'
 import { addPillar, deletePillar, reorderPillars, setPillarRetired, updatePillar } from '../../data/learningRepo'
 import type { LearningPillar } from '../../data/types'
 import { formatMediumDate } from '../../engine/dates'
+import { dueItems } from '../../engine/score'
 import { useCore } from '../../state/core'
 import { Button } from '../../ui/Button'
 import { Card, SectionTitle } from '../../ui/Card'
@@ -99,6 +101,10 @@ export default function PillarsScreen() {
   const toast = useToast()
   const pillars = usePillars()
   const resources = useResources()
+  const { today: day, habits, index } = useCore()
+  // The learning habits due today, shown here so they can be ticked without going to Today. It is
+  // the same row and the same tick: done here is done there.
+  const dueToday = useMemo(() => dueItems(habits, day, index).filter((item) => item.version.area === 'learning'), [habits, day, index])
   const [editing, setEditing] = useState<LearningPillar | 'new' | null>(null)
 
   const countOf = useMemo(() => {
@@ -121,6 +127,13 @@ export default function PillarsScreen() {
       }
     >
       <div className="flex flex-col gap-6">
+        {dueToday.length > 0 && (
+          <Card padded={false} className="divide-y divide-line overflow-hidden">
+            {dueToday.map((item) => (
+              <HabitRow key={item.habit.id} habit={item.habit} date={day} />
+            ))}
+          </Card>
+        )}
         {active.length === 0 ? (
           <EmptyState
             icon="learn"
