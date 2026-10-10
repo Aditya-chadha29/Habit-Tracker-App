@@ -1,7 +1,5 @@
-import balcony from '../assets/scene-temple-balcony.webp'
-import moonBlossom from '../assets/scene-moon-blossom.webp'
+import lake from '../assets/scene-journal-lake.webp'
 import mountain from '../assets/scene-mountain-moon.webp'
-import pagoda from '../assets/scene-pagoda-valley.webp'
 import torii from '../assets/scene-torii-lake.webp'
 import toriiWide from '../assets/scene-torii-lake-wide.webp'
 import { cx } from '../ui/cx'
@@ -14,7 +12,7 @@ import { cx } from '../ui/cx'
  * A scene is night in both themes. Whatever sits on it uses the night tokens, not the theme's
  * ink, so the words stay light on dark even when the rest of the app is on paper.
  */
-const SCENES = { mountain, torii, toriiWide, moonBlossom, pagoda, balcony }
+const SCENES = { mountain, torii, toriiWide, lake }
 export type SceneName = keyof typeof SCENES
 
 const FADES = {
@@ -23,9 +21,11 @@ const FADES = {
   /** The picture is the point; only the edges are settled. */
   soft: 'bg-gradient-to-t from-night/70 via-night/10 to-night/25',
   /** Behind the top of a screen: clear at the top, gone into the page colour by the bottom. */
-  top: 'bg-gradient-to-b from-night/35 via-night/30 to-ground',
+  top: 'bg-gradient-to-b from-night/75 via-night/10 via-35% to-ground',
   /** Behind the bottom of a screen: rises out of the page colour. */
   bottom: 'bg-gradient-to-b from-ground via-night/60 to-night/40',
+  /** The opening screen: the picture is left clear, and only the foot is darkened for the name. */
+  splash: 'bg-gradient-to-b from-night/15 via-night/5 via-55% to-night/85',
   /** Words sit in the middle of a full screen. */
   full: 'bg-gradient-to-b from-night/55 via-night/45 to-night',
 }

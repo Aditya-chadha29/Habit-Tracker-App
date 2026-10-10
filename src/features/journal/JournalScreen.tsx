@@ -119,7 +119,7 @@ export default function JournalScreen() {
       title="Journal"
       subtitle="Written in the evening"
       width="narrow"
-      backdrop={{ scene: 'balcony', at: 'bottom', position: '40% 60%' }}
+      backdrop={{ scene: 'lake', at: 'bottom', position: '50% 70%' }}
       actions={
         <>
           <IconButton icon="sliders" label="Edit the questions" onClick={() => setEditingPrompts(true)} />

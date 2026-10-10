@@ -8,8 +8,8 @@ import { cx } from '../ui/cx'
  */
 export function Splash({ quiet = false }: { quiet?: boolean }) {
   return (
-    <div className="relative flex h-full flex-col items-center overflow-hidden bg-night pt-[24vh]">
-      <Scene name="torii" fade="full" position="66% 50%" eager />
+    <div className="relative flex h-full flex-col items-center justify-end overflow-hidden bg-night pb-[13vh]">
+      <Scene name="torii" fade="splash" position="50% 40%" eager />
       <div className="relative flex flex-col items-center gap-3 px-8 text-center">
         <p className="font-display text-[30px] font-medium tracking-[0.32em] text-night-ink">IKIKATA</p>
         <span aria-hidden="true" className="h-px w-10 bg-accent" />

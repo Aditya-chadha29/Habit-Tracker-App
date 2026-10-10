@@ -67,7 +67,7 @@ export default function HomeScreen() {
 
 
   return (
-    <Page title={formatDayTitle(today)} subtitle={greeting(hour, settings.name)} width="wide" backdrop={{ scene: 'mountain', at: 'top', position: '62% 22%' }}>
+    <Page title={formatDayTitle(today)} subtitle={greeting(hour, settings.name)} width="wide" backdrop={{ scene: 'mountain', at: 'top', position: '58% 28%' }}>
       <div className="flex flex-col gap-4 lg:grid lg:grid-cols-12 lg:items-start lg:gap-6">
         <div className="contents lg:col-span-7 lg:flex lg:flex-col lg:gap-5 xl:col-span-8">
           {quote && (

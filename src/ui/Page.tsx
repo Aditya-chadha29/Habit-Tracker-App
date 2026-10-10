@@ -89,8 +89,8 @@ export function Page({ title, subtitle, back, actions, tabs, width = 'default', 
             <IconButton icon="menu" label="Menu: every part of the app" onClick={openMenu} className={cx('lg:hidden', onScene && 'text-night-ink')} />
           )}
           <div className={cx('min-w-0 flex-1', back === undefined && 'lg:pl-0')}>
-            <h1 className={cx('truncate font-display text-[24px] leading-tight font-medium tracking-[0.01em] lg:text-[30px]', onScene ? 'text-night-ink' : 'text-cream')}>{title}</h1>
-            {subtitle && <div className={cx('mt-0.5 truncate text-[12.5px] lg:text-[13.5px]', onScene ? 'text-night-ink/80' : 'text-ink-3')}>{subtitle}</div>}
+            <h1 className={cx('truncate font-display text-[24px] leading-tight font-medium tracking-[0.01em] lg:text-[30px]', onScene ? 'text-night-ink [text-shadow:0_1px_10px_var(--color-night),0_0_2px_var(--color-night)]' : 'text-cream')}>{title}</h1>
+            {subtitle && <div className={cx('mt-0.5 truncate text-[12.5px] lg:text-[13.5px]', onScene ? 'text-night-ink [text-shadow:0_1px_8px_var(--color-night),0_0_2px_var(--color-night)]' : 'text-ink-3')}>{subtitle}</div>}
           </div>
           {actions && <div className="flex shrink-0 items-center gap-1.5 pr-2 lg:pr-0">{actions}</div>}
         </div>
