@@ -24,6 +24,19 @@ async function before(): Promise<{ db: AppDb; backups: string }> {
 const run = (db: AppDb, backups: string, today = "2026-10-08") => runMigrations({ db, today, now: 2, theme: "system" }, { backupName: backups })
 const byName = async (db: AppDb, name: string) => (await db.habits.toArray()).find((habit) => habit.name.toLowerCase() === name)!
 
+describe("reading and writing leave the list", () => {
+  it("retires both from today and keeps their past ticks", async () => {
+    const { db, backups } = await before()
+    const reading = await byName(db, "reading")
+    await setHabitDone(reading.id!, "2026-10-08", true, { today: "2026-10-10", windowDays: 7 }, {}, db)
+    await run(db, backups, "2026-10-10")
+    expect((await byName(db, "reading")).retired_on).toBe("2026-10-10")
+    expect((await byName(db, "writing / reflection")).retired_on).toBe("2026-10-10")
+    expect((await byName(db, "meditation (isha kriya)")).retired_on).toBeNull()
+    expect(await db.entries.where("habit_id").equals(reading.id!).count()).toBe(1)
+  })
+})
+
 describe("a simpler day", () => {
   it("retires Water on waking, Cardio and the Daily 10s from today, and keeps their past", async () => {
     const { db, backups } = await before()

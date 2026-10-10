@@ -339,6 +339,23 @@ async function simplerDay({ db, today }: MigrationContext): Promise<{ retired: s
 }
 
 /**
+ * Reading and Writing / reflection leave the list, at the user’s request of 2026-10-10. Retired from
+ * today, never deleted: every earlier day keeps the score it had.
+ */
+const RETIRED_2026_10_10 = ['reading', 'writing / reflection']
+
+async function dropReadingAndWriting({ db, today }: MigrationContext): Promise<{ retired: string[] }> {
+  const retired: string[] = []
+  for (const habit of await db.habits.toArray()) {
+    if (habit.id === undefined || habit.retired_on !== null) continue
+    if (!RETIRED_2026_10_10.includes(habit.name.trim().toLowerCase())) continue
+    await retireHabit(habit.id, today, db)
+    retired.push(habit.name)
+  }
+  return { retired }
+}
+
+/**
  * Removes the duplicate Breakfast habit, at the user's request. It was created and retired on the
  * same day in August, so it was never due on any day and no score has ever counted it; the
  * Breakfast that is in use is untouched. Done only when that is exactly the situation.
@@ -419,6 +436,7 @@ export const MIGRATIONS: Migration[] = [
   { id: '010-drop-duplicate-breakfast', run: dropDuplicateBreakfast },
   { id: '011-evening-journal', run: eveningJournal },
   { id: '012-simpler-day', run: simplerDay },
+  { id: '013-drop-reading-and-writing', run: dropReadingAndWriting },
 ]
 
 export async function pendingMigrations(db: AppDb, migrations: Migration[] = MIGRATIONS): Promise<Migration[]> {
