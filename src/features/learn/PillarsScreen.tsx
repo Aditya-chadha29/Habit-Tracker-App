@@ -12,7 +12,6 @@ import { EmptyState } from '../../ui/EmptyState'
 import { Field, TextArea, TextInput } from '../../ui/Field'
 import { ConfirmationDialog, Modal } from '../../ui/Overlay'
 import { Page } from '../../ui/Page'
-import { SceneBand } from '../../components/Scene'
 import { useToast } from '../../ui/Toast'
 import { usePillars, useResources } from './hooks'
 
@@ -114,6 +113,7 @@ export default function PillarsScreen() {
     <Page
       title="Learn"
       width="narrow"
+      backdrop={{ scene: 'balcony', at: 'top', position: '56% 40%', reveal: true }}
       actions={
         <Button variant="primary" size="sm" icon="plus" onClick={() => setEditing('new')}>
           Add
@@ -121,7 +121,6 @@ export default function PillarsScreen() {
       }
     >
       <div className="flex flex-col gap-6">
-        <SceneBand name="balcony" position="55% 45%" />
         {active.length === 0 ? (
           <EmptyState
             icon="learn"

@@ -164,6 +164,7 @@ export default function ReviewScreen({ params }: RouteProps) {
 
   return (
     <Page
+      backdrop={{ scene: 'toriiWide', at: 'top', position: '50% 45%', reveal: true }}
       title="Review"
       subtitle={formatRange(start, end)}
       width="wide"

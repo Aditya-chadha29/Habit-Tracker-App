@@ -36,7 +36,7 @@ interface PageProps {
   /** Extra classes for the content container (e.g. a grid). */
   className?: string
   /** Scenery behind the screen itself: across the top (under the header) or along the bottom. */
-  backdrop?: { scene: SceneName; at: 'top' | 'bottom'; position?: string }
+  backdrop?: { scene: SceneName; at: 'top' | 'bottom'; position?: string; /** Leave a clear strip under the header so the picture is seen before the first card. */ reveal?: boolean }
 }
 
 /**
@@ -92,13 +92,16 @@ export function Page({ title, subtitle, back, actions, tabs, width = 'default', 
             <h1 className={cx('truncate font-display text-[24px] leading-tight font-medium tracking-[0.01em] lg:text-[30px]', onScene ? 'text-night-ink [text-shadow:0_1px_10px_var(--color-night),0_0_2px_var(--color-night)]' : 'text-cream')}>{title}</h1>
             {subtitle && <div className={cx('mt-0.5 truncate text-[12.5px] lg:text-[13.5px]', onScene ? 'text-night-ink [text-shadow:0_1px_8px_var(--color-night),0_0_2px_var(--color-night)]' : 'text-ink-3')}>{subtitle}</div>}
           </div>
-          {actions && <div className="flex shrink-0 items-center gap-1.5 pr-2 lg:pr-0">{actions}</div>}
+          {actions && <div className={cx('flex shrink-0 items-center gap-1.5 pr-2 lg:pr-0', onScene && '[&_button:not([class*=bg-gradient])]:text-night-ink')}>{actions}</div>}
         </div>
         {tabs && <div className={cx('relative mx-auto w-full px-4 pb-3 lg:px-8', WIDTH[width])}>{tabs}</div>}
       </header>
       <div ref={scroller} className="relative min-h-0 flex-1 overflow-y-auto">
         <div className={cx(// The screen runs to the very bottom of the phone; the last of it clears the home indicator.
-          'mx-auto w-full px-4 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] lg:px-8 lg:py-6', WIDTH[width], className)}>{children}</div>
+          'mx-auto w-full px-4 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] lg:px-8 lg:py-6', WIDTH[width], className)}>
+          {onScene && backdrop?.reveal && <div aria-hidden="true" className="h-[92px] lg:h-[150px]" />}
+          {children}
+        </div>
       </div>
     </div>
   )

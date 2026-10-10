@@ -22,7 +22,6 @@ import { EmptyState } from '../../ui/EmptyState'
 import { Icon } from '../../ui/icons'
 import { MetricCard, TrendMark } from '../../ui/Metric'
 import { Page } from '../../ui/Page'
-import { SceneBand } from '../../components/Scene'
 import { Segmented } from '../../ui/Tabs'
 
 const RANGE_OPTIONS = RANGES.map((range) => ({ id: range.id, label: range.label }))
@@ -120,6 +119,7 @@ export default function ProgressScreen() {
 
   return (
     <Page
+      backdrop={{ scene: 'toriiWide', at: 'top', position: '50% 45%', reveal: true }}
       title="Progress"
       subtitle={`${days} ${days === 1 ? 'day' : 'days'} of history`}
       width="wide"
@@ -378,7 +378,6 @@ export default function ProgressScreen() {
             )}
           </section>
         )}
-        <SceneBand name="toriiWide" position="50% 50%" />
       </div>
     </Page>
   )
