@@ -1,5 +1,5 @@
 import type { AppDb } from '../db'
-import { changeHabit, retireHabit } from '../habitRepo'
+import { changeHabit, createHabit, retireHabit } from '../habitRepo'
 import { takeSnapshot } from '../backup'
 import { readSettings, saveSettings, DATA_FORMAT, DEFAULT_PROMPTS } from '../settingsRepo'
 import { EXERCISE_LIBRARY } from '../seed/exercises'
@@ -356,6 +356,22 @@ async function dropReadingAndWriting({ db, today }: MigrationContext): Promise<{
 }
 
 /**
+ * Adds a daily Cold shower, at the user’s request of 2026-10-12. It sits with Daily moisturiser
+ * under Body · Grooming and is tracked from the day this runs. Added once: if the habit is already
+ * there it is left alone, and if it was retired it is brought back.
+ */
+async function addColdShower({ db, today }: MigrationContext): Promise<{ added: boolean; restored: boolean }> {
+  const existing = (await db.habits.toArray()).find((habit) => habit.name.trim().toLowerCase() === 'cold shower')
+  if (existing?.id !== undefined) {
+    if (existing.retired_on === null) return { added: false, restored: false }
+    await changeHabit(existing.id, { active: true }, today, db)
+    return { added: false, restored: true }
+  }
+  await createHabit({ name: 'Cold shower', area: 'body', group: 'Grooming', icon: 'droplet' }, today, db)
+  return { added: true, restored: false }
+}
+
+/**
  * Removes the duplicate Breakfast habit, at the user's request. It was created and retired on the
  * same day in August, so it was never due on any day and no score has ever counted it; the
  * Breakfast that is in use is untouched. Done only when that is exactly the situation.
@@ -437,6 +453,7 @@ export const MIGRATIONS: Migration[] = [
   { id: '011-evening-journal', run: eveningJournal },
   { id: '012-simpler-day', run: simplerDay },
   { id: '013-drop-reading-and-writing', run: dropReadingAndWriting },
+  { id: '014-cold-shower', run: addColdShower },
 ]
 
 export async function pendingMigrations(db: AppDb, migrations: Migration[] = MIGRATIONS): Promise<Migration[]> {

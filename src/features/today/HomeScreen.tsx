@@ -17,6 +17,12 @@ import { useLearningNow } from '../learn/hooks'
 import { useQuoteOfDay } from '../quotes/hooks'
 import { useTodaysWorkout } from '../train/hooks'
 
+/** The order the user asked for on Home: Learning and Exercise first, then Mind and Body. */
+const HOME_ORDER = ['learning', 'exercise', 'mind', 'body']
+const rank = (id: string): number => (HOME_ORDER.includes(id) ? HOME_ORDER.indexOf(id) : HOME_ORDER.length)
+/** One thing a day: shown as a tick when done, not as "0 / 1". */
+const SINGLE_ON_HOME: string[] = ['learning', 'exercise']
+
 function greeting(hour: number, name: string): string {
   const part = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
   return name ? `${part}, ${name}` : part
@@ -66,6 +72,8 @@ export default function HomeScreen() {
   )
 
 
+  const homeAreas = [...areas].sort((a, b) => rank(a.id) - rank(b.id))
+
   return (
     <Page title={formatDayTitle(today)} subtitle={greeting(hour, settings.name)} width="wide" backdrop={{ scene: 'mountain', at: 'top', position: '58% 28%' }}>
       <div className="flex flex-col gap-4 lg:grid lg:grid-cols-12 lg:items-start lg:gap-6">
@@ -93,11 +101,14 @@ export default function HomeScreen() {
             <Link to="/review" className="block rounded-card transition-opacity duration-100 active:opacity-80">
               <ScoreRing compact lead title="This week" tally={tally} caption="so far" tone="ok" />
             </Link>
-            {areas.map((area) => (
-              <Link key={area.id} to={area.id === 'learning' ? '/learn' : `/area/${area.id}`} className="block rounded-card transition-opacity duration-100 active:opacity-80">
-                <ScoreRing compact title={area.label} tally={day.by_area.get(area.id) ?? { done: 0, due: 0 }} caption="today" tone={areaTone(area.color)} />
-              </Link>
-            ))}
+            {homeAreas.map((area) => {
+              const areaTally = day.by_area.get(area.id) ?? { done: 0, due: 0 }
+              return (
+                <Link key={area.id} to={area.id === 'learning' ? '/learn' : `/area/${area.id}`} className="block rounded-card transition-opacity duration-100 active:opacity-80">
+                  <ScoreRing compact title={area.label} tally={areaTally} caption="today" tone={areaTone(area.color)} single={SINGLE_ON_HOME.includes(area.id) && areaTally.due <= 1} />
+                </Link>
+              )
+            })}
           </nav>
 
         </div>

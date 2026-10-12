@@ -2,6 +2,8 @@ import type { ReactNode } from 'react'
 import { percent, type Tally } from '../engine/score'
 import { Card } from '../ui/Card'
 import type { Tone } from '../ui/Chip'
+import { cx } from '../ui/cx'
+import { Icon } from '../ui/icons'
 import { ProgressRing } from '../ui/Progress'
 
 interface ScoreRingProps {
@@ -16,6 +18,8 @@ interface ScoreRingProps {
   compact?: boolean
   /** With compact: a step larger, for the two scores that lead the screen. */
   lead?: boolean
+  /** With compact: for a pillar that is one thing a day. A tick and a word, not a count of one. */
+  single?: boolean
 }
 
 /**
@@ -25,8 +29,28 @@ interface ScoreRingProps {
  * Two of these sit side by side on a phone, so the narrow layout stacks the ring over the count;
  * with more room the count moves beside the ring.
  */
-export function ScoreRing({ title, tally, caption, tone = 'accent', footer, compact = false, lead = false }: ScoreRingProps) {
+export function ScoreRing({ title, tally, caption, tone = 'accent', footer, compact = false, lead = false, single = false }: ScoreRingProps) {
   const value = percent(tally)
+  if (compact && single) {
+    const done = tally.due > 0 && tally.done >= tally.due
+    const state = tally.due === 0 ? 'Not due' : done ? 'Done' : 'Pending'
+    return (
+      <Card padded={false} className="flex items-center gap-3 p-3.5">
+        <span
+          role="img"
+          aria-label={`${title}: ${state}`}
+          className={cx('flex h-[62px] w-[62px] shrink-0 items-center justify-center rounded-full', done ? 'bg-ok text-ground' : 'shadow-[inset_0_0_0_7px_var(--color-surface-3)]')}
+        >
+          {done && <Icon name="check" size={28} className="stroke-[3]" />}
+        </span>
+        <div className="min-w-0">
+          <h2 className="eyebrow truncate">{title}</h2>
+          <p className={cx('mt-0.5 text-[17px] leading-tight font-semibold tracking-tight', done ? 'text-ok' : 'text-ink')}>{state}</p>
+          <p className="mt-0.5 text-[12px] text-ink-3">today</p>
+        </div>
+      </Card>
+    )
+  }
   if (compact) {
     return (
       <Card padded={false} className={lead ? 'flex flex-col items-center gap-2.5 p-3.5 text-center' : 'flex items-center gap-3 p-3.5'}>
@@ -37,7 +61,9 @@ export function ScoreRing({ title, tally, caption, tone = 'accent', footer, comp
           tone={tone}
           label={value === null ? `${title}: nothing due` : `${title}: ${value} percent, ${tally.done} of ${tally.due}`}
         >
-          <span className={lead ? 'tnum text-[19px] leading-none font-semibold text-ink' : 'tnum text-[15px] leading-none font-semibold text-ink'}>{value === null ? '—' : value}</span>
+          <span className={lead ? 'tnum text-[19px] leading-none font-semibold text-ink' : 'tnum text-[15px] leading-none font-semibold text-ink'}>{value === null ? '—' : value}
+            {value !== null && <span className={lead ? 'ml-px text-[11px] font-medium text-ink-3' : 'ml-px text-[9.5px] font-medium text-ink-3'}>%</span>}
+          </span>
         </ProgressRing>
         <div className="min-w-0">
           <h2 className="eyebrow truncate">{title}</h2>

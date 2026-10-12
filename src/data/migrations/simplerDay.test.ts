@@ -37,6 +37,20 @@ describe("reading and writing leave the list", () => {
   })
 })
 
+describe("a cold shower is added", () => {
+  it("adds one daily habit under Body, Grooming, tracked from the day it runs, and only once", async () => {
+    const { db, backups } = await before()
+    const count = await db.habits.count()
+    await run(db, backups, "2026-10-12")
+    const habit = await byName(db, "cold shower")
+    const current = habit.versions[habit.versions.length - 1]
+    expect([current.area, current.group, habit.created_on, habit.retired_on]).toEqual(["body", "Grooming", "2026-10-12", null])
+    expect(await db.habits.count()).toBe(count + 1)
+    await run(db, backups, "2026-10-13")
+    expect(await db.habits.count()).toBe(count + 1)
+  })
+})
+
 describe("a simpler day", () => {
   it("retires Water on waking, Cardio and the Daily 10s from today, and keeps their past", async () => {
     const { db, backups } = await before()
