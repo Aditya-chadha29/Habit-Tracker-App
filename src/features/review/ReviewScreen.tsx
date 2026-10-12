@@ -3,11 +3,10 @@ import { Link, navigate, type RouteProps } from '../../app/router'
 import { canReflectOn, freezeDueWeeks, saveReflection, weekStatsFor, type ReflectionPatch } from '../../data/reviewRepo'
 import type { DateStr, HabitWeekResult, TargetResult, WeeklyReview, WeekStats } from '../../data/types'
 import { addDays, formatMediumDate, formatRange, isValidDateStr, weekStartOf } from '../../engine/dates'
-import { describeFrequency, describeTarget } from '../../engine/describe'
+import { describeTarget } from '../../engine/describe'
 import { firstEditableDate } from '../../engine/lock'
 import { rankHabits } from '../../engine/review'
 import { targetProgress } from '../../engine/targets'
-import { currentVersion, isRetired } from '../../engine/timeline'
 import { ReviewTabs } from '../../components/ReviewTabs'
 import { useCore } from '../../state/core'
 import { useKeyedLiveQuery } from '../../state/live'
@@ -157,10 +156,6 @@ export default function ReviewScreen({ params }: RouteProps) {
         return day ? { ...day, counted: true } : { date, done: 0, due: 0, counted: false }
       })
     : []
-  const upcoming = habits
-    .filter((habit) => !isRetired(habit) && currentVersion(habit).target?.per === 'week')
-    .map((habit) => ({ id: habit.id!, name: habit.name, count: currentVersion(habit).target!.count, frequency: describeFrequency(currentVersion(habit)) }))
-  const weightChange = stats && stats.weight.kg !== null && stats.weight.previous_kg !== null ? Math.round((stats.weight.kg - stats.weight.previous_kg) * 10) / 10 : null
 
   return (
     <Page
@@ -232,13 +227,6 @@ export default function ReviewScreen({ params }: RouteProps) {
                   )
                 })}
               </div>
-              <details className="text-[12.5px] leading-relaxed text-ink-3">
-                <summary className="cursor-pointer text-accent-ink">How this is counted</summary>
-                <p className="mt-2">
-                  Every habit due on a day counts once for that day, done or not. A habit with no particular day counts as its weekly target — twice a week
-                  counts as 2, with what was done capped at the target. Habits that were not due are not counted at all. {running ? 'Days still to come are not counted yet.' : ''}
-                </p>
-              </details>
             </Card>
 
             <section className="flex flex-col gap-2">
@@ -278,7 +266,7 @@ export default function ReviewScreen({ params }: RouteProps) {
               </section>
             )}
 
-            {(missedTargets.length > 0 || openTargets.length > 0 || weakest.length > 0 || strongest.length > 0) && (
+            {!running && (missedTargets.length > 0 || openTargets.length > 0 || weakest.length > 0 || strongest.length > 0) && (
               <section className="flex flex-col gap-2">
                 <SectionTitle>{running ? 'Where the week stands' : 'What did I miss?'}</SectionTitle>
                 <Card className="flex flex-col gap-5">
@@ -321,7 +309,6 @@ export default function ReviewScreen({ params }: RouteProps) {
                 ))}
               </section>
             )}
-            {running && stats.due > 0 && <p className="px-1 text-[12.5px] text-ink-3">Comparisons with earlier weeks appear once this week is over.</p>}
           </div>
 
           <div className="flex flex-col gap-5 lg:col-span-5">
@@ -338,30 +325,6 @@ export default function ReviewScreen({ params }: RouteProps) {
                   <p className="mt-2 text-[14.5px] leading-relaxed whitespace-pre-wrap text-ink">{data.review.legacy_notes}</p>
                 </Card>
               )}
-            </section>
-
-            <section className="flex flex-col gap-2">
-              <SectionTitle
-                action={
-                  <Link to="/progress/weight" className="font-medium">
-                    Weight
-                  </Link>
-                }
-              >
-                Body
-              </SectionTitle>
-              <Card className="grid grid-cols-3 gap-3">
-                {[
-                  ['Weight', stats.weight.kg === null ? '—' : `${stats.weight.kg} kg`],
-                  ['Week before', stats.weight.previous_kg === null ? '—' : `${stats.weight.previous_kg} kg`],
-                  ['Change', weightChange === null ? '—' : `${weightChange > 0 ? '+' : ''}${weightChange} kg`],
-                ].map(([label, value]) => (
-                  <div key={label}>
-                    <p className="eyebrow">{label}</p>
-                    <p className="tnum mt-1 text-[17px] font-semibold text-ink">{value}</p>
-                  </div>
-                ))}
-              </Card>
             </section>
 
             <section className="flex flex-col gap-2">
@@ -383,56 +346,6 @@ export default function ReviewScreen({ params }: RouteProps) {
                 {stats.training.sessions === 0 && <p className="text-[13px] text-ink-3">No sessions logged this week.</p>}
               </Card>
             </section>
-
-            <section className="flex flex-col gap-2">
-              <SectionTitle>Learning</SectionTitle>
-              <Card className="flex flex-col gap-3">
-                <div className="grid grid-cols-3 gap-3">
-                  {[
-                    ['Sessions', String(stats.learning.sessions)],
-                    ['Minutes', String(stats.learning.minutes)],
-                    ['Completed', String(stats.learning.completed)],
-                  ].map(([label, value]) => (
-                    <div key={label}>
-                      <p className="eyebrow">{label}</p>
-                      <p className="tnum mt-1 text-[17px] font-semibold text-ink">{value}</p>
-                    </div>
-                  ))}
-                </div>
-                {stats.learning.by_pillar.length > 0 && (
-                  <ul className="flex flex-col gap-1 border-t border-line pt-3">
-                    {stats.learning.by_pillar.map((row) => (
-                      <li key={row.name} className="flex items-baseline gap-3 text-[13.5px]">
-                        <span className="min-w-0 flex-1 truncate text-ink-2">{row.name}</span>
-                        <span className="tnum text-ink">{row.sessions}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </Card>
-            </section>
-
-            {start === current && upcoming.length > 0 && (
-              <section className="flex flex-col gap-2">
-                <SectionTitle
-                  action={
-                    <Link to="/habits" className="font-medium">
-                      Change
-                    </Link>
-                  }
-                >
-                  Targets for next week
-                </SectionTitle>
-                <Card padded={false} className="divide-y divide-line overflow-hidden">
-                  {upcoming.map((target) => (
-                    <div key={target.id} className="flex min-h-[44px] items-center gap-3 px-4 py-2 text-[14px]">
-                      <span className="min-w-0 flex-1 truncate text-ink">{target.name}</span>
-                      <span className="tnum shrink-0 text-ink-2">{target.count} per week</span>
-                    </div>
-                  ))}
-                </Card>
-              </section>
-            )}
 
             {!running && !frozen && (
               <p className="px-1 text-[12.5px] leading-relaxed text-ink-3">

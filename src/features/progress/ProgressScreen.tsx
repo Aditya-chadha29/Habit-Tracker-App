@@ -2,14 +2,13 @@ import { useMemo, useState } from 'react'
 import { Link, useQueryState } from '../../app/router'
 import { db } from '../../data/db'
 import type { DateStr } from '../../data/types'
-import { addDays, formatShortDate, WEEKDAY_LONG, WEEKDAY_SHORT, weekdayIndex, weekStartOf } from '../../engine/dates'
+import { addDays, formatShortDate, weekStartOf } from '../../engine/dates'
 import { describeFrequency } from '../../engine/describe'
 import {
-  compareRange, habitSummaries, historyDays, lowestWeekday, pointsWithData, RANGES, rangeFor, standingComparisons,
+  compareRange, habitSummaries, historyDays, pointsWithData, RANGES, rangeFor,
   streakLeaders, weeklySeries, type Comparison, type RangeKey,
 } from '../../engine/insights'
-import { weekdayRates } from '../../engine/streaks'
-import { LearningInsights, MonthlyHistory } from './LongerViews'
+import { MonthlyHistory } from './LongerViews'
 import { currentVersion, isRetired } from '../../engine/timeline'
 import { ReviewTabs } from '../../components/ReviewTabs'
 import { useCore } from '../../state/core'
@@ -17,7 +16,6 @@ import { useLive } from '../../state/live'
 import { Card, SectionTitle } from '../../ui/Card'
 import { BarChart, LineChart, type Series } from '../../ui/Charts'
 import { areaTone } from '../../ui/Chip'
-import { cx } from '../../ui/cx'
 import { EmptyState } from '../../ui/EmptyState'
 import { Icon } from '../../ui/icons'
 import { MetricCard, TrendMark } from '../../ui/Metric'
@@ -38,14 +36,6 @@ function deltaText(comparison: Comparison): string {
   return `${comparison.delta > 0 ? '+' : ''}${comparison.delta} points`
 }
 
-/** Shade for a weekday cell. The number is always printed in the cell; the shade only helps the eye. */
-function shade(rate: number): string {
-  if (rate >= 0.9) return 'bg-accent/45 text-ink'
-  if (rate >= 0.75) return 'bg-accent/32 text-ink'
-  if (rate >= 0.5) return 'bg-accent/20 text-ink'
-  if (rate >= 0.25) return 'bg-accent/10 text-ink-2'
-  return 'bg-surface-2 text-ink-2'
-}
 
 /**
  * Progress answers "am I actually improving?" with evidence: consistency over a chosen range
@@ -63,18 +53,15 @@ export default function ProgressScreen() {
   const overall = useMemo(() => compareRange(habits, range, index), [habits, range, index])
   const summaries = useMemo(() => habitSummaries(habits, range, today, weekStart, index), [habits, range, today, weekStart, index])
   const leaders = useMemo(() => streakLeaders(summaries), [summaries])
-  const standing = useMemo(() => standingComparisons(habits, today, weekStart, index), [habits, today, weekStart, index])
   const series = useMemo(() => weeklySeries(habits, rangeInfo.weeks, today, weekStart, index), [habits, rangeInfo.weeks, today, weekStart, index])
   const areaSeries = useMemo(
     () => (lines === 'pillars' ? areas.map((area) => ({ area, points: weeklySeries(habits, rangeInfo.weeks, today, weekStart, index, area.id) })) : []),
     [lines, areas, habits, rangeInfo.weeks, today, weekStart, index],
   )
-  const pillars = useMemo(() => areas.map((area) => ({ area, comparison: compareRange(habits, range, index, area.id) })), [areas, habits, range, index])
   const retired = habits.filter(isRetired)
   const days = historyDays(habits, today)
 
   const sessions = useLive(() => db.sessions.toArray(), [], [])
-  const learning = useLive(() => db.learning_sessions.toArray(), [], [])
   const perWeek = (rows: { date: DateStr }[]) => {
     const current = weekStartOf(today, weekStart)
     const counts = new Map<DateStr, Set<DateStr>>()
@@ -90,24 +77,12 @@ export default function ProgressScreen() {
     })
   }
   const trainingBars = perWeek(sessions.filter((session) => session.ended_at !== null))
-  const learningBars = perWeek(learning)
 
   const chartSeries: Series[] =
     lines === 'overall'
       ? [{ label: 'Overall', tone: 'accent', points: series.map((point) => ({ x: point.week_start, y: point.rate })) }]
       : areaSeries.map(({ area, points }) => ({ label: area.label, tone: areaTone(area.color), points: points.map((point) => ({ x: point.week_start, y: point.rate })) }))
 
-  const weekdayRows = useMemo(
-    () =>
-      summaries
-        .filter((summary) => summary.streak.unit === 'days')
-        .map((summary) => {
-          const rates = weekdayRates(summary.habit, range.from, range.to, today, index, weekdayIndex)
-          return { habit: summary.habit, rates, lowest: lowestWeekday(rates) }
-        })
-        .filter((row) => row.rates.some((entry) => entry.due > 0)),
-    [summaries, range, today, index],
-  )
 
   if (!habits.length) {
     return (
@@ -232,44 +207,6 @@ export default function ProgressScreen() {
           </div>
 
           <div className="flex flex-col gap-6 lg:col-span-5">
-            <section className="flex flex-col gap-2">
-              <SectionTitle>Against the period before</SectionTitle>
-              <Card padded={false} className="divide-y divide-line overflow-hidden">
-                {standing.map((row) => (
-                  <div key={row.label} className="flex min-h-[56px] items-center gap-3 px-4 py-2">
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-[14px] text-ink">{row.label}</span>
-                      <span className="block text-[12px] text-ink-3">
-                        {row.previous_label}: {row.previous_rate === null ? '—' : `${row.previous_rate}%`}
-                      </span>
-                    </span>
-                    <span className="tnum shrink-0 text-right">
-                      <span className="block text-[15px] font-semibold text-ink">{row.rate === null ? '—' : `${row.rate}%`}</span>
-                      <span className="block text-[11.5px] text-ink-3">{deltaText(row)}</span>
-                    </span>
-                    {row.direction && <TrendMark direction={row.direction} good={row.direction === 'flat' ? null : row.direction === 'up'} label={deltaText(row)} />}
-                  </div>
-                ))}
-              </Card>
-            </section>
-
-            <section className="flex flex-col gap-2">
-              <SectionTitle>Pillars · {rangeInfo.label}</SectionTitle>
-              <Card padded={false} className="divide-y divide-line overflow-hidden">
-                {pillars.map(({ area, comparison }) => (
-                  <Link key={area.id} to={`/area/${area.id}`} className="flex min-h-[52px] items-center gap-3 px-4 py-2 transition-colors duration-100 hover:bg-surface-2">
-                    <span className="min-w-0 flex-1 text-[14px] text-ink">{area.label}</span>
-                    <span className="tnum shrink-0 text-[12.5px] text-ink-3">{deltaText(comparison)}</span>
-                    <span className="tnum w-12 shrink-0 text-right text-[15px] font-semibold text-ink">{comparison.rate === null ? '—' : `${comparison.rate}%`}</span>
-                    {comparison.direction ? (
-                      <TrendMark direction={comparison.direction} good={comparison.direction === 'flat' ? null : comparison.direction === 'up'} label={deltaText(comparison)} />
-                    ) : (
-                      <span className="w-4" />
-                    )}
-                  </Link>
-                ))}
-              </Card>
-            </section>
 
             <section className="flex flex-col gap-2">
               <SectionTitle
@@ -290,25 +227,6 @@ export default function ProgressScreen() {
               </Card>
             </section>
 
-            <section className="flex flex-col gap-2">
-              <SectionTitle
-                action={
-                  <Link to="/learn" className="font-medium">
-                    Learn
-                  </Link>
-                }
-              >
-                Days with learning per week
-              </SectionTitle>
-              <Card>
-                {learningBars.filter((bar) => bar.y > 0).length >= 2 ? (
-                  <BarChart bars={learningBars.map((bar) => ({ ...bar, tone: 'learning' as const }))} yMax={7} xFormat={formatShortDate} height={130} label="Days with a learning or reading session in each of the last twelve weeks" />
-                ) : (
-                  <p className="text-[13.5px] text-ink-3">{NEED}.</p>
-                )}
-              </Card>
-            </section>
-
             <Link to="/progress/weight" className="flex min-h-[56px] items-center gap-3 rounded-card bg-surface px-4 py-2 shadow-card transition-colors duration-100 hover:bg-surface-2">
               <Icon name="scale" size={18} className="text-ink-3" />
               <span className="min-w-0 flex-1 text-[14.5px] text-ink">Body weight</span>
@@ -319,65 +237,7 @@ export default function ProgressScreen() {
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start">
           <MonthlyHistory />
-          <LearningInsights range={range} label={rangeInfo.label} />
         </div>
-
-        {weekdayRows.length > 0 && (
-          <section className="flex flex-col gap-2">
-            <SectionTitle>Habit by weekday · {rangeInfo.label}</SectionTitle>
-            <Card padded={false} className="overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[520px] border-separate border-spacing-1 p-2 text-[12px]">
-                  <thead>
-                    <tr>
-                      <th scope="col" className="w-[38%] px-2 py-1 text-left font-medium text-ink-3">
-                        Habit
-                      </th>
-                      {WEEKDAY_SHORT.map((day) => (
-                        <th key={day} scope="col" className="px-1 py-1 text-center font-medium text-ink-3">
-                          {day}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {weekdayRows.map(({ habit, rates }) => (
-                      <tr key={habit.id}>
-                        <th scope="row" className="max-w-0 truncate px-2 py-1 text-left text-[13px] font-normal text-ink">
-                          {habit.short_name || habit.name}
-                        </th>
-                        {rates.map((entry, weekday) => (
-                          <td key={weekday} className="p-0 text-center">
-                            {entry.rate === null || entry.due < 2 ? (
-                              <span className="tnum flex h-8 items-center justify-center rounded-[6px] border border-dashed border-line text-ink-3" title="Not enough days yet">
-                                ·
-                              </span>
-                            ) : (
-                              <span className={cx('tnum flex h-8 items-center justify-center rounded-[6px] font-medium', shade(entry.rate))}>{Math.round(entry.rate * 100)}</span>
-                            )}
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </Card>
-            <p className="px-1 text-[12.5px] text-ink-3">Percent of due days done. A dot means too few days to say.</p>
-            {weekdayRows.some((row) => row.lowest) && (
-              <ul className="flex flex-col gap-1 px-1 text-[13.5px] text-ink-2">
-                {weekdayRows
-                  .filter((row) => row.lowest)
-                  .slice(0, 5)
-                  .map((row) => (
-                    <li key={row.habit.id}>
-                      {WEEKDAY_LONG[row.lowest!.weekday]} has the lowest completion rate for {row.habit.name} ({Math.round(row.lowest!.rate * 100)}%).
-                    </li>
-                  ))}
-              </ul>
-            )}
-          </section>
-        )}
       </div>
     </Page>
   )
