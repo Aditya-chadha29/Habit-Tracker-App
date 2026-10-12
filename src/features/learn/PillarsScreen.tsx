@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { navigate } from '../../app/router'
 import { HabitRow } from '../../components/HabitRow'
 import { moved, Reorderable } from '../../components/SortableList'
 import { addPillar, deletePillar, reorderPillars, setPillarRetired, updatePillar } from '../../data/learningRepo'
@@ -19,7 +20,7 @@ import { usePillars, useResources } from './hooks'
 
 const COLORS = ['mind', 'learning', 'body', 'exercise', 'accent']
 
-function PillarForm({ pillar, count, onClose }: { pillar: LearningPillar | null; count: number; onClose: () => void }) {
+export function PillarForm({ pillar, count, onClose }: { pillar: LearningPillar | null; count: number; onClose: () => void }) {
   const { today } = useCore()
   const toast = useToast()
   const [name, setName] = useState(pillar?.name ?? '')
@@ -162,7 +163,7 @@ export default function PillarsScreen() {
               <span className="absolute top-1.5 right-1">{handle}</span>
               <button
                 type="button"
-                onClick={() => setEditing(pillar)}
+                onClick={() => navigate('/learn/topic/' + pillar.id)}
                 className="flex min-h-[150px] w-full cursor-pointer flex-col items-start gap-3 rounded-card bg-surface p-4 text-left shadow-card transition-colors duration-100 hover:bg-surface-2 active:bg-surface-3"
               >
                 <span className={cx('flex h-10 w-10 shrink-0 items-center justify-center rounded-control text-[16px] font-semibold text-on-accent', toneSolid(areaTone(pillar.color)))}>{i + 1}</span>
@@ -200,7 +201,7 @@ export default function PillarsScreen() {
           </section>
         )}
 
-        <p className="px-1 text-[12.5px] leading-relaxed text-ink-3">Tap a topic to rename, retire or delete it. Drag the dots to change the order.</p>
+        <p className="px-1 text-[12.5px] leading-relaxed text-ink-3">Tap a topic to open it. Drag the dots to change the order.</p>
       </div>
 
       {editing && (

@@ -113,12 +113,6 @@ export function openResourceLink(resource: LearningResource): boolean {
 
 // ─── Add / edit a resource ───────────────────────────────────────────────────────────────────
 
-const PRIORITIES = [
-  { id: '1', label: 'High' },
-  { id: '2', label: 'Normal' },
-  { id: '3', label: 'Low' },
-] as const
-
 const UNITS: ProgressUnit[] = ['pages', 'minutes', 'lessons', 'chapters', 'percent', 'none']
 
 function toInput(resource: LearningResource): ResourceInput {
@@ -134,15 +128,17 @@ interface ResourceFormProps {
   /** An existing resource to edit, or a type to start a new one with. */
   resource?: LearningResource
   type?: ResourceType
+  /** For a new resource: the topic it is being added from. */
+  pillarId?: number
   pillars: LearningPillar[]
   onClose: () => void
   onSaved?: (id: number) => void
 }
 
-export function ResourceForm({ resource, type, pillars, onClose, onSaved }: ResourceFormProps) {
+export function ResourceForm({ resource, type, pillarId, pillars, onClose, onSaved }: ResourceFormProps) {
   const { today } = useCore()
-  const [form, setForm] = useState<ResourceInput>(resource ? toInput(resource) : blankResource(type))
-  const [minutes, setMinutes] = useState(resource?.estimated_minutes ? String(resource.estimated_minutes) : '')
+  const [form, setForm] = useState<ResourceInput>(resource ? toInput(resource) : { ...blankResource(type), pillar_id: pillarId ?? null })
+  const [minutes] = useState(resource?.estimated_minutes ? String(resource.estimated_minutes) : '')
   const [total, setTotal] = useState(resource?.progress_total ? String(resource.progress_total) : '')
   const [error, setError] = useState('')
   const set = <K extends keyof ResourceInput>(key: K, value: ResourceInput[K]) => setForm((current) => ({ ...current, [key]: value }))
@@ -154,7 +150,10 @@ export function ResourceForm({ resource, type, pillars, onClose, onSaved }: Reso
         await updateResource(resource.id!, input)
         onSaved?.(resource.id!)
       } else {
-        onSaved?.(await createResource(input, today))
+        // Saved first, then reported: inside `onSaved?.(…)` the save would be skipped whenever no
+        // one is listening, and the form would close having kept nothing.
+        const id = await createResource(input, today)
+        onSaved?.(id)
       }
       onClose()
     } catch (problem) {
@@ -166,10 +165,10 @@ export function ResourceForm({ resource, type, pillars, onClose, onSaved }: Reso
     <Drawer
       open
       onClose={onClose}
-      title={resource ? 'Edit resource' : 'Add a resource'}
+      title={resource ? 'Edit' : 'Add something to learn'}
       footer={
         <Button variant="primary" onClick={save}>
-          {resource ? 'Save' : 'Add to inbox'}
+          {resource ? 'Save' : 'Add'}
         </Button>
       }
     >
@@ -193,7 +192,7 @@ export function ResourceForm({ resource, type, pillars, onClose, onSaved }: Reso
               ))}
             </Select>
           </Field>
-          <Field label="Pillar">
+          <Field label="Topic">
             <Select value={form.pillar_id ?? ''} onChange={(event) => set('pillar_id', event.target.value ? Number(event.target.value) : null)}>
               <option value="">None</option>
               {pillars.filter((pillar) => !pillar.retired_on || pillar.id === form.pillar_id).map((pillar) => (
@@ -207,24 +206,8 @@ export function ResourceForm({ resource, type, pillars, onClose, onSaved }: Reso
         <Field label="Link" hint="Optional. Opened in a new tab when you start.">
           <TextInput type="url" inputMode="url" value={form.url} onChange={(event) => set('url', event.target.value)} placeholder="https://" />
         </Field>
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Source" hint="YouTube, a publisher…">
-            <TextInput value={form.source} onChange={(event) => set('source', event.target.value)} maxLength={60} />
-          </Field>
-          <Field label="Author">
-            <TextInput value={form.author} onChange={(event) => set('author', event.target.value)} maxLength={80} />
-          </Field>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Topic">
-            <TextInput value={form.topic} onChange={(event) => set('topic', event.target.value)} maxLength={60} />
-          </Field>
-          <Field label="Length in minutes">
-            <TextInput inputMode="numeric" value={minutes} onChange={(event) => setMinutes(event.target.value)} />
-          </Field>
-        </div>
-        <Field label="Priority">
-          <Segmented options={PRIORITIES} value={String(form.priority) as '1' | '2' | '3'} onChange={(value) => set('priority', Number(value) as 1 | 2 | 3)} label="Priority" block />
+        <Field label="Author or source" hint="Optional.">
+          <TextInput value={form.author} onChange={(event) => set('author', event.target.value)} maxLength={80} />
         </Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Progress counted in">
@@ -242,9 +225,6 @@ export function ResourceForm({ resource, type, pillars, onClose, onSaved }: Reso
             </Field>
           )}
         </div>
-        <Field label="Where you are" hint="Optional: “Book IV”, “Lesson 3”.">
-          <TextInput value={form.position_note} onChange={(event) => set('position_note', event.target.value)} maxLength={80} />
-        </Field>
         <Field label="Notes">
           <TextArea autoGrow rows={3} value={form.notes} onChange={(event) => set('notes', event.target.value)} />
         </Field>

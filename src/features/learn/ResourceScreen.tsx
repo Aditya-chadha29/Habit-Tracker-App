@@ -2,8 +2,8 @@ import { useMemo, useState } from 'react'
 import { navigate, type RouteProps } from '../../app/router'
 import { db } from '../../data/db'
 import {
-  addToQueue, archiveResource, deleteLearningSession, deleteResourceCreatedToday, moveResource, restoreResource,
-  setActiveBook, setResourceNotes, startResource,
+  addToQueue, archiveResource, deleteLearningSession, deleteResourceCreatedToday, restoreResource,
+  setResourceNotes, startResource,
 } from '../../data/learningRepo'
 import type { LearningLane } from '../../data/types'
 import { formatFullDate, formatMediumDate } from '../../engine/dates'
@@ -43,12 +43,12 @@ export default function ResourceScreen({ params }: RouteProps) {
 
   if (loaded && !resource) {
     return (
-      <Page title="Resource" back="/learn/library">
+      <Page title="Resource" back="/learn">
         <EmptyState title="That resource does not exist." />
       </Page>
     )
   }
-  if (!resource) return <Page title="Resource" back="/learn/library">{null}</Page>
+  if (!resource) return <Page title="Resource" back="/learn">{null}</Page>
 
   const fail = (error: unknown) => toast.show(error instanceof Error ? error.message : 'That could not be done.', { tone: 'risk' })
   const run = (action: () => Promise<unknown>, message?: string) =>
@@ -58,7 +58,6 @@ export default function ResourceScreen({ params }: RouteProps) {
   const fraction = progressFraction(resource)
   const inQueue = queue.some((item) => item.id === resource.id)
   const place = queue.findIndex((item) => item.id === resource.id)
-  const isBook = resource.type === 'book'
   const isActiveBook = settings.active_book_id === resource.id
   const lane: LearningLane = isActiveBook && !inQueue ? 'reading' : 'learning'
   const open = resource.status !== 'completed' && resource.status !== 'archived'
@@ -67,7 +66,7 @@ export default function ResourceScreen({ params }: RouteProps) {
     <Page
       title={resource.title}
       subtitle={metaLine(resource)}
-      back="/learn/library"
+      back={resource.pillar_id !== null ? '/learn/topic/' + resource.pillar_id : '/learn'}
       width="default"
       actions={<IconButton icon="edit" label="Edit this resource" onClick={() => setEditing(true)} />}
     >
@@ -78,8 +77,6 @@ export default function ResourceScreen({ params }: RouteProps) {
               <StatusChip status={resource.status} head={place === 0} />
               <Chip>{TYPE_LABEL[resource.type]}</Chip>
               <PillarChip pillar={resource.pillar_id !== null ? pillars.find((p) => p.id === resource.pillar_id) : undefined} />
-              {inQueue && <Chip tone="accent">{place === 0 ? 'Today’s learning' : `Place ${place + 1} in the queue`}</Chip>}
-              {isActiveBook && <Chip tone="mind">Active book</Chip>}
             </div>
             {(fraction !== null || resource.position_note) && (
               <div>
@@ -131,33 +128,9 @@ export default function ResourceScreen({ params }: RouteProps) {
                 <Button variant="secondary" icon="check" onClick={() => setLogging({ lane, finishing: true })}>
                   Mark complete
                 </Button>
-                {inQueue ? (
-                  <Button variant="secondary" onClick={() => run(() => moveResource(resource.id!, 'shortlist'), 'Moved to the shortlist.')}>
-                    Remove from queue
-                  </Button>
-                ) : (
-                  <Button variant="secondary" onClick={() => run(() => addToQueue(resource.id!), 'Added to the end of the queue.')}>
-                    Add to queue
-                  </Button>
-                )}
               </div>
               <div className="flex flex-wrap gap-2 border-t border-line pt-2">
-                {resource.status === 'inbox' && (
-                  <Button variant="ghost" size="sm" onClick={() => run(() => moveResource(resource.id!, 'shortlist'), 'Shortlisted.')}>
-                    Shortlist
-                  </Button>
-                )}
-                {resource.status === 'shortlist' && (
-                  <Button variant="ghost" size="sm" onClick={() => run(() => moveResource(resource.id!, 'inbox'), 'Moved back to the inbox.')}>
-                    Back to inbox
-                  </Button>
-                )}
-                {isBook && (
-                  <Button variant="ghost" size="sm" onClick={() => run(() => setActiveBook(isActiveBook ? null : resource.id!), isActiveBook ? 'No longer the active book.' : 'Now the active book.')}>
-                    {isActiveBook ? 'Stop reading this' : 'Make this the active book'}
-                  </Button>
-                )}
-                <Button variant="ghost" size="sm" onClick={() => run(() => archiveResource(resource.id!, today), 'Archived. It can be restored from the library.')}>
+                <Button variant="ghost" size="sm" onClick={() => run(() => archiveResource(resource.id!, today), 'Archived.')}>
                   Archive
                 </Button>
                 {resource.created_on === today && (sessions ?? []).length === 0 && (
@@ -167,7 +140,7 @@ export default function ResourceScreen({ params }: RouteProps) {
                     className="text-risk"
                     onClick={() =>
                       deleteResourceCreatedToday(resource.id!, today)
-                        .then(() => navigate('/learn/library', { replace: true }))
+                        .then(() => navigate(resource.pillar_id !== null ? `/learn/topic/${resource.pillar_id}` : '/learn', { replace: true }))
                         .catch(fail)
                     }
                   >

@@ -26,9 +26,9 @@ export const TYPE_LABEL: Record<ResourceType, string> = {
 }
 
 export const STATUS_LABEL: Record<ResourceStatus, string> = {
-  inbox: 'Inbox',
-  shortlist: 'Shortlist',
-  queued: 'Queued',
+  inbox: 'To learn',
+  shortlist: 'To learn',
+  queued: 'To learn',
   in_progress: 'In progress',
   completed: 'Completed',
   archived: 'Archived',
