@@ -40,14 +40,34 @@ describe("reading and writing leave the list", () => {
 describe("a cold shower is added", () => {
   it("adds one daily habit under Body, Grooming, tracked from the day it runs, and only once", async () => {
     const { db, backups } = await before()
-    const count = await db.habits.count()
     await run(db, backups, "2026-10-12")
+    const count = await db.habits.count()
     const habit = await byName(db, "cold shower")
     const current = habit.versions[habit.versions.length - 1]
     expect([current.area, current.group, habit.created_on, habit.retired_on]).toEqual(["body", "Grooming", "2026-10-12", null])
-    expect(await db.habits.count()).toBe(count + 1)
+    expect((await db.habits.toArray()).filter((row) => row.name === "Cold shower").length).toBe(1)
     await run(db, backups, "2026-10-13")
-    expect(await db.habits.count()).toBe(count + 1)
+    expect(await db.habits.count()).toBe(count)
+  })
+})
+
+describe("today in the order of the day", () => {
+  it("renames the moisturiser, adds Haircare, and orders the habits by the day", async () => {
+    const { db, backups } = await before()
+    await run(db, backups, "2026-10-12")
+    expect(await db.habits.toArray().then((all) => all.some((habit) => habit.name === "Daily moisturiser" && habit.retired_on === null))).toBe(false)
+    const skincare = await byName(db, "skincare")
+    expect(skincare.versions[0].name).toBe("Daily moisturiser")
+    expect((await byName(db, "haircare")).retired_on).toBeNull()
+    const names = (await db.habits.orderBy("sort_order").toArray()).filter((habit) => habit.retired_on === null).map((habit) => habit.name)
+    expect(names.slice(0, 4)).toEqual(["Wake up at 4:00 AM", "Cold shower", "Skincare", "Haircare"])
+    expect(names.indexOf("Chia seeds")).toBeLessThan(names.indexOf("Breakfast"))
+    expect(names.indexOf("Breakfast")).toBeLessThan(names.indexOf("Lunch"))
+    expect(names.indexOf("Lunch")).toBeLessThan(names.indexOf("Dinner"))
+    // The evening steps close the day: Dinner, and Sleep where that habit exists.
+    expect(["Dinner", "Sleep before 10:00 PM"]).toContain(names[names.length - 1])
+    const orders = (await db.habits.toArray()).map((habit) => habit.sort_order)
+    expect(new Set(orders).size).toBe(orders.length)
   })
 })
 

@@ -54,6 +54,8 @@ export function buildDayView(
   areas: readonly AreaConfig[],
   date: DateStr,
   index: CompletionIndex,
+  /** One list in the order of the habits themselves (the order of the day), with no pillar groups. */
+  flat = false,
 ): DayView {
   const due = dueItems(habits, date, index)
   const byId = new Map(due.map((item) => [item.habit.id!, item]))
@@ -89,6 +91,12 @@ export function buildDayView(
       rows,
       ...summarise(rows),
     })
+  }
+
+  if (flat) {
+    const rows: DayRow[] = due.filter((item) => !placed.has(item.habit.id!)).map((item) => ({ type: 'habit', item }))
+    if (rows.length) sections.push({ key: 'day', title: 'In the order of the day', part: 'day', routineId: null, rows, ...summarise(rows) })
+    return { sections, flexible: flexibleItems(habits, date, index) }
   }
 
   const areaOrder = new Map(areas.map((area, i) => [area.id, i]))

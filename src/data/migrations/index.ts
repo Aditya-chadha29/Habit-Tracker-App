@@ -372,6 +372,52 @@ async function addColdShower({ db, today }: MigrationContext): Promise<{ added: 
 }
 
 /**
+ * Today in the order of the day, at the user’s request of 2026-10-12. Daily moisturiser becomes
+ * Skincare, a daily Haircare is added beside it, and every habit is put in the order of the day:
+ * the steps of the morning routine the user had, with Cold shower, Skincare and Haircare straight
+ * after waking; then everything else as it was; then the evening steps. The order is the habits’
+ * own (the one dragged in Habits), so it can be changed there at any time.
+ */
+async function orderOfTheDay({ db, today }: MigrationContext): Promise<{ renamed: boolean; added: boolean; ordered: number }> {
+  const named = async (name: string) => (await db.habits.toArray()).find((habit) => habit.name.trim().toLowerCase() === name)
+
+  let renamed = false
+  const moisturiser = await named('daily moisturiser')
+  if (moisturiser?.id !== undefined && !(await named('skincare'))) {
+    await changeHabit(moisturiser.id, { name: 'Skincare', short_name: 'Skincare' }, today, db)
+    renamed = true
+  }
+
+  let added = false
+  const haircare = (await named('haircare')) ?? (await named('hair care'))
+  if (haircare?.id === undefined) {
+    await createHabit({ name: 'Haircare', area: 'body', group: 'Grooming', icon: 'sparkles' }, today, db)
+    added = true
+  } else if (haircare.retired_on !== null) {
+    await changeHabit(haircare.id, { active: true }, today, db)
+    added = true
+  }
+
+  const habits = (await db.habits.toArray()).sort((a, b) => a.sort_order - b.sort_order)
+  const active = habits.filter((habit) => habit.retired_on === null)
+  const idOf = (name: string) => active.find((habit) => habit.name.trim().toLowerCase() === name)?.id
+  const routines = (await db.day_routines.toArray()).sort((a, b) => a.sort_order - b.sort_order)
+  const stepsOf = (slot: string) => routines.filter((routine) => routine.slot === slot).flatMap((routine) => routine.steps.map((step) => step.habit_id))
+  const isActive = (id: number | null): id is number => id !== null && active.some((habit) => habit.id === id)
+
+  const afterWaking = [idOf('cold shower'), idOf('skincare'), idOf('haircare')].filter((id): id is number => id !== undefined)
+  const morning = [...new Set(stepsOf('morning').filter(isActive))].filter((id) => !afterWaking.includes(id))
+  const evening = [...new Set(stepsOf('evening').filter(isActive))].filter((id) => !morning.includes(id) && !afterWaking.includes(id))
+  // Straight after the first morning step (waking), or first of all if there is no such step.
+  const start = morning.length ? [morning[0], ...afterWaking, ...morning.slice(1)] : afterWaking
+  const placed = new Set([...start, ...evening])
+  const middle = active.map((habit) => habit.id!).filter((id) => !placed.has(id))
+  const order = [...start, ...middle, ...evening, ...habits.filter((habit) => habit.retired_on !== null).map((habit) => habit.id!)]
+  for (const [position, id] of order.entries()) await db.habits.update(id, { sort_order: position })
+  return { renamed, added, ordered: order.length }
+}
+
+/**
  * Removes the duplicate Breakfast habit, at the user's request. It was created and retired on the
  * same day in August, so it was never due on any day and no score has ever counted it; the
  * Breakfast that is in use is untouched. Done only when that is exactly the situation.
@@ -454,6 +500,7 @@ export const MIGRATIONS: Migration[] = [
   { id: '012-simpler-day', run: simplerDay },
   { id: '013-drop-reading-and-writing', run: dropReadingAndWriting },
   { id: '014-cold-shower', run: addColdShower },
+  { id: '015-order-of-the-day', run: orderOfTheDay },
 ]
 
 export async function pendingMigrations(db: AppDb, migrations: Migration[] = MIGRATIONS): Promise<Migration[]> {

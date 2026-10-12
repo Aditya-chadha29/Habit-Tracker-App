@@ -42,7 +42,7 @@ export default function TodayScreen() {
   const isToday = date === today
 
   const score = useMemo(() => dayScore(habits, date, index), [habits, date, index])
-  const view = useMemo(() => buildDayView(habits, NO_ROUTINES, areas, date, index), [habits, areas, date, index])
+  const view = useMemo(() => buildDayView(habits, NO_ROUTINES, areas, date, index, true), [habits, areas, date, index])
   const week = useMemo(() => periodOf('week', date, weekStart), [date, weekStart])
   const sections = view.sections
   const showFlexible = view.flexible.length > 0

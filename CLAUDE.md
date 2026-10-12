@@ -89,6 +89,13 @@ Decisions the user has already made, so they are not re-opened:
   2026-10-08, with Water on waking, Cardio and the three Daily 10s retired: exercise on Today is
   Gym alone. Habit rows show no amount line ("2 capsules", "1 tbsp"). The journal is an evening
   page.
+- Today is one list in the order of the day (the habits' own order, dragged in Habits), not grouped
+  by pillar (2026-10-12). Reading and Writing / reflection are retired; Cold shower and Haircare were
+  added and Daily moisturiser renamed Skincare. On Home the cards run Today, This week, Learning,
+  Exercise, Mind, Body; Learning and Exercise show a tick and a word instead of "0 / 1", and the
+  rings carry a % sign. Learn has the Learning habit's tick at the top.
+- Scenery is a page background (Home, Learn, Review, Progress at the top; Journal at the foot), never
+  a picture in a box. An opening screen shows for about 1.6 s on each launch.
 
 ## Working here
 
