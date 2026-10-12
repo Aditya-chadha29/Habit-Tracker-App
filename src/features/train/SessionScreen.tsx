@@ -5,11 +5,11 @@ import { db } from '../../data/db'
 import type { SetLog } from '../../data/types'
 import {
   addExerciseToSession, addSetRow, clearRest, deleteSession, extendRest, finishSession, lastPerformedSets,
-  removeExerciseBlock, setSessionNotes,
+  removeExerciseBlock, removeSetRow, setSessionNotes,
 } from '../../data/workoutRepo'
 import { formatMediumDate } from '../../engine/dates'
 import { isEditable } from '../../engine/lock'
-import { bestSet, formatDuration, formatSet, formatSetLine, isWorkSet, sessionMinutes, volumeLoad } from '../../engine/training'
+import { bestSet, formatDuration, formatSet, isWorkSet, sessionMinutes, volumeLoad } from '../../engine/training'
 import { useCore } from '../../state/core'
 import { useKeyedLiveQuery } from '../../state/live'
 import { Button } from '../../ui/Button'
@@ -81,16 +81,11 @@ export default function SessionScreen({ params }: RouteProps) {
   const live = !!session && session.ended_at === null
   const now = useNow(live)
   const awake = useWakeLock(live)
-  const [expanded, setExpanded] = useState<number | null>(null)
   const [picking, setPicking] = useState(false)
   const [finishing, setFinishing] = useState(false)
   const [discarding, setDiscarding] = useState(false)
   const [notes, setNotes] = useState('')
   const buzzed = useRef<number | null>(null)
-
-  // Opens the first block that still has sets to do; once the user opens another, that wins.
-  const firstOpen = blocks.find((block) => block.sets.some((set) => !set.done))?.position ?? blocks[0]?.position ?? null
-  const openPosition = expanded ?? firstOpen
 
   const restLeft =
     session?.rest_started_at && session.rest_seconds ? Math.ceil(session.rest_seconds - (now - session.rest_started_at) / 1000) : null
@@ -150,11 +145,6 @@ export default function SessionScreen({ params }: RouteProps) {
       actions={
         live ? (
           <>
-            {elapsed && (
-              <span role="timer" aria-label={`Elapsed ${elapsed}`} className="tnum px-1 text-[17px] font-semibold text-ok">
-                {elapsed}
-              </span>
-            )}
             <Button
               variant="primary"
               size="sm"
@@ -196,17 +186,17 @@ export default function SessionScreen({ params }: RouteProps) {
           </Card>
         )}
 
-        {!live && !session.quick && doneSets.length > 0 && (
-          <div className="grid grid-cols-3 gap-3">
+        {!session.quick && (live || doneSets.length > 0) && (
+          <div className="grid grid-cols-3 divide-x divide-line rounded-card bg-surface py-2.5 shadow-card">
             {[
-              ['Sets', String(doneSets.length)],
+              ['Duration', live ? (elapsed ?? '—') : minutes !== null ? `${minutes} min` : '—'],
               ['Volume', `${Math.round(volumeLoad(sets)).toLocaleString('en-IN')} kg`],
-              ['Time', minutes !== null ? `${minutes} min` : '—'],
+              ['Sets', String(doneSets.length)],
             ].map(([label, value]) => (
-              <Card key={label} className="p-3">
-                <p className="eyebrow">{label}</p>
-                <p className="tnum mt-1 text-[17px] font-semibold text-ink">{value}</p>
-              </Card>
+              <div key={label} className="px-3">
+                <p className="text-[11.5px] text-ink-3">{label}</p>
+                <p className={cx('tnum mt-0.5 text-[16px] font-semibold', label === 'Duration' && live ? 'text-accent-ink' : 'text-ink')}>{value}</p>
+              </div>
             ))}
           </div>
         )}
@@ -229,61 +219,51 @@ export default function SessionScreen({ params }: RouteProps) {
           const exercise = byId.get(block.exerciseId)
           const before = previous?.get(block.exerciseId) ?? []
           const done = block.sets.filter((set) => set.done).length
-          const open = openPosition === block.position
           const rest = exercise?.rest_seconds ?? settings.default_rest_seconds
+          const spare = [...block.sets].reverse().find((set) => !set.done)
           return (
-            <Card key={block.position} padded={false} className="overflow-hidden">
-              <div className="flex items-stretch">
-                <button
-                  type="button"
-                  aria-expanded={open}
-                  onClick={() => setExpanded(open ? -1 : block.position)}
-                  className="flex min-h-[60px] min-w-0 flex-1 cursor-pointer items-center gap-3 py-2 pr-2 pl-4 text-left transition-colors duration-100 hover:bg-surface-2"
-                >
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[15px] font-semibold text-ink">{exercise?.name ?? 'Exercise'}</span>
-                    <span className="mt-0.5 block truncate text-[12.5px] text-ink-3">
-                      {before.length ? `Last time: ${formatSetLine(before)}` : 'First time logging this exercise'}
-                    </span>
-                  </span>
-                  <span className={cx('tnum shrink-0 text-[13px] font-medium', done === block.sets.length && done > 0 ? 'text-ok' : 'text-ink-2')}>
-                    {done} / {block.sets.length}
-                  </span>
-                  <Icon name={open ? 'chevron-up' : 'chevron-down'} size={17} className="shrink-0 text-ink-3" />
-                </button>
-                <Link
-                  to={`/train/exercise/${block.exerciseId}`}
-                  aria-label={`History of ${exercise?.name ?? 'this exercise'}`}
-                  title="Exercise history"
-                  className="flex w-11 shrink-0 items-center justify-center text-ink-3 transition-colors duration-100 hover:bg-surface-2 hover:text-ink"
-                >
-                  <Icon name="history" size={17} />
-                </Link>
+            <Card key={block.position} padded={false} className="flex flex-col gap-2 px-2 py-3">
+              <div className="flex items-start gap-2 px-1.5">
+                <div className="min-w-0 flex-1">
+                  <Link to={`/train/exercise/${block.exerciseId}`} className="block truncate text-[16px] font-semibold text-accent-ink">
+                    {exercise?.name ?? 'Exercise'}
+                  </Link>
+                  <p className="mt-0.5 flex items-center gap-1.5 text-[12.5px] text-ink-3">
+                    <Icon name="timer" size={13} />
+                    Rest {formatDuration(rest)}
+                  </p>
+                </div>
+                <span className={cx('tnum shrink-0 pt-0.5 text-[13px] font-medium', done === block.sets.length && done > 0 ? 'text-ok' : 'text-ink-2')}>
+                  {done} / {block.sets.length}
+                </span>
               </div>
-              {open && (
-                <div className="border-t border-line px-2 pt-1 pb-2">
-                  {block.sets.map((set, i) => (
-                    <SetRow
-                      key={set.id}
-                      set={set}
-                      exercise={exercise}
-                      previous={before.length ? before[Math.min(i, before.length - 1)] : undefined}
-                      restSeconds={rest}
-                      editable={editable}
-                      live={live}
-                      heading={i === 0}
-                    />
-                  ))}
-                  {editable && (
-                    <div className="mt-1 flex gap-2 pl-6">
-                      <Button variant="secondary" size="sm" icon="plus" onClick={() => addSetRow(sessionId, block.position, write).catch(fail)}>
-                        Add set
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => removeExerciseBlock(sessionId, block.position, write).catch(fail)}>
-                        Remove exercise
-                      </Button>
-                    </div>
-                  )}
+              <div className="flex flex-col gap-1">
+                {block.sets.map((set, i) => (
+                  <SetRow
+                    key={set.id}
+                    set={set}
+                    exercise={exercise}
+                    previous={before.length ? before[Math.min(i, before.length - 1)] : undefined}
+                    restSeconds={rest}
+                    editable={editable}
+                    live={live}
+                    heading={i === 0}
+                  />
+                ))}
+              </div>
+              {editable && (
+                <div className="flex flex-col gap-1 px-1.5">
+                  <Button variant="secondary" icon="plus" block onClick={() => addSetRow(sessionId, block.position, write).catch(fail)}>
+                    Add set
+                  </Button>
+                  <div className="flex justify-between">
+                    <Button variant="ghost" size="sm" disabled={!spare} onClick={() => spare && removeSetRow(spare.id!, write).catch(fail)}>
+                      Remove a set
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => removeExerciseBlock(sessionId, block.position, write).catch(fail)}>
+                      Remove exercise
+                    </Button>
+                  </div>
                 </div>
               )}
             </Card>
@@ -291,8 +271,8 @@ export default function SessionScreen({ params }: RouteProps) {
         })}
 
         {editable && !session.quick && blocks.length > 0 && (
-          <Button variant="secondary" icon="plus" onClick={() => setPicking(true)}>
-            Add an exercise
+          <Button variant="primary" icon="plus" block onClick={() => setPicking(true)}>
+            Add exercise
           </Button>
         )}
 

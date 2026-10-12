@@ -1,42 +1,88 @@
-import type { Exercise, SetLog } from '../../data/types'
-import { completeSet, removeSetRow, uncompleteSet, updateSet } from '../../data/workoutRepo'
-import { formatSet } from '../../engine/training'
-import { useCore } from '../../state/core'
-import { cx } from '../../ui/cx'
-import { Stepper } from '../../ui/Field'
-import { Icon } from '../../ui/icons'
-import { useToast } from '../../ui/Toast'
+import { useState } from "react"
+import type { Exercise, SetLog } from "../../data/types"
+import { completeSet, uncompleteSet, updateSet } from "../../data/workoutRepo"
+import { formatSet } from "../../engine/training"
+import { useCore } from "../../state/core"
+import { cx } from "../../ui/cx"
+import { Icon } from "../../ui/icons"
+import { useToast } from "../../ui/Toast"
 
-type FieldKey = 'weight_kg' | 'reps' | 'seconds' | 'distance_m'
+type FieldKey = "weight_kg" | "reps" | "seconds" | "distance_m"
 
 interface FieldSpec {
   key: FieldKey
+  /** The column heading, as a workout log writes it: KG, REPS. */
   label: string
-  unit: string
-  step: number
-  /** Stored value → shown value, and back. */
+  /** What a screen reader hears for the cell. */
+  name: string
+  decimal: boolean
+  /** Stored value to shown value, and back. */
   show: (stored: number) => number
   store: (shown: number) => number
 }
 
 const same = (value: number) => value
 
-function fieldsFor(exercise: Exercise | undefined, increment: number): FieldSpec[] {
-  const weight: FieldSpec = { key: 'weight_kg', label: 'Weight', unit: 'kg', step: increment, show: same, store: same }
-  const reps: FieldSpec = { key: 'reps', label: 'Reps', unit: '', step: 1, show: same, store: same }
+function fieldsFor(exercise: Exercise | undefined): FieldSpec[] {
+  const weight: FieldSpec = { key: "weight_kg", label: "KG", name: "weight in kilograms", decimal: true, show: same, store: same }
+  const reps: FieldSpec = { key: "reps", label: "REPS", name: "reps", decimal: false, show: same, store: same }
   switch (exercise?.kind) {
-    case 'bodyweight_reps':
+    case "bodyweight_reps":
       return [reps]
-    case 'time':
-      return [{ key: 'seconds', label: 'Seconds', unit: 's', step: 5, show: same, store: same }]
-    case 'distance_time':
+    case "time":
+      return [{ key: "seconds", label: "SEC", name: "seconds", decimal: false, show: same, store: same }]
+    case "distance_time":
       return [
-        { key: 'seconds', label: 'Minutes', unit: 'min', step: 1, show: (s) => Math.round(s / 60), store: (m) => m * 60 },
-        { key: 'distance_m', label: 'Distance', unit: 'km', step: 0.1, show: (m) => Math.round(m / 10) / 100, store: (km) => Math.round(km * 1000) },
+        { key: "seconds", label: "MIN", name: "minutes", decimal: false, show: (s) => Math.round(s / 60), store: (m) => m * 60 },
+        { key: "distance_m", label: "KM", name: "distance in kilometres", decimal: true, show: (m) => Math.round(m / 10) / 100, store: (km) => Math.round(km * 1000) },
       ]
     default:
       return [weight, reps]
   }
+}
+
+/** The grid every row of an exercise shares, so the columns line up under their headings. */
+function columns(count: number): string {
+  return "26px minmax(0, 1fr) " + Array.from({ length: count }, () => "minmax(0, 66px)").join(" ") + " 44px"
+}
+
+interface CellProps {
+  label: string
+  value: number | null
+  decimal: boolean
+  disabled: boolean
+  onCommit: (value: number) => void
+}
+
+/**
+ * One number in a set. Typed straight in, as in a paper log. While it has focus it holds its own
+ * text, so a half-typed "62." is not rewritten under the thumb; every valid number is saved as it
+ * is typed, and leaving the cell shows what is stored.
+ */
+function Cell({ label, value, decimal, disabled, onCommit }: CellProps) {
+  const [draft, setDraft] = useState<string | null>(null)
+  const stored = value === null ? "" : String(value)
+  return (
+    <input
+      aria-label={label}
+      inputMode={decimal ? "decimal" : "numeric"}
+      disabled={disabled}
+      placeholder="–"
+      value={draft ?? stored}
+      onFocus={(event) => {
+        setDraft(stored)
+        event.target.select()
+      }}
+      onChange={(event) => {
+        const text = event.target.value.replace(decimal ? /[^0-9.]/g : /[^0-9]/g, "")
+        setDraft(text)
+        const number = Number(text)
+        if (text !== "" && Number.isFinite(number)) onCommit(number)
+      }}
+      onBlur={() => setDraft(null)}
+      className="tnum h-11 w-full min-w-0 rounded-control bg-surface-2 px-1 text-center text-[16px] font-semibold text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)] outline-none focus:shadow-[inset_0_0_0_2px_var(--color-accent-ink)] disabled:opacity-60"
+    />
+  )
 }
 
 interface SetRowProps {
@@ -54,14 +100,16 @@ interface SetRowProps {
 }
 
 /**
- * One set: the numbers, pre-filled from last time, and a large button that logs it in one tap.
- * Built for a tired thumb — every control is at least 44px and nothing needs the keyboard.
+ * One set, laid out like a line of a workout log: its number, what was done last time, the
+ * numbers for this time, and a tick. The numbers arrive filled in from last time, so a set that
+ * went as planned is one tap.
  */
 export function SetRow({ set, exercise, previous, restSeconds, editable, live, heading = false }: SetRowProps) {
-  const { write, settings } = useCore()
+  const { write } = useCore()
   const toast = useToast()
-  const fields = fieldsFor(exercise, exercise?.increment_kg || settings.default_increment_kg)
-  const fail = (error: unknown) => toast.show(error instanceof Error ? error.message : 'That could not be saved.', { tone: 'risk' })
+  const fields = fieldsFor(exercise)
+  const grid = { gridTemplateColumns: columns(fields.length) }
+  const fail = (error: unknown) => toast.show(error instanceof Error ? error.message : "That could not be saved.", { tone: "risk" })
 
   const toggle = () => {
     if (set.done) uncompleteSet(set.id!, write).catch(fail)
@@ -69,65 +117,54 @@ export function SetRow({ set, exercise, previous, restSeconds, editable, live, h
   }
 
   return (
-    <div className="py-1.5">
+    <>
       {heading && (
-        <div className="flex items-center gap-1.5 pb-1 text-[11px] text-ink-3" aria-hidden="true">
-          <span className="w-5 shrink-0 text-center">Set</span>
+        <div className="grid items-center gap-1.5 px-1.5 pb-1 text-[10.5px] font-semibold tracking-[0.08em] text-ink-3" style={grid} aria-hidden="true">
+          <span className="text-center">SET</span>
+          <span>PREVIOUS</span>
           {fields.map((field) => (
-            <span key={field.key} className={cx('min-w-0 text-center', field.key === 'reps' && fields.length > 1 ? 'flex-[0.85]' : 'flex-1')}>
+            <span key={field.key} className="text-center">
               {field.label}
-              {field.unit && ` (${field.unit})`}
             </span>
           ))}
-          <span className="w-12 shrink-0 text-center">Done</span>
+          <span className="flex justify-center">
+            <Icon name="check" size={14} />
+          </span>
         </div>
       )}
-      <div className="flex items-center gap-1.5">
-        <span className="tnum w-5 shrink-0 text-center text-[12.5px] text-ink-3" aria-hidden="true">
+      <div className={cx("grid items-center gap-1.5 rounded-control px-1.5 py-1", set.done && "bg-ok/12")} style={grid}>
+        <span className="tnum text-center text-[14px] font-semibold text-ink-2" aria-hidden="true">
           {set.set_index}
         </span>
+        <span className="tnum min-w-0 truncate text-[13px] text-ink-3">{previous ? formatSet(previous) : "—"}</span>
         {fields.map((field) => (
-          <Stepper
+          <Cell
             key={field.key}
-            label={`Set ${set.set_index} ${field.label.toLowerCase()}`}
+            label={"Set " + set.set_index + " " + field.name}
             value={set[field.key] === null ? null : field.show(set[field.key]!)}
-            onChange={(shown) => {
-              if (!editable) return
+            decimal={field.decimal}
+            disabled={!editable}
+            onCommit={(shown) => {
               const patch: Partial<Pick<SetLog, FieldKey>> = {}
               patch[field.key] = field.store(shown)
               updateSet(set.id!, patch, write).catch(fail)
             }}
-            step={field.step}
-            min={0}
-            className={cx('min-w-0', field.key === 'reps' && fields.length > 1 ? 'flex-[0.85]' : 'flex-1')}
           />
         ))}
         <button
           type="button"
           aria-pressed={set.done}
-          aria-label={`Set ${set.set_index}: ${set.done ? 'done. Tap to undo' : 'tap when done'}`}
+          aria-label={"Set " + set.set_index + ": " + (set.done ? "done. Tap to undo" : "tap when done")}
           disabled={!editable}
           onClick={toggle}
           className={cx(
-            'flex h-11 w-12 shrink-0 cursor-pointer items-center justify-center rounded-control transition-colors duration-100 disabled:cursor-not-allowed disabled:opacity-50',
-            set.done ? 'bg-ok text-ground' : 'bg-surface-2 text-ink-3 shadow-[inset_0_0_0_1.5px_var(--color-line-strong)]',
+            "flex h-11 w-11 cursor-pointer items-center justify-center rounded-control transition-colors duration-100 disabled:cursor-not-allowed disabled:opacity-50",
+            set.done ? "bg-ok text-ground" : "bg-surface-3 text-ink-3",
           )}
         >
           <Icon name="check" size={20} className="stroke-[2.8]" />
         </button>
       </div>
-      <div className="mt-0.5 flex min-h-5 items-center gap-2 pl-6 text-[11.5px] text-ink-3">
-        <span className="min-w-0 flex-1 truncate">{previous ? `Last time ${formatSet(previous)}` : 'No earlier set to compare'}</span>
-        {editable && !set.done && (
-          <button
-            type="button"
-            onClick={() => removeSetRow(set.id!, write).catch(fail)}
-            className="-my-2 h-9 shrink-0 cursor-pointer rounded-[7px] px-2 text-[11.5px] text-ink-3 hover:bg-surface-2 hover:text-ink"
-          >
-            Remove
-          </button>
-        )}
-      </div>
-    </div>
+    </>
   )
 }

@@ -1,19 +1,20 @@
 import { useMemo, useState } from 'react'
 import { Link, navigate } from '../../app/router'
 import { TargetRow } from '../../components/TargetRow'
-import type { DateStr, Session, SessionKind } from '../../data/types'
+import { db } from '../../data/db'
+import type { DateStr, RoutineItem, Session, SessionKind } from '../../data/types'
 import { quickLogSession, startSession } from '../../data/workoutRepo'
-import { addDays, formatDayTitle, formatMediumDate, relativeDayLabel, weekDates, weekdayIndex, WEEKDAY_SHORT } from '../../engine/dates'
+import { addDays, formatDayTitle, formatMediumDate, relativeDayLabel } from '../../engine/dates'
 import { firstEditableDate } from '../../engine/lock'
 import { periodOf } from '../../engine/periods'
 import { targetProgress } from '../../engine/targets'
 import { currentVersion, isRetired } from '../../engine/timeline'
 import { sessionMinutes } from '../../engine/training'
 import { useCore } from '../../state/core'
+import { useLive } from '../../state/live'
 import { Button, IconButton } from '../../ui/Button'
 import { Card, SectionTitle } from '../../ui/Card'
 import { Chip } from '../../ui/Chip'
-import { cx } from '../../ui/cx'
 import { EmptyState } from '../../ui/EmptyState'
 import { Field, Select, Stepper, TextInput } from '../../ui/Field'
 import { Icon } from '../../ui/icons'
@@ -21,7 +22,9 @@ import { Modal } from '../../ui/Overlay'
 import { Page } from '../../ui/Page'
 import { Segmented } from '../../ui/Tabs'
 import { useToast } from '../../ui/Toast'
-import { useRoutines, useRoutineSizes, useSessionsBetween, useTodaysWorkout } from './hooks'
+import { useExercises, useRoutines, useTodaysWorkout } from './hooks'
+
+const NO_ITEMS: RoutineItem[] = []
 
 const KIND_OPTIONS = [
   { id: 'strength', label: 'Strength' },
@@ -106,27 +109,35 @@ function QuickLog({ open, onClose }: { open: boolean; onClose: () => void }) {
 }
 
 /**
- * Train answers "what should I train?": today's workout from the weekly programme, one tap from
- * starting, with the week around it. The programme is a suggestion — any routine can be started
- * on any day.
+ * Train, laid out like the first screen of a workout log: start an empty workout, or start one of
+ * the routines. The routine the weekly programme has for today is listed first and marked. History
+ * and the set-up of routines, exercises and the programme are one tap away in the header.
  */
 export default function TrainScreen() {
   const { today, weekStart, habits, index, write } = useCore()
   const toast = useToast()
   const allRoutines = useRoutines()
-  const sizes = useRoutineSizes()
   const workout = useTodaysWorkout()
-  const [choosing, setChoosing] = useState(false)
+  const { byId } = useExercises()
+  const items = useLive(() => db.routine_items.toArray(), [], NO_ITEMS)
   const [quick, setQuick] = useState(false)
 
-  const routines = useMemo(() => allRoutines.filter((routine) => !routine.retired_on), [allRoutines])
   const week = useMemo(() => periodOf('week', today, weekStart), [today, weekStart])
-  const sessions = useSessionsBetween(addDays(week.start, -28), today)
-  const finished = sessions.filter((session) => session.ended_at !== null)
   const gym = habits.find((habit) => !isRetired(habit) && currentVersion(habit).sources.includes('workout'))
   const progress = gym ? targetProgress(gym, week, today, index) : null
   const stale = workout.open && workout.open.date < today ? workout.open : null
   const inProgress = workout.open && workout.open.date === today ? workout.open : null
+  const current = stale ?? inProgress
+  const scheduledIds = workout.scheduled.map((routine) => routine.id)
+  const active = allRoutines.filter((routine) => !routine.retired_on)
+  const routines = [...active.filter((routine) => scheduledIds.includes(routine.id)), ...active.filter((routine) => !scheduledIds.includes(routine.id))]
+  const exercisesOf = (routineId: number): string =>
+    items
+      .filter((item) => item.routine_id === routineId)
+      .sort((a, b) => a.position - b.position)
+      .map((item) => byId.get(item.exercise_id)?.name)
+      .filter(Boolean)
+      .join(', ')
 
   const start = async (routineId: number | null) => {
     try {
@@ -141,7 +152,7 @@ export default function TrainScreen() {
     <Page
       title="Train"
       subtitle={formatDayTitle(today)}
-      width="wide"
+      width="narrow"
       actions={
         <>
           <IconButton icon="history" label="Training history" onClick={() => navigate('/train/history')} />
@@ -149,205 +160,100 @@ export default function TrainScreen() {
         </>
       }
     >
-      <div className="flex flex-col gap-5 lg:grid lg:grid-cols-12 lg:items-start lg:gap-6">
-        <div className="flex flex-col gap-5 lg:col-span-7">
-          {stale && (
-            <Card className="flex items-center gap-3">
-              <Icon name="alert-circle" size={20} className="shrink-0 text-warn" />
-              <div className="min-w-0 flex-1">
-                <p className="text-[14.5px] font-medium text-ink">Unfinished workout from {formatMediumDate(stale.date)}</p>
-                <p className="text-[12.5px] text-ink-3">{stale.title}. Finish it or discard it before starting another.</p>
-              </div>
-              <Button variant="secondary" size="sm" onClick={() => navigate(`/train/session/${stale.id}`)}>
-                Open
-              </Button>
-            </Card>
-          )}
-
-          <Card className="flex flex-col gap-4">
-            <div>
-              <p className="eyebrow">{inProgress ? 'In progress' : 'Today’s workout'}</p>
-              <h2 className="mt-1 text-[24px] leading-tight font-semibold tracking-tight text-ink">
-                {inProgress ? inProgress.title : workout.scheduled.length ? workout.scheduled.map((routine) => routine.name).join(' + ') : 'Nothing scheduled'}
-              </h2>
-              <p className="mt-1 text-[13px] text-ink-3">
-                {inProgress
-                  ? 'Started earlier today.'
-                  : workout.scheduled.length
-                    ? `${workout.scheduled.reduce((total, routine) => total + (sizes.get(routine.id!) ?? 0), 0)} exercises · from the weekly programme`
-                    : 'The programme has no workout for today. Any routine can still be started.'}
-              </p>
+      <div className="flex flex-col gap-6">
+        {current && (
+          <Card className="flex items-center gap-3 shadow-[inset_0_0_0_1.5px_var(--color-accent)]">
+            <Icon name={stale ? 'alert-circle' : 'play'} size={20} className={stale ? 'shrink-0 text-warn' : 'shrink-0 text-accent-ink'} />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[14.5px] font-medium text-ink">{stale ? `Unfinished workout from ${formatMediumDate(stale.date)}` : 'Workout in progress'}</p>
+              <p className="truncate text-[12.5px] text-ink-3">{current.title}</p>
             </div>
-            {workout.finished.length > 0 && (
-              <ul className="flex flex-col gap-1.5">
-                {workout.finished.map((session) => (
-                  <li key={session.id}>
-                    <Link to={`/train/session/${session.id}`} className="flex items-center gap-2 text-[13.5px] text-ok">
-                      <Icon name="check-circle" size={16} />
-                      <span className="min-w-0 truncate">
-                        Logged today: {session.title}
-                        {sessionSummary(session) && <span className="text-ink-3"> · {sessionSummary(session)}</span>}
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
-            {inProgress ? (
-              <Button variant="primary" size="lg" icon="play" block onClick={() => navigate(`/train/session/${inProgress.id}`)}>
-                Resume workout
-              </Button>
-            ) : workout.scheduled.length ? (
-              workout.scheduled.map((routine) => (
-                <Button key={routine.id} variant="primary" size="lg" icon="play" block disabled={!!stale} onClick={() => start(routine.id!)}>
-                  Start {workout.scheduled.length > 1 ? routine.name : 'workout'}
-                </Button>
-              ))
-            ) : null}
-            <div className="grid grid-cols-2 gap-2">
-              <Button variant="secondary" disabled={!!workout.open} onClick={() => setChoosing(true)}>
-                Another routine
-              </Button>
-              <Button variant="secondary" onClick={() => setQuick(true)}>
-                Log without sets
-              </Button>
-            </div>
+            <Button variant="primary" size="sm" onClick={() => navigate(`/train/session/${current.id}`)}>
+              {stale ? 'Open' : 'Resume'}
+            </Button>
           </Card>
+        )}
 
-          <section className="flex flex-col gap-2">
-            <SectionTitle
-              action={
-                <Link to="/train/history" className="font-medium">
-                  All history
+        {workout.finished.length > 0 && (
+          <ul className="flex flex-col gap-1.5 px-1">
+            {workout.finished.map((session) => (
+              <li key={session.id}>
+                <Link to={`/train/session/${session.id}`} className="flex items-center gap-2 text-[13.5px] text-ok">
+                  <Icon name="check-circle" size={16} />
+                  <span className="min-w-0 truncate">
+                    Logged today: {session.title}
+                    {sessionSummary(session) && <span className="text-ink-3"> · {sessionSummary(session)}</span>}
+                  </span>
                 </Link>
-              }
-            >
-              Recent sessions
-            </SectionTitle>
-            {finished.length === 0 ? (
-              <EmptyState icon="train" title="No sessions logged yet." body="Start today’s workout, or log one without sets." />
-            ) : (
-              <Card padded={false} className="divide-y divide-line overflow-hidden">
-                {finished.slice(0, 6).map((session) => (
-                  <Link
-                    key={session.id}
-                    to={`/train/session/${session.id}`}
-                    className="flex min-h-[56px] items-center gap-3 px-4 py-2 transition-colors duration-100 hover:bg-surface-2 active:bg-surface-3"
-                  >
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[14.5px] text-ink">{session.title}</span>
-                      <span className="mt-0.5 block truncate text-[12.5px] text-ink-3">
-                        {relativeDayLabel(session.date, today)}
-                        {sessionSummary(session) && ` · ${sessionSummary(session)}`}
-                      </span>
-                    </span>
-                    {(session.kinds ?? []).map((kind) => (
-                      <Chip key={kind} tone={kind === 'cardio' ? 'learning' : 'exercise'}>
-                        {kind === 'cardio' ? 'Cardio' : 'Strength'}
-                      </Chip>
-                    ))}
-                    <Icon name="chevron-right" size={17} className="shrink-0 text-ink-3" />
-                  </Link>
-                ))}
-              </Card>
-            )}
-          </section>
-        </div>
+              </li>
+            ))}
+          </ul>
+        )}
 
-        <div className="flex flex-col gap-5 lg:col-span-5">
-          {gym && progress && (
-            <section className="flex flex-col gap-2">
-              <SectionTitle>Weekly target</SectionTitle>
-              <Card padded={false} className="overflow-hidden">
-                <TargetRow habit={gym} progress={progress} />
-              </Card>
-            </section>
-          )}
+        <section className="flex flex-col gap-2">
+          <SectionTitle>Quick start</SectionTitle>
+          <Button variant="secondary" size="lg" icon="plus" block disabled={!!workout.open} onClick={() => start(null)}>
+            Start empty workout
+          </Button>
+        </section>
 
-          <section className="flex flex-col gap-2">
-            <SectionTitle
+        <section className="flex flex-col gap-2">
+          <SectionTitle
+            action={
+              <Link to="/train/setup/routine/new" className="font-medium">
+                New routine
+              </Link>
+            }
+          >
+            Routines · {routines.length}
+          </SectionTitle>
+          {routines.length === 0 ? (
+            <EmptyState
+              icon="train"
+              title="No routines yet."
+              body="A routine is a list of exercises you repeat: Push, Pull, Legs. Make one, then start it from here."
               action={
-                <Link to="/train/setup?tab=programme" className="font-medium">
-                  Edit programme
-                </Link>
+                <Button variant="primary" icon="plus" onClick={() => navigate('/train/setup/routine/new')}>
+                  New routine
+                </Button>
               }
-            >
-              This week
-            </SectionTitle>
-            <Card padded={false} className="divide-y divide-line overflow-hidden">
-              {weekDates(week.start).map((date) => {
-                const weekday = weekdayIndex(date)
-                const planned = routines.filter((routine) => (routine.weekdays ?? []).includes(weekday))
-                const done = finished.filter((session) => session.date === date)
-                const isToday = date === today
-                return (
-                  <div key={date} className={cx('flex min-h-[52px] items-center gap-3 px-4 py-2', isToday && 'bg-accent/8')}>
-                    <span className={cx('w-9 shrink-0 text-[12.5px] font-medium', isToday ? 'text-accent-ink' : 'text-ink-3')}>{WEEKDAY_SHORT[weekday]}</span>
-                    <span className="min-w-0 flex-1">
-                      <span className={cx('block truncate text-[14px]', planned.length ? 'text-ink' : 'text-ink-3')}>
-                        {planned.length ? planned.map((routine) => routine.name).join(' + ') : 'Rest / unscheduled'}
-                      </span>
-                      {done.length > 0 && <span className="block truncate text-[12px] text-ink-3">Logged: {done.map((session) => session.title).join(', ')}</span>}
-                    </span>
-                    {done.length > 0 ? (
-                      <span className="flex shrink-0 items-center gap-1 text-[12px] font-medium text-ok">
-                        <Icon name="check-circle" size={16} />
-                        Done
-                      </span>
-                    ) : date < today ? (
-                      <span className="shrink-0 text-[12px] text-ink-3">No session</span>
-                    ) : isToday ? (
-                      <span className="shrink-0 text-[12px] font-medium text-accent-ink">Today</span>
-                    ) : null}
+            />
+          ) : (
+            routines.map((routine) => {
+              const names = exercisesOf(routine.id!)
+              return (
+                <Card key={routine.id} className="flex flex-col gap-3">
+                  <div className="flex items-start gap-2">
+                    <div className="min-w-0 flex-1">
+                      <h2 className="truncate text-[16px] font-semibold text-ink">{routine.name}</h2>
+                      <p className="mt-1 line-clamp-2 text-[13px] leading-snug text-ink-3">{names || 'No exercises in this routine yet.'}</p>
+                    </div>
+                    {scheduledIds.includes(routine.id) && <Chip tone="accent">Today</Chip>}
+                    <IconButton icon="edit" size="sm" label={`Edit ${routine.name}`} onClick={() => navigate(`/train/setup/routine/${routine.id}`)} />
                   </div>
-                )
-              })}
+                  <Button variant="primary" block disabled={!!workout.open} onClick={() => start(routine.id!)}>
+                    Start routine
+                  </Button>
+                </Card>
+              )
+            })
+          )}
+        </section>
+
+        {gym && progress && (
+          <section className="flex flex-col gap-2">
+            <SectionTitle>This week</SectionTitle>
+            <Card padded={false} className="overflow-hidden">
+              <TargetRow habit={gym} progress={progress} />
             </Card>
           </section>
-        </div>
+        )}
+
+        <Button variant="ghost" onClick={() => setQuick(true)} className="self-center">
+          Log a session without sets
+        </Button>
       </div>
 
-      <Modal open={choosing} onClose={() => setChoosing(false)} title="Start a routine" size="sm">
-        <ul className="divide-y divide-line overflow-hidden rounded-control bg-surface-2">
-          {routines.map((routine) => (
-            <li key={routine.id}>
-              <button
-                type="button"
-                onClick={() => {
-                  setChoosing(false)
-                  void start(routine.id!)
-                }}
-                className="flex min-h-[56px] w-full cursor-pointer items-center gap-3 px-3 text-left transition-colors duration-100 hover:bg-surface-3"
-              >
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[14.5px] text-ink">{routine.name}</span>
-                  <span className="block text-[12.5px] text-ink-3">
-                    {sizes.get(routine.id!) ?? 0} exercises
-                    {(routine.weekdays ?? []).length > 0 && ` · ${(routine.weekdays ?? []).map((day) => WEEKDAY_SHORT[day]).join(', ')}`}
-                  </span>
-                </span>
-                <Icon name="play" size={16} className="shrink-0 text-ink-3" />
-              </button>
-            </li>
-          ))}
-          <li>
-            <button
-              type="button"
-              onClick={() => {
-                setChoosing(false)
-                void start(null)
-              }}
-              className="flex min-h-[56px] w-full cursor-pointer items-center gap-3 px-3 text-left transition-colors duration-100 hover:bg-surface-3"
-            >
-              <span className="min-w-0 flex-1">
-                <span className="block text-[14.5px] text-ink">Free session</span>
-                <span className="block text-[12.5px] text-ink-3">No routine. Add exercises as you go.</span>
-              </span>
-              <Icon name="play" size={16} className="shrink-0 text-ink-3" />
-            </button>
-          </li>
-        </ul>
-      </Modal>
       <QuickLog open={quick} onClose={() => setQuick(false)} />
     </Page>
   )

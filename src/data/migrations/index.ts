@@ -418,6 +418,28 @@ async function orderOfTheDay({ db, today }: MigrationContext): Promise<{ renamed
 }
 
 /**
+ * The morning, in the order the user gave on 2026-10-12: wake up, meditation, brush, chia,
+ * creatine, learning, gym, Hanuman Chalisa, Shiv Tandav Stotram, breakfast. Those ten lead the
+ * list in that order; everything else follows in the order it already had. It is the habits own
+ * order, so it can still be changed by dragging in Habits.
+ */
+const MORNING_ORDER = ['wake up', 'meditation', 'brush', 'chia', 'creatine', 'learning', 'gym', 'hanuman chalisa', 'shiv tandav', 'breakfast']
+
+async function morningOrder({ db }: MigrationContext): Promise<{ placed: number }> {
+  const habits = (await db.habits.toArray()).sort((a, b) => a.sort_order - b.sort_order)
+  const active = habits.filter((habit) => habit.retired_on === null)
+  const lead: number[] = []
+  for (const start of MORNING_ORDER) {
+    const match = active.find((habit) => habit.name.trim().toLowerCase().startsWith(start) && !lead.includes(habit.id!))
+    if (match) lead.push(match.id!)
+  }
+  const rest = active.map((habit) => habit.id!).filter((id) => !lead.includes(id))
+  const order = [...lead, ...rest, ...habits.filter((habit) => habit.retired_on !== null).map((habit) => habit.id!)]
+  for (const [position, id] of order.entries()) await db.habits.update(id, { sort_order: position })
+  return { placed: lead.length }
+}
+
+/**
  * Removes the duplicate Breakfast habit, at the user's request. It was created and retired on the
  * same day in August, so it was never due on any day and no score has ever counted it; the
  * Breakfast that is in use is untouched. Done only when that is exactly the situation.
@@ -501,6 +523,7 @@ export const MIGRATIONS: Migration[] = [
   { id: '013-drop-reading-and-writing', run: dropReadingAndWriting },
   { id: '014-cold-shower', run: addColdShower },
   { id: '015-order-of-the-day', run: orderOfTheDay },
+  { id: '016-morning-order', run: morningOrder },
 ]
 
 export async function pendingMigrations(db: AppDb, migrations: Migration[] = MIGRATIONS): Promise<Migration[]> {
