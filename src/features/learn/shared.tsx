@@ -204,7 +204,17 @@ export function ResourceForm({ resource, type, pillarId, pillars, onClose, onSav
           </Field>
         </div>
         <Field label="Link" hint="Optional. Opened in a new tab when you start.">
-          <TextInput type="url" inputMode="url" value={form.url} onChange={(event) => set('url', event.target.value)} placeholder="https://" />
+          <TextInput
+            type="url"
+            inputMode="url"
+            value={form.url}
+            onChange={(event) => {
+              const url = event.target.value
+              const isVideo = !resource && /youtu.?be/i.test(url)
+              setForm((current) => (isVideo ? { ...current, url, type: 'video', progress_unit: 'minutes' } : { ...current, url }))
+            }}
+            placeholder="https://"
+          />
         </Field>
         <Field label="Author or source" hint="Optional.">
           <TextInput value={form.author} onChange={(event) => set('author', event.target.value)} maxLength={80} />
@@ -249,16 +259,19 @@ interface SessionSheetProps {
   lane: LearningLane
   /** Start with "this finishes it" switched on (the Mark complete path). */
   finishing?: boolean
+  /** Minutes already measured by the timer, to start the form from. */
+  minutes?: number
   onClose: () => void
 }
 
 /** Records a learning or reading session: when, how long, how far, and whether it is finished. */
-export function SessionSheet({ resource, lane, finishing = false, onClose }: SessionSheetProps) {
+export function SessionSheet({ resource, lane, finishing = false, minutes: timed, onClose }: SessionSheetProps) {
   const { today, settings, write } = useCore()
   const toast = useToast()
   const [date, setDate] = useState<DateStr>(today)
-  const [minutes, setMinutes] = useState(resource.estimated_minutes && lane === 'learning' ? Math.min(resource.estimated_minutes, 240) : 30)
-  const [reached, setReached] = useState(resource.progress_current)
+  const [minutes, setMinutes] = useState(timed ?? (resource.estimated_minutes && lane === 'learning' ? Math.min(resource.estimated_minutes, 240) : 30))
+  // For something counted in minutes, the timed minutes are also how far it has moved on.
+  const [reached, setReached] = useState(timed && resource.progress_unit === 'minutes' ? resource.progress_current + timed : resource.progress_current)
   const [notes, setNotes] = useState('')
   const [finished, setFinished] = useState(finishing)
   const first = firstEditableDate(today, settings.edit_window_days)
@@ -307,7 +320,7 @@ export function SessionSheet({ resource, lane, finishing = false, onClose }: Ses
           </Select>
         </Field>
         <Field label="Minutes" hint="Set to 0 to leave it out.">
-          <Stepper label="Minutes" value={minutes} onChange={setMinutes} step={5} min={0} max={600} unit="min" />
+          <Stepper label="Minutes" value={minutes} onChange={setMinutes} step={timed ? 1 : 5} min={0} max={600} unit="min" />
         </Field>
         {counted && !finished && (
           <Field label={REACHED[resource.progress_unit]} hint={resource.progress_total ? `Out of ${resource.progress_total}.` : undefined}>

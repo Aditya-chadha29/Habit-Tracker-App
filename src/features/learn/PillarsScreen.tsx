@@ -16,7 +16,10 @@ import { Field, TextArea, TextInput } from '../../ui/Field'
 import { ConfirmationDialog, Modal } from '../../ui/Overlay'
 import { Page } from '../../ui/Page'
 import { useToast } from '../../ui/Toast'
-import { usePillars, useResources } from './hooks'
+import { useLearningSessions, usePillars, useResources } from './hooks'
+import { UpNext } from './UpNext'
+
+const timeLabel = (minutes: number): string => (minutes < 60 ? minutes + ' min' : Math.floor(minutes / 60) + ' h' + (minutes % 60 ? ' ' + (minutes % 60) + ' min' : ''))
 
 const COLORS = ['mind', 'learning', 'body', 'exercise', 'accent']
 
@@ -108,6 +111,21 @@ export default function PillarsScreen() {
   const dueToday = useMemo(() => dueItems(habits, day, index).filter((item) => item.version.area === 'learning'), [habits, day, index])
   const [editing, setEditing] = useState<LearningPillar | 'new' | null>(null)
 
+  // Per topic: how many are finished, and the minutes logged this month.
+  const monthStart = day.slice(0, 8) + '01'
+  const sessions = useLearningSessions(monthStart, day)
+  const statsOf = useMemo(() => {
+    const topicOf = new Map(resources.list.map((resource) => [resource.id!, resource.pillar_id]))
+    const stats = new Map<number, { finished: number; minutes: number }>()
+    const at = (id: number) => stats.get(id) ?? stats.set(id, { finished: 0, minutes: 0 }).get(id)!
+    for (const resource of resources.list) if (resource.pillar_id !== null && resource.status === 'completed') at(resource.pillar_id).finished += 1
+    for (const session of sessions) {
+      const topic = topicOf.get(session.resource_id)
+      if (topic !== null && topic !== undefined) at(topic).minutes += session.minutes ?? 0
+    }
+    return stats
+  }, [resources.list, sessions])
+
   const countOf = useMemo(() => {
     const counts = new Map<number, number>()
     for (const resource of resources.list) if (resource.pillar_id !== null) counts.set(resource.pillar_id, (counts.get(resource.pillar_id) ?? 0) + 1)
@@ -135,6 +153,7 @@ export default function PillarsScreen() {
             ))}
           </Card>
         )}
+        <UpNext resources={resources.list} pillars={pillars} />
         {active.length === 0 ? (
           <EmptyState
             icon="learn"
@@ -170,8 +189,9 @@ export default function PillarsScreen() {
                 <span className="min-w-0">
                   <span className="block text-[17px] leading-snug font-semibold tracking-tight text-ink">{pillar.name}</span>
                   <span className="mt-1 block text-[12.5px] text-ink-3">
-                    {(countOf.get(pillar.id!) ?? 0) === 0 ? 'Nothing saved yet' : `${countOf.get(pillar.id!)} saved`}
+                    {(countOf.get(pillar.id!) ?? 0) === 0 ? 'Nothing saved yet' : `${countOf.get(pillar.id!)} saved · ${statsOf.get(pillar.id!)?.finished ?? 0} finished`}
                   </span>
+                  {(statsOf.get(pillar.id!)?.minutes ?? 0) > 0 && <span className="mt-0.5 block text-[12.5px] text-ink-3">{timeLabel(statsOf.get(pillar.id!)!.minutes)} this month</span>}
                 </span>
               </button>
               </>

@@ -22,6 +22,9 @@ import { Page } from '../../ui/Page'
 import { ProgressBar } from '../../ui/Progress'
 import { useToast } from '../../ui/Toast'
 import { usePillars, useResources } from './hooks'
+import { formatDuration } from '../../engine/training'
+import { useNow } from '../train/hooks'
+import { minutesSince, startTimer, stopTimer, useLearnTimer } from './timer'
 import { metaLine, openResourceLink, PillarChip, ResourceForm, SessionSheet, StatusChip } from './shared'
 
 /** One resource: what it is, how far through it you are, every session spent on it, and the
@@ -37,7 +40,9 @@ export default function ResourceScreen({ params }: RouteProps) {
     (await db.learning_sessions.where('resource_id').equals(id).toArray()).sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : b.created_at - a.created_at)),
   )
   const [editing, setEditing] = useState(false)
-  const [logging, setLogging] = useState<{ lane: LearningLane; finishing: boolean } | null>(null)
+  const [logging, setLogging] = useState<{ lane: LearningLane; finishing: boolean; minutes?: number } | null>(null)
+  const timer = useLearnTimer()
+  const clock = useNow(timer !== null)
   const [removing, setRemoving] = useState<number | null>(null)
   const queue = useMemo(() => queueOf(list), [list])
 
@@ -60,6 +65,7 @@ export default function ResourceScreen({ params }: RouteProps) {
   const place = queue.findIndex((item) => item.id === resource.id)
   const isActiveBook = settings.active_book_id === resource.id
   const lane: LearningLane = isActiveBook && !inQueue ? 'reading' : 'learning'
+  const timing = timer?.resourceId === resource.id
   const open = resource.status !== 'completed' && resource.status !== 'archived'
 
   return (
@@ -114,13 +120,20 @@ export default function ResourceScreen({ params }: RouteProps) {
               <div className="grid grid-cols-2 gap-2">
                 <Button
                   variant="primary"
-                  icon={resource.url ? 'external' : 'play'}
+                  icon={timing ? 'timer' : resource.url ? 'external' : 'play'}
                   onClick={() => {
+                    if (timing) {
+                      // Stopping measures the session; the form opens with those minutes in it.
+                      const was = stopTimer()
+                      setLogging({ lane, finishing: false, minutes: was ? minutesSince(was.startedAt, Date.now()) : undefined })
+                      return
+                    }
                     openResourceLink(resource)
                     void run(() => startResource(resource.id!, today))
+                    startTimer(resource.id!, Date.now())
                   }}
                 >
-                  {resource.status === 'in_progress' ? 'Continue' : 'Start'}
+                  {timing && timer ? 'Stop · ' + formatDuration((clock - timer.startedAt) / 1000) : resource.status === 'in_progress' ? 'Continue' : 'Start'}
                 </Button>
                 <Button variant="secondary" onClick={() => setLogging({ lane, finishing: false })}>
                   Log a session
@@ -225,7 +238,7 @@ export default function ResourceScreen({ params }: RouteProps) {
       </div>
 
       {editing && <ResourceForm resource={resource} pillars={pillars} onClose={() => setEditing(false)} />}
-      {logging && <SessionSheet resource={resource} lane={logging.lane} finishing={logging.finishing} onClose={() => setLogging(null)} />}
+      {logging && <SessionSheet resource={resource} lane={logging.lane} finishing={logging.finishing} minutes={logging.minutes} onClose={() => setLogging(null)} />}
       <ConfirmationDialog
         open={removing !== null}
         title="Remove this session?"
