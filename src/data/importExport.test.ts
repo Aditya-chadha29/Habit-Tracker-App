@@ -36,7 +36,7 @@ describe('export', () => {
     expect(file).toMatchObject({ app: 'personal-os', export_format: 3, exported_at: TODAY })
     for (const table of db.tables) expect(Array.isArray(file[table.name]), table.name).toBe(true)
     expect((file.habits as unknown[]).length).toBeGreaterThan(15)
-    expect((file.migrations as unknown[]).length).toBe(16)
+    expect((file.migrations as unknown[]).length).toBe(17)
   })
 
   it('round-trips: export, wipe, import gives the same data back', async () => {

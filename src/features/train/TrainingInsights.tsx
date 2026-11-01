@@ -4,7 +4,7 @@ import { db } from '../../data/db'
 import type { Exercise, SetLog } from '../../data/types'
 import { formatMediumDate, formatShortDate } from '../../engine/dates'
 import { muscleBalance, personalBests, weeklyVolume } from '../../engine/history'
-import { formatSet } from '../../engine/training'
+import { formatSet, weightIn } from '../../engine/training'
 import { useCore } from '../../state/core'
 import { useLive } from '../../state/live'
 import { Card, SectionTitle } from '../../ui/Card'
@@ -22,7 +22,7 @@ const WINDOW_DAYS = 30
  * the logged sets; nothing here is stored.
  */
 export function TrainingInsights() {
-  const { today, weekStart } = useCore()
+  const { today, weekStart, settings } = useCore()
   const sets = useLive(() => db.set_logs.toArray(), [], NO_SETS)
   const exercises = useLive(() => db.exercises.toArray(), [], NO_EXERCISES)
   const byId = useMemo(() => new Map(exercises.map((exercise) => [exercise.id!, exercise])), [exercises])
@@ -87,8 +87,8 @@ export function TrainingInsights() {
                   <span className="block truncate text-[12.5px] text-ink-3">{formatMediumDate(best.set.date)}</span>
                 </span>
                 <span className="tnum shrink-0 text-right">
-                  <span className="block text-[14px] font-medium text-ink">{formatSet(best.set)}</span>
-                  <span className="block text-[12px] text-ink-3">about {Math.round(best.estimate)} kg for one</span>
+                  <span className="block text-[14px] font-medium text-ink">{formatSet(best.set, settings.weight_unit)}</span>
+                  <span className="block text-[12px] text-ink-3">about {Math.round(weightIn(best.estimate, settings.weight_unit))} {settings.weight_unit} for one</span>
                 </span>
               </Link>
             ))}

@@ -1,7 +1,7 @@
 import { useState } from "react"
 import type { Exercise, SetLog } from "../../data/types"
 import { completeSet, uncompleteSet, updateSet } from "../../data/workoutRepo"
-import { formatSet } from "../../engine/training"
+import { formatSet, weightFrom, weightIn, type WeightUnit } from "../../engine/training"
 import { useCore } from "../../state/core"
 import { cx } from "../../ui/cx"
 import { Icon } from "../../ui/icons"
@@ -23,8 +23,15 @@ interface FieldSpec {
 
 const same = (value: number) => value
 
-function fieldsFor(exercise: Exercise | undefined): FieldSpec[] {
-  const weight: FieldSpec = { key: "weight_kg", label: "KG", name: "weight in kilograms", decimal: true, show: same, store: same }
+function fieldsFor(exercise: Exercise | undefined, unit: WeightUnit): FieldSpec[] {
+  const weight: FieldSpec = {
+    key: "weight_kg",
+    label: unit === "lb" ? "LB" : "KG",
+    name: unit === "lb" ? "weight in pounds" : "weight in kilograms",
+    decimal: true,
+    show: (kg) => weightIn(kg, unit),
+    store: (shown) => weightFrom(shown, unit),
+  }
   const reps: FieldSpec = { key: "reps", label: "REPS", name: "reps", decimal: false, show: same, store: same }
   switch (exercise?.kind) {
     case "bodyweight_reps":
@@ -105,15 +112,30 @@ interface SetRowProps {
  * went as planned is one tap.
  */
 export function SetRow({ set, exercise, previous, restSeconds, editable, live, heading = false }: SetRowProps) {
-  const { write } = useCore()
+  const { write, settings } = useCore()
   const toast = useToast()
-  const fields = fieldsFor(exercise)
+  const unit = settings.weight_unit
+  const fields = fieldsFor(exercise, unit)
   const grid = { gridTemplateColumns: columns(fields.length) }
   const fail = (error: unknown) => toast.show(error instanceof Error ? error.message : "That could not be saved.", { tone: "risk" })
 
   const toggle = () => {
     if (set.done) uncompleteSet(set.id!, write).catch(fail)
-    else completeSet(set.id!, {}, live ? restSeconds : null, write, Date.now()).catch(fail)
+    else {
+      // A set with no numbers says nothing. Blanks take what was done last time; with nothing to
+      // copy, the number has to be entered first.
+      const patch: Partial<Pick<SetLog, FieldKey>> = {}
+      for (const field of fields) {
+        if (set[field.key] !== null) continue
+        const earlier = previous?.[field.key] ?? null
+        if (earlier === null) {
+          toast.show("Enter the " + field.name + " for set " + set.set_index + " first.", { tone: "risk" })
+          return
+        }
+        patch[field.key] = earlier
+      }
+      completeSet(set.id!, patch, live ? restSeconds : null, write, Date.now()).catch(fail)
+    }
   }
 
   return (
@@ -136,7 +158,7 @@ export function SetRow({ set, exercise, previous, restSeconds, editable, live, h
         <span className="tnum text-center text-[14px] font-semibold text-ink-2" aria-hidden="true">
           {set.set_index}
         </span>
-        <span className="tnum min-w-0 truncate text-[13px] text-ink-3">{previous ? formatSet(previous) : "—"}</span>
+        <span className="tnum min-w-0 truncate text-[13px] text-ink-3">{previous ? formatSet(previous, unit) : "—"}</span>
         {fields.map((field) => (
           <Cell
             key={field.key}

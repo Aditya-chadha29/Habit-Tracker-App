@@ -9,7 +9,7 @@ import {
 } from '../../data/workoutRepo'
 import { formatMediumDate } from '../../engine/dates'
 import { isEditable } from '../../engine/lock'
-import { bestSet, formatDuration, formatSet, isWorkSet, sessionMinutes, volumeLoad } from '../../engine/training'
+import { bestSet, formatDuration, formatSet, isWorkSet, sessionMinutes, volumeLoad, weightIn } from '../../engine/training'
 import { useCore } from '../../state/core'
 import { useKeyedLiveQuery } from '../../state/live'
 import { Button } from '../../ui/Button'
@@ -20,7 +20,9 @@ import { Field, TextArea } from '../../ui/Field'
 import { Icon } from '../../ui/icons'
 import { ConfirmationDialog, Modal } from '../../ui/Overlay'
 import { Page } from '../../ui/Page'
+import { Segmented } from '../../ui/Tabs'
 import { useToast } from '../../ui/Toast'
+import { saveSettings } from '../../data/settingsRepo'
 import { ExercisePicker } from './ExercisePicker'
 import { blocksOf, useExercises, useNow } from './hooks'
 import { SetRow } from './SetRow'
@@ -57,6 +59,11 @@ function useWakeLock(active: boolean): boolean {
   return held
 }
 
+const UNITS = [
+  { id: 'kg', label: 'kg' },
+  { id: 'lb', label: 'lb' },
+] as const
+
 export default function SessionScreen({ params }: RouteProps) {
   const sessionId = Number(params.id)
   const { today, settings, write } = useCore()
@@ -79,6 +86,7 @@ export default function SessionScreen({ params }: RouteProps) {
   }, [exerciseIds.join(','), sessionDate])
 
   const live = !!session && session.ended_at === null
+  const unit = settings.weight_unit
   const now = useNow(live)
   const awake = useWakeLock(live)
   const [picking, setPicking] = useState(false)
@@ -190,7 +198,7 @@ export default function SessionScreen({ params }: RouteProps) {
           <div className="grid grid-cols-3 divide-x divide-line rounded-card bg-surface py-2.5 shadow-card">
             {[
               ['Duration', live ? (elapsed ?? '—') : minutes !== null ? `${minutes} min` : '—'],
-              ['Volume', `${Math.round(volumeLoad(sets)).toLocaleString('en-IN')} kg`],
+              ['Volume', `${Math.round(weightIn(volumeLoad(sets), unit)).toLocaleString('en-IN')} ${unit}`],
               ['Sets', String(doneSets.length)],
             ].map(([label, value]) => (
               <div key={label} className="px-3">
@@ -198,6 +206,13 @@ export default function SessionScreen({ params }: RouteProps) {
                 <p className={cx('tnum mt-0.5 text-[16px] font-semibold', label === 'Duration' && live ? 'text-accent-ink' : 'text-ink')}>{value}</p>
               </div>
             ))}
+          </div>
+        )}
+
+        {!session.quick && blocks.length > 0 && editable && (
+          <div className="flex items-center justify-between gap-3 px-1">
+            <span className="text-[13px] text-ink-2">Log weights in</span>
+            <Segmented options={UNITS} value={unit} onChange={(next) => void saveSettings({ weight_unit: next }).catch(fail)} label="Weight unit" size="sm" />
           </div>
         )}
 
@@ -231,6 +246,7 @@ export default function SessionScreen({ params }: RouteProps) {
                   <p className="mt-0.5 flex items-center gap-1.5 text-[12.5px] text-ink-3">
                     <Icon name="timer" size={13} />
                     Rest {formatDuration(rest)}
+                    {exercise?.equipment === 'dumbbell' && exercise.kind !== 'time' ? ' · both dumbbells together' : ''}
                   </p>
                 </div>
                 <span className={cx('tnum shrink-0 pt-0.5 text-[13px] font-medium', done === block.sets.length && done > 0 ? 'text-ok' : 'text-ink-2')}>
@@ -326,10 +342,13 @@ export default function SessionScreen({ params }: RouteProps) {
         }
       >
         <div className="flex flex-col gap-4">
+          {doneSets.length === 0 && !session.quick && (
+            <p className="text-[13.5px] leading-relaxed text-ink-2">No sets are done, so this will not count as a training day. Discard it if it was started by mistake.</p>
+          )}
           <div className="grid grid-cols-3 gap-3">
             {[
               ['Sets done', String(doneSets.length)],
-              ['Volume', `${Math.round(volumeLoad(sets)).toLocaleString('en-IN')} kg`],
+              ['Volume', `${Math.round(weightIn(volumeLoad(sets), unit)).toLocaleString('en-IN')} ${unit}`],
               ['Time', elapsed ?? '—'],
             ].map(([label, value]) => (
               <div key={label} className="rounded-control bg-surface-2 p-3">
@@ -354,8 +373,8 @@ export default function SessionScreen({ params }: RouteProps) {
                     <li key={block.position} className="flex items-baseline gap-3 px-3 py-2.5">
                       <span className="min-w-0 flex-1 truncate text-[14px] text-ink">{byId.get(block.exerciseId)?.name ?? 'Exercise'}</span>
                       <span className="tnum shrink-0 text-[13px] text-ink-2">
-                        {top ? formatSet(top) : '—'}
-                        {before && <span className="text-ink-3"> · was {formatSet(before)}</span>}
+                        {top ? formatSet(top, unit) : '—'}
+                        {before && <span className="text-ink-3"> · was {formatSet(before, unit)}</span>}
                       </span>
                     </li>
                   )

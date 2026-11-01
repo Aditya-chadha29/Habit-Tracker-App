@@ -31,6 +31,8 @@ export function entryKey(habitId: number, date: DateStr): string {
   return `${habitId}|${date}`
 }
 
+const EMPTY_SESSION_RULE_FROM = '2026-11-02'
+
 export function buildCompletionIndex(input: CompletionInput): CompletionIndex {
   const manual = new Set<string>()
   const values = new Map<string, number>()
@@ -45,6 +47,9 @@ export function buildCompletionIndex(input: CompletionInput): CompletionIndex {
   for (const session of input.sessions) {
     // An open session is a workout in progress, not a workout done.
     if (session.ended_at === null) continue
+    // A finished session with nothing in it is not a workout. Days before this rule keep the score
+    // they already had: a lived day is never rescored.
+    if (session.date >= EMPTY_SESSION_RULE_FROM && !session.kinds?.length) continue
     workout.add(session.date)
     if (session.kinds?.includes('cardio')) cardio.add(session.date)
   }

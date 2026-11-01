@@ -53,6 +53,11 @@ export function weeklyVolume(sets: readonly SetLog[], today: DateStr, weekStart:
   })
 }
 
+/** Reps with no weight on a lift that takes one: a warm-up, not work for that muscle. */
+export function unweighted(set: SetLog, exercise: Exercise): boolean {
+  return exercise.kind === 'weight_reps' && !set.weight_kg
+}
+
 export interface MuscleRow {
   muscle: MuscleGroup
   sets: number
@@ -68,7 +73,7 @@ export function muscleBalance(sets: readonly SetLog[], exercisesById: ReadonlyMa
   for (const set of sets) {
     if (!set.done || !isHardSet(set) || set.date < before || set.date > today) continue
     const exercise = exercisesById.get(set.exercise_id)
-    if (!exercise || exercise.primary_muscle === 'cardio') continue
+    if (!exercise || exercise.primary_muscle === 'cardio' || unweighted(set, exercise)) continue
     const row = rows.get(exercise.primary_muscle) ?? { muscle: exercise.primary_muscle, sets: 0, previous: 0 }
     if (set.date >= from) row.sets += 1
     else row.previous += 1

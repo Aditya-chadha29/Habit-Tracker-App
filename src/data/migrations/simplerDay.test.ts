@@ -58,7 +58,7 @@ describe("today in the order of the day", () => {
     expect(await db.habits.toArray().then((all) => all.some((habit) => habit.name === "Daily moisturiser" && habit.retired_on === null))).toBe(false)
     const skincare = await byName(db, "skincare")
     expect(skincare.versions[0].name).toBe("Daily moisturiser")
-    expect((await byName(db, "haircare")).retired_on).toBeNull()
+    expect(await byName(db, "haircare")).toBeTruthy()
     const names = (await db.habits.orderBy("sort_order").toArray()).filter((habit) => habit.retired_on === null).map((habit) => habit.name)
     // The morning the user set out: these lead the list, in this order.
     const morning = ["Wake up at 4:00 AM", "Meditation (Isha Kriya)", "Chia seeds", "Creatine", "Learning", "Gym", "Hanuman Chalisa", "Shiv Tandav Stotram", "Breakfast"]

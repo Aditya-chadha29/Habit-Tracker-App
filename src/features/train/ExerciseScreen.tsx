@@ -1,9 +1,10 @@
+import { useCore } from '../../state/core'
 import { useMemo } from 'react'
 import type { RouteProps } from '../../app/router'
 import { db } from '../../data/db'
 import type { SetLog } from '../../data/types'
 import { formatMediumDate, formatShortDate } from '../../engine/dates'
-import { bestSet, e1rm, formatSet, formatSetLine, groupSetsByDate, isWorkSet, volumeLoad } from '../../engine/training'
+import { bestSet, e1rm, formatSet, formatSetLine, groupSetsByDate, isWorkSet, volumeLoad, weightIn } from '../../engine/training'
 import { useKeyedLiveQuery } from '../../state/live'
 import { Card, SectionTitle } from '../../ui/Card'
 import { LineChart } from '../../ui/Charts'
@@ -21,6 +22,7 @@ const MIN_SESSIONS_FOR_CHART = 3
  * held back until there are enough sessions for a line to mean anything.
  */
 export default function ExerciseScreen({ params }: RouteProps) {
+  const unit = useCore().settings.weight_unit
   const exerciseId = Number(params.id)
   const { byId } = useExercises()
   const exercise = byId.get(exerciseId)
@@ -64,8 +66,8 @@ export default function ExerciseScreen({ params }: RouteProps) {
       ) : (
         <div className="flex flex-col gap-5">
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <MetricCard label="Last workout" value={latest ? formatSet(bestSet(latest.sets) ?? latest.sets[0]) : '—'} hint={latest ? formatMediumDate(latest.date) : undefined} />
-            <MetricCard label="Best set" value={best ? formatSet(best) : '—'} hint={best ? formatMediumDate(best.date) : undefined} />
+            <MetricCard label="Last workout" value={latest ? formatSet(bestSet(latest.sets) ?? latest.sets[0], unit) : '—'} hint={latest ? formatMediumDate(latest.date) : undefined} />
+            <MetricCard label="Best set" value={best ? formatSet(best, unit) : '—'} hint={best ? formatMediumDate(best.date) : undefined} />
             {weighted && (
               <MetricCard
                 label="Best estimated 1RM"
@@ -104,9 +106,9 @@ export default function ExerciseScreen({ params }: RouteProps) {
                 <div key={day.date} className="px-4 py-3">
                   <div className="flex items-baseline gap-3">
                     <span className="text-[13.5px] font-medium text-ink">{formatMediumDate(day.date)}</span>
-                    {weighted && <span className="tnum ml-auto text-[12px] text-ink-3">{Math.round(volumeLoad(day.sets)).toLocaleString('en-IN')} kg volume</span>}
+                    {weighted && <span className="tnum ml-auto text-[12px] text-ink-3">{Math.round(weightIn(volumeLoad(day.sets), unit)).toLocaleString('en-IN')} {unit} volume</span>}
                   </div>
-                  <p className="tnum mt-1 text-[14px] leading-relaxed text-ink-2">{formatSetLine(day.sets)}</p>
+                  <p className="tnum mt-1 text-[14px] leading-relaxed text-ink-2">{formatSetLine(day.sets, unit)}</p>
                 </div>
               ))}
             </Card>

@@ -440,6 +440,25 @@ async function morningOrder({ db }: MigrationContext): Promise<{ placed: number 
 }
 
 /**
+ * Haircare is retired, at the user’s request of 2026-11-01 (Hair oiling stays), and a Bodyweight
+ * Squat is added so warm-up squats need not be logged under a barbell lift.
+ */
+async function novemberTidy({ db, today }: MigrationContext): Promise<{ retired: boolean; added: boolean }> {
+  const habits = await db.habits.toArray()
+  const haircare = habits.find((habit) => habit.name.trim().toLowerCase() === 'haircare' && habit.retired_on === null)
+  if (haircare?.id !== undefined) await retireHabit(haircare.id, today, db)
+  const exercises = await db.exercises.toArray()
+  const added = !exercises.some((exercise) => exercise.name.trim().toLowerCase() === 'bodyweight squat')
+  if (added) {
+    await db.exercises.add({
+      name: 'Bodyweight Squat', primary_muscle: 'quads', equipment: 'bodyweight', kind: 'bodyweight_reps', increment_kg: 0, bar_weight_kg: null,
+      rest_seconds: 60, is_builtin: true, retired_on: null, sort_order: exercises.reduce((max, exercise) => Math.max(max, exercise.sort_order), -1) + 1, notes: '',
+    })
+  }
+  return { retired: haircare !== undefined, added }
+}
+
+/**
  * Removes the duplicate Breakfast habit, at the user's request. It was created and retired on the
  * same day in August, so it was never due on any day and no score has ever counted it; the
  * Breakfast that is in use is untouched. Done only when that is exactly the situation.
@@ -524,6 +543,7 @@ export const MIGRATIONS: Migration[] = [
   { id: '014-cold-shower', run: addColdShower },
   { id: '015-order-of-the-day', run: orderOfTheDay },
   { id: '016-morning-order', run: morningOrder },
+  { id: '017-november-tidy', run: novemberTidy },
 ]
 
 export async function pendingMigrations(db: AppDb, migrations: Migration[] = MIGRATIONS): Promise<Migration[]> {

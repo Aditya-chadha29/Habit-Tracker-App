@@ -64,9 +64,21 @@ export function bestSet(sets: readonly SetLog[]): SetLog | null {
   return work.reduce((best, set) => (setScore(set) > setScore(best) ? set : best))
 }
 
-/** "60 × 10" — one set, in the units it was recorded in. */
-export function formatSet(set: SetLog): string {
-  if (set.weight_kg !== null && set.reps !== null) return `${set.weight_kg} × ${set.reps}`
+/** Weights are stored in kilograms; this is what the owner sees. */
+export type WeightUnit = 'kg' | 'lb'
+const KG_PER_LB = 0.45359237
+
+export function weightIn(kg: number, unit: WeightUnit): number {
+  return unit === 'lb' ? Math.round((kg / KG_PER_LB) * 10) / 10 : kg
+}
+
+export function weightFrom(shown: number, unit: WeightUnit): number {
+  return unit === 'lb' ? Math.round(shown * KG_PER_LB * 100) / 100 : shown
+}
+
+/** "60 × 10" — one set, in the chosen unit. */
+export function formatSet(set: SetLog, unit: WeightUnit = 'kg'): string {
+  if (set.weight_kg !== null && set.reps !== null) return `${weightIn(set.weight_kg, unit)} × ${set.reps}`
   if (set.reps !== null) return `${set.reps} reps`
   if (set.seconds !== null) return formatDuration(set.seconds)
   if (set.distance_m !== null) return `${set.distance_m} m`
@@ -74,12 +86,12 @@ export function formatSet(set: SetLog): string {
 }
 
 /** "60 × 10 · 60 × 9 · 57.5 × 10" — the single most useful line on any history screen. */
-export function formatSetLine(sets: readonly SetLog[]): string {
+export function formatSetLine(sets: readonly SetLog[], unit: WeightUnit = 'kg'): string {
   return sets
     .filter(isWorkSet)
     .slice()
     .sort((a, b) => a.set_index - b.set_index)
-    .map(formatSet)
+    .map((set) => formatSet(set, unit))
     .join(' · ')
 }
 

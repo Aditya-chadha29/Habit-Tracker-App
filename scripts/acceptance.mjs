@@ -171,6 +171,7 @@ async function scenarioB() {
     await app.page.getByRole('button', { name: 'Start routine', exact: true }).first().click()
     await app.page.waitForURL(/#\/train\/session\//, { timeout: 10000 })
     await app.settle()
+    for (const cell of await app.page.locator('main input[aria-label^="Set 1 "]').all()) await cell.fill('10')
     await app.page.getByRole('button', { name: /^Set 1: tap when done/ }).first().click()
     await app.settle()
     await app.page.getByRole('button', { name: 'Finish', exact: true }).click()
