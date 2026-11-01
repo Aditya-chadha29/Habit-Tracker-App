@@ -82,6 +82,39 @@ export function muscleBalance(sets: readonly SetLog[], exercisesById: ReadonlyMa
   return [...rows.values()].sort((a, b) => b.sets - a.sets || b.previous - a.previous)
 }
 
+export interface MuscleWeekRow {
+  muscle: MuscleGroup
+  /** Hard sets: 1 for the main muscle of an exercise, 1/2 for a muscle that assists. */
+  sets: number
+  /** The exercises that worked it, most sets first. */
+  exercises: string[]
+  /** The latest day it was worked in the period. */
+  last: DateStr
+}
+
+/** What the hard sets between two days went to, muscle by muscle. Warm-ups and cardio are left out. */
+export function muscleWeek(sets: readonly SetLog[], exercisesById: ReadonlyMap<number, Exercise>, from: DateStr, to: DateStr): MuscleWeekRow[] {
+  const rows = new Map<MuscleGroup, { sets: number; by: Map<string, number>; last: DateStr }>()
+  const add = (muscle: MuscleGroup, amount: number, set: SetLog, name: string) => {
+    if (muscle === 'cardio') return
+    const row = rows.get(muscle) ?? { sets: 0, by: new Map<string, number>(), last: set.date }
+    row.sets += amount
+    row.by.set(name, (row.by.get(name) ?? 0) + amount)
+    if (set.date > row.last) row.last = set.date
+    rows.set(muscle, row)
+  }
+  for (const set of sets) {
+    if (!isHardSet(set) || set.date < from || set.date > to) continue
+    const exercise = exercisesById.get(set.exercise_id)
+    if (!exercise || unweighted(set, exercise)) continue
+    add(exercise.primary_muscle, 1, set, exercise.name)
+    for (const muscle of exercise.secondary_muscles ?? []) add(muscle, 0.5, set, exercise.name)
+  }
+  return [...rows.entries()]
+    .map(([muscle, row]) => ({ muscle, sets: row.sets, last: row.last, exercises: [...row.by.entries()].sort((a, b) => b[1] - a[1]).map(([name]) => name) }))
+    .sort((a, b) => b.sets - a.sets)
+}
+
 export interface PersonalBest {
   exercise: Exercise
   set: SetLog

@@ -1,3 +1,4 @@
+import type { MuscleGroup } from '../types'
 import type { AppDb } from '../db'
 import { changeHabit, createHabit, retireHabit } from '../habitRepo'
 import { takeSnapshot } from '../backup'
@@ -459,6 +460,35 @@ async function novemberTidy({ db, today }: MigrationContext): Promise<{ retired:
 }
 
 /**
+ * Which muscles assist the built-in compound lifts, so a chest day also shows on the triceps. Only
+ * built-ins are filled in, and only where nothing is set yet; it can be changed per exercise.
+ */
+function assisting(name: string, primary: MuscleGroup): MuscleGroup[] {
+  const n = name.toLowerCase()
+  if (primary === 'chest' && /press|push-up|dip/.test(n)) return ['triceps', 'shoulders']
+  if (primary === 'back' && /deadlift|rack pull/.test(n)) return ['hamstrings', 'glutes', 'traps']
+  if (primary === 'back' && !n.includes('straight-arm') && /row|pulldown|pull-up|chin-up/.test(n)) return ['biceps']
+  if (primary === 'shoulders' && /press/.test(n)) return ['triceps']
+  if (primary === 'quads' && /squat|leg press|lunge/.test(n)) return ['glutes']
+  if (primary === 'hamstrings' && /deadlift|good morning/.test(n)) return ['glutes']
+  return []
+}
+
+async function secondaryMuscles({ db }: MigrationContext): Promise<{ filled: number }> {
+  let filled = 0
+  for (const exercise of await db.exercises.toArray()) {
+    // The Bodyweight Squat of step 017 went in with a step of 0, which the exercise form refuses.
+    if (exercise.increment_kg <= 0) await db.exercises.update(exercise.id!, { increment_kg: 2.5 })
+    if (!exercise.is_builtin || exercise.secondary_muscles) continue
+    const muscles = assisting(exercise.name, exercise.primary_muscle)
+    if (!muscles.length) continue
+    await db.exercises.update(exercise.id!, { secondary_muscles: muscles })
+    filled += 1
+  }
+  return { filled }
+}
+
+/**
  * Removes the duplicate Breakfast habit, at the user's request. It was created and retired on the
  * same day in August, so it was never due on any day and no score has ever counted it; the
  * Breakfast that is in use is untouched. Done only when that is exactly the situation.
@@ -544,6 +574,7 @@ export const MIGRATIONS: Migration[] = [
   { id: '015-order-of-the-day', run: orderOfTheDay },
   { id: '016-morning-order', run: morningOrder },
   { id: '017-november-tidy', run: novemberTidy },
+  { id: '018-secondary-muscles', run: secondaryMuscles },
 ]
 
 export async function pendingMigrations(db: AppDb, migrations: Migration[] = MIGRATIONS): Promise<Migration[]> {

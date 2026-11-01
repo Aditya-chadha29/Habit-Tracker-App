@@ -168,6 +168,8 @@ export interface Exercise {
   id?: number
   name: string
   primary_muscle: MuscleGroup
+  /** Muscles that assist. Each set counts for half on them. Absent on older rows. */
+  secondary_muscles?: MuscleGroup[]
   equipment: Equipment
   kind: ExerciseKind
   /** Default step for the plus/minus buttons, in kg. */

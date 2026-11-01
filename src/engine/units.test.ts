@@ -22,3 +22,23 @@ describe('an empty workout', () => {
     expect(index('2026-10-09', [])).toBe(true)
   })
 })
+
+import { muscleWeek } from './history'
+import type { Exercise, SetLog } from '../data/types'
+
+describe('the week by muscle', () => {
+  const bench = { id: 1, name: 'Bench', primary_muscle: 'chest', secondary_muscles: ['triceps'], kind: 'weight_reps' } as Exercise
+  const squat = { id: 2, name: 'Squat', primary_muscle: 'quads', kind: 'weight_reps' } as Exercise
+  const run = { id: 3, name: 'Run', primary_muscle: 'cardio', kind: 'distance_time' } as Exercise
+  const byId = new Map([bench, squat, run].map((e) => [e.id!, e]))
+  const set = (exercise_id: number, date: string, weight_kg: number | null, kind = 'work') => ({ exercise_id, date, weight_kg, reps: 10, rir: null, done: true, kind }) as SetLog
+  it('counts the main muscle whole and an assisting one by half', () => {
+    const rows = muscleWeek([set(1, '2026-11-02', 60), set(1, '2026-11-03', 60)], byId, '2026-11-01', '2026-11-07')
+    expect(rows.find((r) => r.muscle === 'chest')).toMatchObject({ sets: 2, last: '2026-11-03', exercises: ['Bench'] })
+    expect(rows.find((r) => r.muscle === 'triceps')?.sets).toBe(1)
+  })
+  it('leaves out warm-ups, unweighted lifts, cardio and other weeks', () => {
+    const rows = muscleWeek([set(1, '2026-11-02', 60, 'warmup'), set(2, '2026-11-02', null), set(3, '2026-11-02', null), set(1, '2026-10-31', 60)], byId, '2026-11-01', '2026-11-07')
+    expect(rows).toEqual([])
+  })
+})

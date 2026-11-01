@@ -33,7 +33,7 @@ function ExerciseEditor({ exercise, onClose }: { exercise: Exercise | 'new'; onC
   const existing = exercise === 'new' ? null : exercise
   const [form, setForm] = useState<ExerciseInput>(
     existing
-      ? { name: existing.name, primary_muscle: existing.primary_muscle, equipment: existing.equipment, kind: existing.kind, increment_kg: existing.increment_kg, rest_seconds: existing.rest_seconds, notes: existing.notes }
+      ? { name: existing.name, primary_muscle: existing.primary_muscle, secondary_muscles: existing.secondary_muscles ?? [], equipment: existing.equipment, kind: existing.kind, increment_kg: existing.increment_kg, rest_seconds: existing.rest_seconds, notes: existing.notes }
       : BLANK,
   )
   const [error, setError] = useState('')
@@ -86,6 +86,24 @@ function ExerciseEditor({ exercise, onClose }: { exercise: Exercise | 'new'; onC
               </option>
             ))}
           </Select>
+        </Field>
+        <Field label="Also works" hint="Each set counts for half on these.">
+          <div className="flex flex-wrap gap-1.5">
+            {MUSCLES.filter((muscle) => muscle !== form.primary_muscle && muscle !== 'cardio').map((muscle) => {
+              const on = (form.secondary_muscles ?? []).includes(muscle)
+              return (
+                <button
+                  key={muscle}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => setForm({ ...form, secondary_muscles: on ? (form.secondary_muscles ?? []).filter((item) => item !== muscle) : [...(form.secondary_muscles ?? []), muscle] })}
+                  className={on ? 'h-11 cursor-pointer rounded-full bg-accent px-3.5 text-[13px] font-medium text-on-accent' : 'h-11 cursor-pointer rounded-full bg-surface-2 px-3.5 text-[13px] text-ink-2'}
+                >
+                  {MUSCLE_LABEL[muscle]}
+                </button>
+              )
+            })}
+          </div>
         </Field>
         <Field label="Equipment">
           <Select value={form.equipment} onChange={(event) => setForm({ ...form, equipment: event.target.value as ExerciseInput['equipment'] })}>

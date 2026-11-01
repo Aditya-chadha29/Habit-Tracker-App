@@ -397,6 +397,7 @@ export async function setProgrammeDay(weekday: number, routineIds: number[], dat
 export interface ExerciseInput {
   name: string
   primary_muscle: MuscleGroup
+  secondary_muscles?: MuscleGroup[]
   equipment: Equipment
   kind: ExerciseKind
   increment_kg: number
@@ -411,6 +412,7 @@ function cleanExercise(input: ExerciseInput): Omit<Exercise, 'id' | 'is_builtin'
   return {
     name,
     primary_muscle: input.primary_muscle,
+    secondary_muscles: (input.secondary_muscles ?? []).filter((muscle) => muscle !== input.primary_muscle),
     equipment: input.equipment,
     kind: input.kind,
     increment_kg: input.increment_kg,

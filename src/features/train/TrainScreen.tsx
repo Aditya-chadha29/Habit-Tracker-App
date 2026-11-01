@@ -22,6 +22,7 @@ import { Modal } from '../../ui/Overlay'
 import { Page } from '../../ui/Page'
 import { Segmented } from '../../ui/Tabs'
 import { useToast } from '../../ui/Toast'
+import { BodyCard } from './BodyCard'
 import { useExercises, useRoutines, useTodaysWorkout } from './hooks'
 
 const NO_ITEMS: RoutineItem[] = []
@@ -161,6 +162,7 @@ export default function TrainScreen() {
       }
     >
       <div className="flex flex-col gap-6">
+        <BodyCard />
         {current && (
           <Card className="flex items-center gap-3 shadow-[inset_0_0_0_1.5px_var(--color-accent)]">
             <Icon name={stale ? 'alert-circle' : 'play'} size={20} className={stale ? 'shrink-0 text-warn' : 'shrink-0 text-accent-ink'} />
