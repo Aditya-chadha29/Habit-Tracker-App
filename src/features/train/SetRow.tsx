@@ -1,7 +1,7 @@
 import { useState } from "react"
 import type { Exercise, SetLog } from "../../data/types"
 import { completeSet, uncompleteSet, updateSet } from "../../data/workoutRepo"
-import { formatSet, weightFrom, weightIn, type WeightUnit } from "../../engine/training"
+import { e1rm, formatSet, weightFrom, weightIn, type WeightUnit } from "../../engine/training"
 import { useCore } from "../../state/core"
 import { cx } from "../../ui/cx"
 import { Icon } from "../../ui/icons"
@@ -50,7 +50,7 @@ function fieldsFor(exercise: Exercise | undefined, unit: WeightUnit): FieldSpec[
 
 /** The grid every row of an exercise shares, so the columns line up under their headings. */
 function columns(count: number): string {
-  return "26px minmax(0, 1fr) " + Array.from({ length: count }, () => "minmax(0, 66px)").join(" ") + " 44px"
+  return "30px minmax(0, 1fr) " + Array.from({ length: count }, () => "minmax(0, 66px)").join(" ") + " 44px"
 }
 
 interface CellProps {
@@ -104,6 +104,8 @@ interface SetRowProps {
   live: boolean
   /** Draw the column headings above this row (the first row of a block). */
   heading?: boolean
+  /** The best estimated one-rep max before this session; null when there is none to beat. */
+  bestBefore?: number | null
 }
 
 /**
@@ -111,13 +113,17 @@ interface SetRowProps {
  * numbers for this time, and a tick. The numbers arrive filled in from last time, so a set that
  * went as planned is one tap.
  */
-export function SetRow({ set, exercise, previous, restSeconds, editable, live, heading = false }: SetRowProps) {
+export function SetRow({ set, exercise, previous, restSeconds, editable, live, heading = false, bestBefore = null }: SetRowProps) {
   const { write, settings } = useCore()
   const toast = useToast()
   const unit = settings.weight_unit
   const fields = fieldsFor(exercise, unit)
   const grid = { gridTemplateColumns: columns(fields.length) }
   const fail = (error: unknown) => toast.show(error instanceof Error ? error.message : "That could not be saved.", { tone: "risk" })
+
+  const estimate = e1rm(set.weight_kg, set.reps, set.rir)
+  const isBest = set.done && set.kind === "work" && bestBefore !== null && estimate !== null && estimate > bestBefore
+  const warmup = set.kind === "warmup"
 
   const toggle = () => {
     if (set.done) uncompleteSet(set.id!, write).catch(fail)
@@ -155,10 +161,18 @@ export function SetRow({ set, exercise, previous, restSeconds, editable, live, h
         </div>
       )}
       <div className={cx("grid items-center gap-1.5 rounded-control px-1.5 py-1", set.done && "bg-ok/12")} style={grid}>
-        <span className="tnum text-center text-[14px] font-semibold text-ink-2" aria-hidden="true">
-          {set.set_index}
+        <button
+          type="button"
+          disabled={!editable}
+          aria-label={"Set " + set.set_index + (warmup ? ": warm-up. Tap to make it a work set" : ": work set. Tap to make it a warm-up")}
+          onClick={() => updateSet(set.id!, { kind: warmup ? "work" : "warmup" }, write).catch(fail)}
+          className={cx("tnum h-11 cursor-pointer text-center text-[14px] font-semibold", warmup ? "text-warn" : "text-ink-2")}
+        >
+          {warmup ? "W" : set.set_index}
+        </button>
+        <span className="tnum min-w-0 truncate text-[13px] text-ink-3">
+          {isBest ? <span className="font-semibold text-accent-ink">PR</span> : previous ? formatSet(previous, unit) : "—"}
         </span>
-        <span className="tnum min-w-0 truncate text-[13px] text-ink-3">{previous ? formatSet(previous, unit) : "—"}</span>
         {fields.map((field) => (
           <Cell
             key={field.key}

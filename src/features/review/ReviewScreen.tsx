@@ -1,3 +1,4 @@
+import { WeekReportCard } from './WeekReportCard'
 import { useEffect, useRef, useState } from 'react'
 import { Link, navigate, type RouteProps } from '../../app/router'
 import { canReflectOn, freezeDueWeeks, saveReflection, weekStatsFor, type ReflectionPatch } from '../../data/reviewRepo'
@@ -235,6 +236,8 @@ export default function ReviewScreen({ params }: RouteProps) {
                 <WeekStrip days={days} today={today} />
               </Card>
             </section>
+
+            <WeekReportCard start={start} />
 
             {stats.targets.length > 0 && (
               <section className="flex flex-col gap-2">

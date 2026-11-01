@@ -110,3 +110,9 @@ Decisions the user has already made, so they are not re-opened:
   `--browser webkit` for Safari's engine). An upgrade from any old release is rehearsed with
   `node scripts/rehearse-migration.mjs --export <file> --chain <commits>`; run it before any
   change to `src/data/migrations/` reaches `main`.
+
+## Training and weekly report (2026-11-01)
+
+- Weights are always stored in kg; `settings.weight_unit` only changes what is shown and typed. Dumbbell weights are both dumbbells together.
+- From 2026-11-02 a finished session with no sets does not complete Gym. Unweighted reps on a weighted lift are not hard sets for muscles.
+- Train opens with the body map (hard sets this week; assisting muscles count for half). Review has a Gym and diet card computed on the device. No cloud agent was built, and no Firebase admin key exists.

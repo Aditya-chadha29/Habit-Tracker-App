@@ -9,7 +9,7 @@ import {
 } from '../../data/workoutRepo'
 import { formatMediumDate } from '../../engine/dates'
 import { isEditable } from '../../engine/lock'
-import { bestSet, formatDuration, formatSet, isWorkSet, sessionMinutes, volumeLoad, weightIn } from '../../engine/training'
+import { bestSet, e1rm, formatDuration, formatSet, isWorkSet, sessionMinutes, volumeLoad, weightIn } from '../../engine/training'
 import { useCore } from '../../state/core'
 import { useKeyedLiveQuery } from '../../state/live'
 import { Button } from '../../ui/Button'
@@ -25,6 +25,8 @@ import { useToast } from '../../ui/Toast'
 import { saveSettings } from '../../data/settingsRepo'
 import { ExercisePicker } from './ExercisePicker'
 import { blocksOf, useExercises, useNow } from './hooks'
+import { BodyFigures } from './BodyCard'
+import { muscleWeek } from '../../engine/history'
 import { SetRow } from './SetRow'
 
 /** Keeps the screen on during a workout where the browser allows it. It cannot make a locked
@@ -84,6 +86,22 @@ export default function SessionScreen({ params }: RouteProps) {
     for (const id of exerciseIds) map.set(id, await lastPerformedSets(id, sessionDate))
     return map
   }, [exerciseIds.join(','), sessionDate])
+
+  // The best of each exercise before this day, to tell a new best from an ordinary set, and the
+  // routine's rep ranges, for the next-weight hint.
+  const earlier = useLiveQuery(async () => {
+    const best = new Map<number, number>()
+    for (const id of exerciseIds) {
+      for (const set of await db.set_logs.where('exercise_id').equals(id).toArray()) {
+        if (!isWorkSet(set) || set.date >= sessionDate) continue
+        const estimate = e1rm(set.weight_kg, set.reps, set.rir)
+        if (estimate !== null) best.set(id, Math.max(best.get(id) ?? 0, estimate))
+      }
+    }
+    return best
+  }, [exerciseIds.join(','), sessionDate])
+  const routineId = data?.session?.routine_id ?? null
+  const targets = useLiveQuery(async () => (routineId ? db.routine_items.where('routine_id').equals(routineId).toArray() : []), [routineId])
 
   const live = !!session && session.ended_at === null
   const unit = settings.weight_unit
@@ -236,6 +254,12 @@ export default function SessionScreen({ params }: RouteProps) {
           const done = block.sets.filter((set) => set.done).length
           const rest = exercise?.rest_seconds ?? settings.default_rest_seconds
           const spare = [...block.sets].reverse().find((set) => !set.done)
+          // Every work set last time reached the top of the routine's rep range: time for the next step.
+          const top = targets?.find((item) => item.exercise_id === block.exerciseId)?.target_reps_high ?? null
+          const lastWork = before.filter((set) => set.kind === 'work' && set.weight_kg)
+          const heaviest = lastWork.reduce((max, set) => Math.max(max, set.weight_kg ?? 0), 0)
+          const reachedTop = live && top !== null && exercise?.kind === 'weight_reps' && lastWork.length > 0 && lastWork.every((set) => (set.reps ?? 0) >= top)
+          const hint = reachedTop ? `All sets reached ${top} reps last time. Next step: ${weightIn(heaviest + (exercise?.increment_kg ?? settings.default_increment_kg), unit)} ${unit}.` : null
           return (
             <Card key={block.position} padded={false} className="flex flex-col gap-2 px-2 py-3">
               <div className="flex items-start gap-2 px-1.5">
@@ -253,6 +277,7 @@ export default function SessionScreen({ params }: RouteProps) {
                   {done} / {block.sets.length}
                 </span>
               </div>
+              {hint && <p className="px-1.5 text-[12.5px] leading-snug text-ink-2">{hint}</p>}
               <div className="flex flex-col gap-1">
                 {block.sets.map((set, i) => (
                   <SetRow
@@ -264,6 +289,7 @@ export default function SessionScreen({ params }: RouteProps) {
                     editable={editable}
                     live={live}
                     heading={i === 0}
+                    bestBefore={earlier?.get(block.exerciseId) ?? null}
                   />
                 ))}
               </div>
@@ -357,6 +383,7 @@ export default function SessionScreen({ params }: RouteProps) {
               </div>
             ))}
           </div>
+          {doneSets.length > 0 && <BodyFigures rows={muscleWeek(sets, byId, session.date, session.date)} />}
           {sets.some((set) => !set.done) && (
             <p className="text-[13px] text-ink-3">
               {sets.filter((set) => !set.done).length} planned sets were not done. They will be left out of the record.
