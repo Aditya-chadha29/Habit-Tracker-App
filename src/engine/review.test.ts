@@ -106,7 +106,7 @@ describe('the numbers', () => {
         ],
       }),
     )
-    expect(stats.training).toEqual({ sessions: 1, sets: 2, volume_kg: 1140, minutes: 50, best: 'Barbell Bench Press 60 × 10' })
+    expect(stats.training).toEqual({ sessions: 1, sets: 2, volume_kg: 1140, minutes: 50, best: 'Barbell Bench Press 60 × 10', best_set: { name: 'Barbell Bench Press', weight_kg: 60, reps: 10 } })
     expect(stats.learning).toMatchObject({ sessions: 1, minutes: 38, completed: 1 })
   })
 

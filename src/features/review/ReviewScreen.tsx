@@ -18,6 +18,7 @@ import { cx } from '../../ui/cx'
 import { Field, TextArea } from '../../ui/Field'
 import { Icon } from '../../ui/icons'
 import { InsightCard } from '../../ui/Metric'
+import { weightIn } from '../../engine/training'
 import { Page } from '../../ui/Page'
 import { ProgressBar, ProgressRing } from '../../ui/Progress'
 import { WeekStrip } from '../../ui/WeekStrip'
@@ -148,6 +149,8 @@ export default function ReviewScreen({ params }: RouteProps) {
   const ranked = stats ? rankHabits(stats.habits) : []
   const strongest = ranked.filter((habit) => habit.done === habit.due).slice(0, 4)
   const weakest = ranked.filter((habit) => habit.done < habit.due).slice(-4).reverse()
+  const unit = settings.weight_unit
+  const bestSet = stats?.training.best_set ?? null
   const missedTargets = stats?.targets.filter((target) => target.outcome === 'missed') ?? []
   const openTargets = stats?.targets.filter((target) => target.outcome === 'open' && target.done < target.target) ?? []
   const days = stats
@@ -340,7 +343,7 @@ export default function ReviewScreen({ params }: RouteProps) {
                   {[
                     ['Sessions', String(stats.training.sessions)],
                     ['Sets', String(stats.training.sets)],
-                    ['Volume', stats.training.volume_kg ? `${stats.training.volume_kg.toLocaleString('en-IN')} kg` : '—'],
+                    ['Volume', stats.training.volume_kg ? `${Math.round(weightIn(stats.training.volume_kg, unit)).toLocaleString('en-IN')} ${unit}` : '—'],
                   ].map(([label, value]) => (
                     <div key={label}>
                       <p className="eyebrow">{label}</p>
@@ -348,7 +351,13 @@ export default function ReviewScreen({ params }: RouteProps) {
                     </div>
                   ))}
                 </div>
-                {stats.training.best && <p className="text-[13px] text-ink-2">Best set: {stats.training.best}</p>}
+                {bestSet && bestSet.weight_kg !== null && bestSet.reps !== null ? (
+                  <p className="text-[13px] text-ink-2">
+                    Best set: {bestSet.name} {weightIn(bestSet.weight_kg, unit)} {unit} × {bestSet.reps}
+                  </p>
+                ) : (
+                  stats.training.best && <p className="text-[13px] text-ink-2">Best set: {stats.training.best} (kg)</p>
+                )}
                 {stats.training.sessions === 0 && <p className="text-[13px] text-ink-3">No sessions logged this week.</p>}
               </Card>
             </section>

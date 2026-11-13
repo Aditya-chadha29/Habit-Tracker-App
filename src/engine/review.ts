@@ -224,6 +224,7 @@ export function computeWeekStats(input: WeekInput): WeekStats {
       volume_kg: Math.round(volumeLoad(sets)),
       minutes: sessions.reduce((total, session) => total + (sessionMinutes(session) ?? 0), 0),
       best: top ? `${topName ? `${topName} ` : ''}${formatSet(top)}`.trim() : '',
+      best_set: top ? { name: topName ?? '', weight_kg: top.weight_kg, reps: top.reps } : null,
     },
     learning: {
       sessions: learning.sessions,

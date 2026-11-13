@@ -92,6 +92,8 @@ export function LineChart({ series, height = 200, yMin, yMax, yFormat = String, 
         borderDash: line.dashed ? [5, 4] : undefined,
         pointRadius: sparse ? 2.5 : 0,
         pointHoverRadius: 4,
+        // Smoothed without overshoot: a line through 100% must not be drawn above 100%.
+        cubicInterpolationMode: 'monotone' as const,
         tension: 0.25,
         spanGaps: false,
       })),
@@ -140,7 +142,8 @@ export function LineChart({ series, height = 200, yMin, yMax, yFormat = String, 
 
   return (
     <div role="img" aria-label={label} style={{ height }}>
-      <Line data={data} options={options} />
+      {/* Remounted when the set of lines changes, so a tooltip from the old lines cannot linger. */}
+      <Line key={series.map((line) => line.label).join('|')} data={data} options={options} />
     </div>
   )
 }

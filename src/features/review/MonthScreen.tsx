@@ -56,7 +56,7 @@ export default function MonthScreen({ params }: RouteProps) {
     ['Completion', report.due ? `${Math.round((report.done / report.due) * 100)}% · ${report.done} of ${report.due}` : '—'],
     ['Days trained', String(report.gymDays)],
     ['Work sets', String(report.workSets)],
-    ['Weight, first to last', report.weightStart === null ? '—' : `${weight(report.weightStart)} to ${weight(report.weightEnd)}`],
+    report.weighIns === 1 ? ['Weight, one weigh-in', weight(report.weightStart)] : ['Weight, first to last', report.weightStart === null ? '—' : `${weight(report.weightStart)} to ${weight(report.weightEnd)}`],
     ['Minutes learned', String(report.minutesLearned)],
     ['Meals eaten out', `${report.mealsOut} of ${report.mealsLogged} logged`],
     ['Days off', String(report.daysOff)],

@@ -33,10 +33,10 @@ export function TrainingInsights() {
   return (
     <>
       <Card>
-        <h2 className="eyebrow">Weight lifted per week (kg) · last 12 weeks</h2>
+        <h2 className="eyebrow">Weight lifted per week ({settings.weight_unit}) · last 12 weeks</h2>
         {weeksLifted >= 2 ? (
           <div className="mt-3">
-            <BarChart bars={volume} xFormat={formatShortDate} yFormat={(value) => value.toLocaleString('en-IN')} label="Kilograms lifted in each of the last twelve weeks" />
+            <BarChart bars={volume.map((week) => ({ x: week.x, y: Math.round(weightIn(week.y, settings.weight_unit)) }))} xFormat={formatShortDate} yFormat={(value) => value.toLocaleString('en-IN')} label="Weight lifted in each of the last twelve weeks" />
           </div>
         ) : (
           <p className="mt-2 text-[13.5px] text-ink-3">Need more history. This appears once two weeks have sets with a weight in them.</p>

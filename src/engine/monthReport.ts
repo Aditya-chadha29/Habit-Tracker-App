@@ -25,6 +25,7 @@ export interface MonthReport {
   workSets: number
   weightStart: number | null
   weightEnd: number | null
+  weighIns: number
   minutesLearned: number
   mealsLogged: number
   mealsOut: number
@@ -78,6 +79,7 @@ export function monthReport(input: MonthInput): MonthReport {
     workSets: input.sets.filter((set) => isWorkSet(set) && within(set.date)).length,
     weightStart: weights.length ? weights[0].kg : null,
     weightEnd: weights.length ? weights[weights.length - 1].kg : null,
+    weighIns: weights.length,
     minutesLearned: input.learning.filter((session) => within(session.date)).reduce((total, session) => total + (session.minutes ?? 0), 0),
     mealsLogged: meals.length,
     mealsOut: meals.filter((meal) => meal.ate_out).length,

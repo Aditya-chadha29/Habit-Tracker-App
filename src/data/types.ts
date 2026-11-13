@@ -482,7 +482,16 @@ export interface WeekStats {
   /** Per day: done / due, for the week strip. */
   days: { date: DateStr; done: number; due: number }[]
   weight: { kg: number | null; previous_kg: number | null }
-  training: { sessions: number; sets: number; volume_kg: number; minutes: number; best: string }
+  training: {
+    sessions: number
+    sets: number
+    volume_kg: number
+    minutes: number
+    /** The best set as text, in kg. Kept for weeks stored before `best_set` existed. */
+    best: string
+    /** The best set in parts, so it can be shown in the chosen unit. */
+    best_set?: { name: string; weight_kg: number | null; reps: number | null } | null
+  }
   learning: {
     sessions: number
     minutes: number

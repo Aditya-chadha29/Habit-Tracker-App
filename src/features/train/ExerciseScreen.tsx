@@ -43,9 +43,10 @@ export default function ExerciseScreen({ params }: RouteProps) {
     return [...days].reverse().map((day) => {
       const top = bestSet(day.sets)
       const estimate = top ? e1rm(top.weight_kg, top.reps, top.rir) : null
-      return { x: day.date, y: estimate === null ? (top?.weight_kg ?? null) : Math.round(estimate * 10) / 10 }
+      const kg = estimate === null ? (top?.weight_kg ?? null) : estimate
+      return { x: day.date, y: kg === null ? null : Math.round(weightIn(kg, unit) * 10) / 10 }
     })
-  }, [days])
+  }, [days, unit])
 
   if (loaded && !exercise) {
     return (
@@ -89,8 +90,8 @@ export default function ExerciseScreen({ params }: RouteProps) {
             {weighted && (
               <MetricCard
                 label="Best estimated 1RM"
-                value={bestEstimate === null ? '—' : formatNumber(bestEstimate, 1)}
-                unit={bestEstimate === null ? undefined : 'kg'}
+                value={bestEstimate === null ? '—' : formatNumber(weightIn(bestEstimate, unit), 1)}
+                unit={bestEstimate === null ? undefined : unit}
                 hint={bestEstimate === null ? 'Needs a set of 12 reps or fewer' : 'Estimated from reps; not a tested maximum'}
               />
             )}
@@ -99,7 +100,7 @@ export default function ExerciseScreen({ params }: RouteProps) {
 
           {weighted && (
             <Card>
-              <h2 className="eyebrow">Top set, estimated one-rep max (kg)</h2>
+              <h2 className="eyebrow">Top set, estimated one-rep max ({unit})</h2>
               {days.length >= MIN_SESSIONS_FOR_CHART ? (
                 <div className="mt-3">
                   <LineChart
