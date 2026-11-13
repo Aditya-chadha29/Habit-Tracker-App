@@ -62,7 +62,7 @@ export function Page({ title, subtitle, back, actions, tabs, width = 'default', 
   }, [path])
 
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+    <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden pt-safe">
       {/* The scenery behind the screen itself. At the top it runs under the header, which then
           carries night colours; at the bottom it sits behind the last of the page (night only). */}
       {backdrop?.at === 'top' && (

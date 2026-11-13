@@ -102,6 +102,17 @@ export function HabitRow({ habit, date, lead, sub, hint, trailing, quiet = false
   }
 
   const stateWord = statusLabel(status, habit.polarity)
+  const wantsAmount = measured && tickable && editable
+  const wantsReason = status === 'missed' && editable && !wantsAmount
+  const hasExtra = wantsAmount || wantsReason
+  const mark =
+    tickable || done ? (
+      <span aria-hidden="true" className="shrink-0">
+        <Tick checked={done} readOnly label="" />
+      </span>
+    ) : (
+      <Icon name="chevron-right" size={18} className="shrink-0 text-ink-3" />
+    )
 
   return (
     <div className="flex min-h-[56px] items-stretch">
@@ -110,7 +121,7 @@ export function HabitRow({ habit, date, lead, sub, hint, trailing, quiet = false
         onClick={activate}
         aria-pressed={tickable ? done : undefined}
         aria-label={`${version.name}: ${stateWord}${secondLine && typeof secondLine === 'string' ? `. ${secondLine}` : ''}`}
-        className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 py-2 pr-3 pl-4 text-left transition-colors duration-100 hover:bg-surface-2 active:bg-surface-3"
+        className={cx('flex min-w-0 flex-1 cursor-pointer items-center gap-3 py-2 pl-4 text-left transition-colors duration-100 hover:bg-surface-2 active:bg-surface-3', hasExtra ? 'pr-1' : 'pr-3')}
       >
         {lead !== undefined && <span className="tnum w-10 shrink-0 text-[12px] text-ink-3">{lead}</span>}
         <span className="min-w-0 flex-1">
@@ -118,25 +129,14 @@ export function HabitRow({ habit, date, lead, sub, hint, trailing, quiet = false
           {secondLine && <span className="mt-0.5 block truncate text-[12.5px] text-ink-3">{secondLine}</span>}
         </span>
         {!quiet && <span className={cx('shrink-0 text-[11.5px] font-medium', STATUS_TEXT[status])}>{stateWord}</span>}
-        {tickable || done ? (
-          <span aria-hidden="true" className="shrink-0">
-            <Tick checked={done} readOnly label="" />
-          </span>
-        ) : (
-          <Icon name="chevron-right" size={18} className="shrink-0 text-ink-3" />
-        )}
+        {!hasExtra && mark}
       </button>
-      {measured && tickable && editable && (
-        <IconButton
-          icon="more"
-          size="md"
-          label={`Value and note for ${version.name}`}
-          onClick={() => setDetailsOpen(true)}
-          className="self-center"
-        />
-      )}
-      {status === 'missed' && editable && !(measured && tickable) && (
-        <IconButton icon="more" size="md" label={`Reason ${version.name} was missed`} onClick={() => setReasonOpen(true)} className="self-center" />
+      {wantsAmount && <IconButton icon="more" size="md" label={`Value and note for ${version.name}`} onClick={() => setDetailsOpen(true)} className="-mx-1.5 self-center" />}
+      {wantsReason && <IconButton icon="more" size="md" label={`Reason ${version.name} was missed`} onClick={() => setReasonOpen(true)} className="-mx-1.5 self-center" />}
+      {hasExtra && (
+        <button type="button" tabIndex={-1} aria-hidden="true" onClick={activate} className="flex shrink-0 cursor-pointer items-center pr-3 pl-3">
+          {mark}
+        </button>
       )}
       {trailing}
       {reasonOpen && <MissReasonSheet habit={habit} date={date} onClose={() => setReasonOpen(false)} />}

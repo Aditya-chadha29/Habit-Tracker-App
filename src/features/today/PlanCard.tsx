@@ -5,7 +5,7 @@ import type { DayPlan } from '../../data/types'
 import { addDays } from '../../engine/dates'
 import { useCore } from '../../state/core'
 import { useKeyedLiveQuery } from '../../state/live'
-import { Card, SectionTitle } from '../../ui/Card'
+import { Card } from '../../ui/Card'
 import { useToast } from '../../ui/Toast'
 
 /**
@@ -23,9 +23,9 @@ export function PlanCard() {
   if (!evening) {
     if (!plan || plan.items.length === 0) return null
     return (
-      <section className="flex flex-col gap-2">
-        <SectionTitle>Planned for today</SectionTitle>
-        <Card>
+      <section>
+        <Card className="flex flex-col gap-2.5">
+          <h2 className="eyebrow">Planned for today</h2>
           <ol className="flex flex-col gap-1.5">
             {plan.items.map((item, i) => (
               <li key={i} className="flex gap-2.5 text-[14.5px] leading-snug text-ink">
@@ -47,9 +47,9 @@ export function PlanCard() {
   }
 
   return (
-    <section className="flex flex-col gap-2">
-      <SectionTitle>Tomorrow</SectionTitle>
-      <Card className="flex flex-col gap-2">
+    <section>
+      <Card className="flex flex-col gap-2.5">
+        <h2 className="eyebrow">Tomorrow</h2>
         {/* Keyed on the day, never on the stored lines: a save must not remount a field mid-typing. */}
         <form key={date} className="flex flex-col gap-2" onSubmit={(event) => event.preventDefault()}>
           {Array.from({ length: PLAN_ITEMS }, (_, i) => (

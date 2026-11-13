@@ -108,7 +108,7 @@ function MenuSheet({ open, current, onClose }: { open: boolean; current: NavId |
 
 function NotFound() {
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center">
+    <div className="flex flex-1 flex-col items-center justify-center gap-3 p-8 pt-safe text-center">
       <p className="text-[15px] text-ink-2">That page does not exist.</p>
       <Link to="/" className="text-[14px] font-medium text-cream underline underline-offset-2">
         Go to Today
@@ -138,7 +138,7 @@ export function Shell({ routes, fallback }: { routes: readonly RouteDef[]; fallb
 
   return (
     <ShellContext.Provider value={shell}>
-      <div className="flex h-dvh w-full overflow-hidden bg-ground text-ink pt-safe">
+      <div className="flex h-dvh w-full overflow-hidden bg-ground text-ink">
         <Sidebar current={current} />
         <div className="flex min-w-0 flex-1 flex-col">
           <main className="flex min-h-0 flex-1 flex-col">
