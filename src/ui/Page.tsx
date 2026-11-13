@@ -62,7 +62,7 @@ export function Page({ title, subtitle, back, actions, tabs, width = 'default', 
   }, [path])
 
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden pt-safe">
+    <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
       {/* The scenery behind the screen itself. At the top it runs under the header, which then
           carries night colours; at the bottom it sits behind the last of the page (night only). */}
       {backdrop?.at === 'top' && (
@@ -75,11 +75,11 @@ export function Page({ title, subtitle, back, actions, tabs, width = 'default', 
           <Scene name={backdrop.scene} fade="bottom" position={backdrop.position} />
         </div>
       )}
-      <header className={cx('relative shrink-0 overflow-hidden', onScene ? 'bg-transparent' : 'border-b border-line bg-ground')}>
+      <header className={cx('relative shrink-0 overflow-hidden pt-safe', onScene ? 'bg-transparent' : 'border-b border-line bg-ground')}>
         {/* Held back where buttons sit in the corner, so they are never lost among petals. */}
         {!onScene && (
           <div aria-hidden="true" className={cx('pointer-events-none absolute top-0 right-0', actions ? 'opacity-45' : undefined)}>
-            <img src={sakuraCorner} alt="" className="blossom-corner h-[118px] w-[150px] object-cover object-[78%_18%] lg:h-[150px] lg:w-[210px]" />
+            <img src={sakuraCorner} alt="" className="blossom-corner h-[calc(118px+env(safe-area-inset-top,0px))] w-[150px] object-cover object-[78%_18%] lg:h-[150px] lg:w-[210px]" />
           </div>
         )}
         <div className={cx('relative mx-auto flex w-full items-center gap-2 px-2 py-3 lg:px-8 lg:py-5', WIDTH[width])}>
@@ -97,10 +97,12 @@ export function Page({ title, subtitle, back, actions, tabs, width = 'default', 
         {tabs && <div className={cx('relative mx-auto w-full px-4 pb-3 lg:px-8', WIDTH[width])}>{tabs}</div>}
       </header>
       <div ref={scroller} className="relative min-h-0 flex-1 overflow-y-auto">
+        <div className="min-h-full" style={onScene ? { background: 'linear-gradient(to bottom, transparent 0, transparent 300px, var(--color-ground) 460px)' } : undefined}>
         <div className={cx(// The screen runs to the very bottom of the phone; the last of it clears the home indicator.
           'mx-auto w-full px-4 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] lg:px-8 lg:py-6', WIDTH[width], className)}>
           {onScene && backdrop?.reveal && <div aria-hidden="true" className="h-[92px] lg:h-[150px]" />}
           {children}
+        </div>
         </div>
       </div>
     </div>

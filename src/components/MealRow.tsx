@@ -65,7 +65,7 @@ export function MealRow({ habit, date, lead }: { habit: Habit; date: DateStr; le
           <span className={cx('shrink-0 text-[11.5px] font-medium', done ? 'text-ok' : status === 'missed' ? 'text-risk' : 'text-ink-3')}>{statusLabel(status, habit.polarity)}</span>
           <Icon name={open ? 'chevron-up' : 'chevron-down'} size={16} className="shrink-0 text-ink-3" />
         </button>
-        <span className="flex shrink-0 items-center pr-1.5">
+        <span className="flex shrink-0 items-center pr-2">
           <Tick checked={done} disabled={!editable} onChange={() => toggleHabit(habitId, date, write, { time: now() }).catch(fail)} label={`${version.name}, eaten`} />
         </span>
       </div>
