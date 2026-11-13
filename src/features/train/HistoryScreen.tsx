@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { Link } from '../../app/router'
 import { db } from '../../data/db'
-import type { DateStr, Session } from '../../data/types'
+import type { DateStr, Session, SetLog } from '../../data/types'
 import { addDays, formatMediumDate, formatRange, formatShortDate, weekStartOf } from '../../engine/dates'
 import { useCore } from '../../state/core'
 import { useLive } from '../../state/live'
@@ -12,16 +12,21 @@ import { EmptyState } from '../../ui/EmptyState'
 import { Icon } from '../../ui/icons'
 import { MetricCard } from '../../ui/Metric'
 import { Page } from '../../ui/Page'
+import { CardioCard, TrainingCalendar } from './HistoryExtras'
+import { useExercises } from './hooks'
 import { TrainingInsights } from './TrainingInsights'
 import { sessionSummary } from './TrainScreen'
 
 const NONE: Session[] = []
+const NO_SETS: SetLog[] = []
 
 /** Every workout ever logged, week by week, with how many there were. */
 export default function HistoryScreen() {
   const { today, weekStart } = useCore()
   const all = useLive(() => db.sessions.orderBy('date').toArray().then((rows) => rows.reverse()), [], NONE)
   const finished = useMemo(() => all.filter((session) => session.ended_at !== null), [all])
+  const sets = useLive(() => db.set_logs.toArray(), [], NO_SETS)
+  const { byId } = useExercises()
 
   const thisWeek = weekStartOf(today, weekStart)
   const weeks = useMemo(() => {
@@ -69,6 +74,9 @@ export default function HistoryScreen() {
               <p className="mt-2 text-[13.5px] text-ink-3">Need more history. This appears once two weeks have a session in them.</p>
             )}
           </Card>
+
+          <TrainingCalendar sessions={finished} />
+          <CardioCard sets={sets} byId={byId} sessions={finished} />
 
           <TrainingInsights />
 

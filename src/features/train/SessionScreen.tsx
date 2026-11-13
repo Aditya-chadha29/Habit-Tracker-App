@@ -5,7 +5,7 @@ import { db } from '../../data/db'
 import type { SetLog } from '../../data/types'
 import {
   addExerciseToSession, addSetRow, clearRest, deleteSession, extendRest, finishSession, lastPerformedSets,
-  removeExerciseBlock, removeSetRow, setSessionNotes,
+  removeExerciseBlock, removeSetRow, reorderBlocks, setBlockNote, setSessionNotes, swapExercise,
 } from '../../data/workoutRepo'
 import { formatMediumDate } from '../../engine/dates'
 import { isEditable } from '../../engine/lock'
@@ -16,7 +16,7 @@ import { Button, IconButton } from '../../ui/Button'
 import { Card } from '../../ui/Card'
 import { cx } from '../../ui/cx'
 import { EmptyState } from '../../ui/EmptyState'
-import { Field, TextArea } from '../../ui/Field'
+import { Field, TextArea, TextInput } from '../../ui/Field'
 import { Icon } from '../../ui/icons'
 import { ConfirmationDialog, Modal } from '../../ui/Overlay'
 import { Page } from '../../ui/Page'
@@ -25,6 +25,8 @@ import { ExercisePicker } from './ExercisePicker'
 import { blocksOf, useExercises, useNow } from './hooks'
 import { BodyFigures } from './BodyCard'
 import { muscleWeek } from '../../engine/history'
+import { MUSCLE_LABEL } from './labels'
+import { BlockNote, PlateSheet, ReorderSheet } from './SessionTools'
 import { SetRow } from './SetRow'
 
 /** Keeps the screen on during a workout where the browser allows it. It cannot make a locked
@@ -106,6 +108,10 @@ export default function SessionScreen({ params }: RouteProps) {
   // Finished exercises fold to their heading; these positions were opened again by hand.
   const [reopened, setReopened] = useState<ReadonlySet<number>>(new Set())
   const [notes, setNotes] = useState('')
+  const [title, setTitle] = useState('')
+  const [swapping, setSwapping] = useState<number | null>(null)
+  const [plating, setPlating] = useState<number | null>(null)
+  const [ordering, setOrdering] = useState(false)
   const buzzed = useRef<number | null>(null)
 
   const restLeft =
@@ -141,9 +147,17 @@ export default function SessionScreen({ params }: RouteProps) {
       return next
     })
 
+  // A name offered on Finish from what was actually trained: the two muscles with the most sets.
+  const suggested = finishing
+    ? muscleWeek(sets, byId, session.date, session.date)
+        .slice(0, 2)
+        .map((row) => MUSCLE_LABEL[row.muscle])
+        .join(' + ')
+    : ''
+
   const finish = async () => {
     try {
-      await finishSession(sessionId, notes, write, Date.now())
+      await finishSession(sessionId, notes, write, Date.now(), undefined, title)
       setFinishing(false)
       toast.show('Workout saved.', { tone: 'ok' })
       navigate('/train', { replace: true })
@@ -179,6 +193,7 @@ export default function SessionScreen({ params }: RouteProps) {
               size="sm"
               onClick={() => {
                 setNotes(session.notes)
+                setTitle(session.title)
                 setFinishing(true)
               }}
             >
@@ -290,6 +305,14 @@ export default function SessionScreen({ params }: RouteProps) {
                 )}
               </div>
               {!folded && hint && <p className="px-1.5 text-[12.5px] leading-snug text-ink-2">{hint}</p>}
+              {!folded && (
+                <BlockNote
+                  id={`${sessionId}-${block.position}-${block.exerciseId}`}
+                  note={block.sets.find((set) => set.note)?.note ?? ''}
+                  editable={editable}
+                  onSave={(note) => setBlockNote(sessionId, block.position, note, write).catch(fail)}
+                />
+              )}
               {!folded && <div className="flex flex-col gap-1">
                 {block.sets.map((set, i) => (
                   <SetRow
@@ -310,11 +333,21 @@ export default function SessionScreen({ params }: RouteProps) {
                   <Button variant="secondary" icon="plus" block onClick={() => addSetRow(sessionId, block.position, write).catch(fail)}>
                     Add set
                   </Button>
-                  <div className="flex justify-between">
-                    <Button variant="ghost" size="sm" disabled={!spare} onClick={() => spare && removeSetRow(spare.id!, write).catch(fail)}>
+                  <div className="flex flex-wrap justify-between gap-x-1">
+                    <Button variant="ghost" disabled={!spare} onClick={() => spare && removeSetRow(spare.id!, write).catch(fail)}>
                       Remove a set
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={() => removeExerciseBlock(sessionId, block.position, write).catch(fail)}>
+                    {spare && (
+                      <Button variant="ghost" onClick={() => setSwapping(block.position)}>
+                        Swap
+                      </Button>
+                    )}
+                    {exercise?.equipment === 'barbell' && exercise.bar_weight_kg !== null && (
+                      <Button variant="ghost" onClick={() => setPlating(block.position)}>
+                        Plates
+                      </Button>
+                    )}
+                    <Button variant="ghost" onClick={() => removeExerciseBlock(sessionId, block.position, write).catch(fail)}>
                       Remove exercise
                     </Button>
                   </div>
@@ -327,6 +360,11 @@ export default function SessionScreen({ params }: RouteProps) {
         {editable && !session.quick && blocks.length > 0 && (
           <Button variant="secondary" icon="plus" block onClick={() => setPicking(true)}>
             Add exercise
+          </Button>
+        )}
+        {editable && !session.quick && blocks.length > 1 && (
+          <Button variant="ghost" onClick={() => setOrdering(true)} className="self-center">
+            Change the order
           </Button>
         )}
 
@@ -367,6 +405,32 @@ export default function SessionScreen({ params }: RouteProps) {
           addExerciseToSession(sessionId, exerciseId, write).catch(fail)
         }}
       />
+
+      <ExercisePicker
+        open={swapping !== null}
+        exercises={list}
+        onClose={() => setSwapping(null)}
+        onPick={(exerciseId) => {
+          const position = swapping
+          setSwapping(null)
+          if (position !== null) swapExercise(sessionId, position, exerciseId, write).catch(fail)
+        }}
+      />
+      {plating !== null &&
+        (() => {
+          const block = blocks.find((candidate) => candidate.position === plating)
+          const exercise = block && byId.get(block.exerciseId)
+          if (!block || !exercise || exercise.bar_weight_kg === null) return null
+          const next = block.sets.find((set) => !set.done) ?? block.sets[block.sets.length - 1]
+          return <PlateSheet name={exercise.name} barKg={exercise.bar_weight_kg} startKg={next?.weight_kg ?? 0} onClose={() => setPlating(null)} />
+        })()}
+      {ordering && (
+        <ReorderSheet
+          blocks={blocks.map((block) => ({ position: block.position, name: byId.get(block.exerciseId)?.name ?? 'Exercise' }))}
+          onMove={(order) => reorderBlocks(sessionId, order, write).catch(fail)}
+          onClose={() => setOrdering(false)}
+        />
+      )}
 
       <Modal
         open={finishing}
@@ -419,6 +483,18 @@ export default function SessionScreen({ params }: RouteProps) {
                   )
                 })}
             </ul>
+          )}
+          <Field label="Name">
+            <TextInput value={title} onChange={(event) => setTitle(event.target.value)} maxLength={60} />
+          </Field>
+          {suggested && suggested !== title.trim() && (
+            <button
+              type="button"
+              onClick={() => setTitle(suggested)}
+              className="-mt-2 flex min-h-11 cursor-pointer items-center self-start rounded-control bg-surface-2 px-3.5 text-[13.5px] text-ink-2 shadow-[inset_0_0_0_1px_var(--color-line-strong)]"
+            >
+              Use “{suggested}”
+            </button>
           )}
           <Field label="Notes" hint="Optional.">
             <TextArea autoGrow value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="How it went" />

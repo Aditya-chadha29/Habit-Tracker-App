@@ -46,10 +46,12 @@ interface CalendarMonthProps {
   /** Word for a done day: "Done" by default, "Held" for an abstaining habit. */
   doneLabel?: string
   missedLabel?: string
+  /** A short word to show in place of the mark (a workout's name). */
+  labelOf?: (date: DateStr) => string | undefined
 }
 
 /** One month as a grid of days, each showing what happened on it. */
-export function CalendarMonth({ month, weekStart, today, statusOf, selected, onSelect, doneLabel = 'Done', missedLabel = 'Missed' }: CalendarMonthProps) {
+export function CalendarMonth({ month, weekStart, today, statusOf, selected, onSelect, doneLabel = 'Done', missedLabel = 'Missed', labelOf }: CalendarMonthProps) {
   const first = monthStartOf(month)
   const lead = (weekdayIndex(first) - weekStart + 7) % 7
   const days = Array.from({ length: daysInMonthOf(month) }, (_, i) => addDays(first, i))
@@ -77,13 +79,14 @@ export function CalendarMonth({ month, weekStart, today, statusOf, selected, onS
         ))}
         {days.map((date) => {
           const status = statusOf(date)
+          const word = labelOf?.(date)
           const dim = status === 'inactive' || status === 'upcoming'
           const content = (
             <>
               <span className={cx('tnum text-[11px] leading-none', date === today ? 'font-semibold text-accent-ink' : dim ? 'text-ink-3/60' : 'text-ink-3')}>
                 {Number(date.slice(8))}
               </span>
-              <Glyph status={status} />
+              {word ? <span className="flex h-5 max-w-full items-center truncate px-0.5 text-[9.5px] font-semibold text-ink">{word}</span> : <Glyph status={status} />}
             </>
           )
           const shared = cx(
@@ -91,7 +94,7 @@ export function CalendarMonth({ month, weekStart, today, statusOf, selected, onS
             date === selected && 'bg-surface-2 shadow-[inset_0_0_0_1.5px_var(--color-accent-ink)]',
             date === today && date !== selected && 'shadow-[inset_0_0_0_1px_var(--color-line-strong)]',
           )
-          const label = `${formatMediumDate(date)}: ${words[status]}`
+          const label = `${formatMediumDate(date)}: ${word ?? words[status]}`
           return onSelect ? (
             <button key={date} type="button" aria-label={label} aria-pressed={date === selected} onClick={() => onSelect(date)} className={cx(shared, 'cursor-pointer hover:bg-surface-2')}>
               {content}

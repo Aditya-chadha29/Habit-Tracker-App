@@ -135,3 +135,46 @@ export function personalBests(sets: readonly SetLog[], exercisesById: ReadonlyMa
   }
   return [...best.values()].sort((a, b) => (a.set.date < b.set.date ? 1 : a.set.date > b.set.date ? -1 : b.estimate - a.estimate))
 }
+
+export interface CardioWeek {
+  /** First day of the week. */
+  x: DateStr
+  minutes: number
+  km: number
+}
+
+/**
+ * Cardio in each of the last `weeks` weeks, oldest first: the done sets of distance-and-time
+ * exercises, plus sessions logged in one tap as cardio.
+ */
+export function cardioWeeks(
+  sets: readonly SetLog[],
+  exercisesById: ReadonlyMap<number, Exercise>,
+  sessions: readonly { date: DateStr; ended_at: number | null; quick?: boolean; kinds?: string[]; minutes?: number | null; distance_km?: number | null }[],
+  today: DateStr,
+  weekStart: number,
+  weeks: number,
+): CardioWeek[] {
+  const totals = new Map<DateStr, { minutes: number; km: number }>()
+  const add = (date: DateStr, minutes: number, km: number) => {
+    const start = weekStartOf(date, weekStart)
+    const row = totals.get(start) ?? { minutes: 0, km: 0 }
+    row.minutes += minutes
+    row.km += km
+    totals.set(start, row)
+  }
+  for (const set of sets) {
+    if (!set.done || exercisesById.get(set.exercise_id)?.kind !== 'distance_time') continue
+    add(set.date, (set.seconds ?? 0) / 60, (set.distance_m ?? 0) / 1000)
+  }
+  for (const session of sessions) {
+    if (session.ended_at === null || !session.quick || !session.kinds?.includes('cardio')) continue
+    add(session.date, session.minutes ?? 0, session.distance_km ?? 0)
+  }
+  const current = weekStartOf(today, weekStart)
+  return Array.from({ length: weeks }, (_, i) => {
+    const x = addDays(current, -7 * (weeks - 1 - i))
+    const row = totals.get(x)
+    return { x, minutes: Math.round(row?.minutes ?? 0), km: Math.round((row?.km ?? 0) * 10) / 10 }
+  })
+}

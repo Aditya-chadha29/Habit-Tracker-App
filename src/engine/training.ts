@@ -137,3 +137,19 @@ export function formatDuration(totalSeconds: number): string {
   const mm = h ? String(m).padStart(2, '0') : String(m)
   return `${h ? `${h}:` : ''}${mm}:${String(s).padStart(2, '0')}`
 }
+
+/** The plates a gym usually has, in kg, heaviest first. */
+export const PLATES_KG = [25, 20, 15, 10, 5, 2.5, 1.25]
+
+/** Plates for ONE side of a bar to reach a total weight, and what cannot be made up. */
+export function platesPerSide(totalKg: number, barKg: number, plates: readonly number[] = PLATES_KG): { plates: number[]; left: number } {
+  let side = Math.max(0, (totalKg - barKg) / 2)
+  const out: number[] = []
+  for (const plate of plates) {
+    while (side >= plate - 1e-9) {
+      out.push(plate)
+      side -= plate
+    }
+  }
+  return { plates: out, left: Math.round(side * 2 * 100) / 100 }
+}

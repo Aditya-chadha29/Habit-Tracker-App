@@ -1,7 +1,11 @@
 import { useCore } from '../../state/core'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import type { RouteProps } from '../../app/router'
 import { db } from '../../data/db'
+import { doubleWeightsBefore } from '../../data/workoutRepo'
+import { Button } from '../../ui/Button'
+import { ConfirmationDialog } from '../../ui/Overlay'
+import { useToast } from '../../ui/Toast'
 import type { SetLog } from '../../data/types'
 import { formatMediumDate, formatShortDate } from '../../engine/dates'
 import { bestSet, e1rm, formatSet, formatSetLine, groupSetsByDate, isWorkSet, volumeLoad, weightIn } from '../../engine/training'
@@ -22,7 +26,11 @@ const MIN_SESSIONS_FOR_CHART = 3
  * held back until there are enough sessions for a line to mean anything.
  */
 export default function ExerciseScreen({ params }: RouteProps) {
-  const unit = useCore().settings.weight_unit
+  const { settings, today } = useCore()
+  const unit = settings.weight_unit
+  const toast = useToast()
+  const [before, setBefore] = useState('')
+  const [confirming, setConfirming] = useState(false)
   const exerciseId = Number(params.id)
   const { byId } = useExercises()
   const exercise = byId.get(exerciseId)
@@ -53,6 +61,16 @@ export default function ExerciseScreen({ params }: RouteProps) {
     return estimate !== null && (max === null || estimate > max) ? estimate : max
   }, null)
   const latest = days[0]
+  const affected = before ? (data ?? []).filter((set) => set.date < before && !!set.weight_kg).length : 0
+  const double = () => {
+    setConfirming(false)
+    doubleWeightsBefore(exerciseId, before, today, Date.now())
+      .then((count) => {
+        setBefore('')
+        toast.show(`${count} ${count === 1 ? 'set' : 'sets'} doubled.`, { tone: 'ok' })
+      })
+      .catch(() => toast.show('The sets could not be changed.', { tone: 'risk' }))
+  }
 
   return (
     <Page
@@ -114,8 +132,34 @@ export default function ExerciseScreen({ params }: RouteProps) {
             </Card>
             {days.length > 30 && <p className="px-1 text-[12.5px] text-ink-3">Showing the 30 most recent of {days.length} sessions.</p>}
           </section>
+
+          {exercise?.equipment === 'dumbbell' && (
+            <section className="flex flex-col gap-2">
+              <SectionTitle>Correct old entries</SectionTitle>
+              <Card className="flex flex-col gap-3">
+                <p className="text-[13.5px] leading-relaxed text-ink-2">
+                  Dumbbell weights are logged as both dumbbells together. If earlier sets were logged as one dumbbell, they can be doubled, for sets before a date you choose. A copy of the record is taken first.
+                </p>
+                <label className="flex flex-col gap-1.5 text-[12.5px] text-ink-3">
+                  Double the sets logged before
+                  <input type="date" value={before} max={today} onChange={(event) => setBefore(event.target.value)} className="h-11 rounded-control bg-surface-2 px-3 text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)]" />
+                </label>
+                <Button variant="secondary" disabled={!before || affected === 0} onClick={() => setConfirming(true)} className="self-start">
+                  {before ? `Double ${affected} ${affected === 1 ? 'set' : 'sets'}` : 'Choose a date'}
+                </Button>
+              </Card>
+            </section>
+          )}
         </div>
       )}
+      <ConfirmationDialog
+        open={confirming}
+        title={`Double ${affected} ${affected === 1 ? 'set' : 'sets'}?`}
+        body={`Every set of ${exercise?.name ?? 'this exercise'} logged before ${before} will have its weight doubled. Do this once only: doing it again doubles them again.`}
+        confirmLabel="Double"
+        onCancel={() => setConfirming(false)}
+        onConfirm={double}
+      />
     </Page>
   )
 }

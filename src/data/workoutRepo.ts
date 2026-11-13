@@ -3,6 +3,7 @@ import type { WriteContext } from './habitRepo'
 import type {
   DateStr, Equipment, Exercise, ExerciseKind, MuscleGroup, Session, SessionKind, SetLog, WorkoutRoutine,
 } from './types'
+import { takeSnapshot } from './backup'
 import { assertEditable } from '../engine/lock'
 import { sessionKindsFrom } from '../engine/training'
 
@@ -236,6 +237,70 @@ export async function removeExerciseBlock(sessionId: number, position: number, c
   })
 }
 
+/** The one-line note of an exercise block. It is kept on the block's first row. */
+export async function setBlockNote(sessionId: number, position: number, note: string, ctx: WriteContext, database: AppDb = db): Promise<void> {
+  await database.transaction('rw', database.sessions, database.set_logs, async () => {
+    await editableSession(sessionId, ctx, database)
+    const rows = (await database.set_logs.where('session_id').equals(sessionId).toArray())
+      .filter((row) => row.position === position)
+      .sort((a, b) => a.set_index - b.set_index)
+    for (const [i, row] of rows.entries()) {
+      const next = i === 0 ? note.trim().slice(0, 120) : ''
+      if (row.note !== next) await database.set_logs.update(row.id!, { note: next })
+    }
+  })
+}
+
+/** Puts a session's exercise blocks in a new order. `order` lists the current positions, first to last. */
+export async function reorderBlocks(sessionId: number, order: readonly number[], ctx: WriteContext, database: AppDb = db): Promise<void> {
+  await database.transaction('rw', database.sessions, database.set_logs, async () => {
+    await editableSession(sessionId, ctx, database)
+    const rows = await database.set_logs.where('session_id').equals(sessionId).toArray()
+    const next = new Map(order.map((position, i) => [position, i]))
+    for (const row of rows) {
+      const position = next.get(row.position)
+      if (position !== undefined && position !== row.position) await database.set_logs.update(row.id!, { position })
+    }
+  })
+}
+
+/**
+ * Swaps the exercise of a block for another. Only sets not yet done change: what was performed
+ * stays as it was performed, and the swapped sets then follow it as a block of their own.
+ */
+export async function swapExercise(sessionId: number, position: number, exerciseId: number, ctx: WriteContext, database: AppDb = db): Promise<void> {
+  await database.transaction('rw', database.sessions, database.set_logs, database.exercises, async () => {
+    const session = await editableSession(sessionId, ctx, database)
+    const rows = await database.set_logs.where('session_id').equals(sessionId).toArray()
+    const block = rows.filter((row) => row.position === position).sort((a, b) => a.set_index - b.set_index)
+    const open = block.filter((row) => !row.done)
+    if (open.length === 0) return
+    const split = open.length !== block.length
+    if (split) {
+      for (const row of rows) if (row.position > position) await database.set_logs.update(row.id!, { position: row.position + 1 })
+    }
+    const previous = await lastPerformedSets(exerciseId, session.date, database)
+    for (const [i, row] of open.entries()) {
+      const prior = previous.length ? previous[Math.min(i, previous.length - 1)] : undefined
+      await database.set_logs.update(row.id!, plannedSet(sessionId, exerciseId, session.date, split ? position + 1 : position, split ? i + 1 : row.set_index, prior, row.reps))
+    }
+  })
+}
+
+/**
+ * Doubles the weight on every set of one exercise logged before a date. For dumbbell lifts that
+ * were first logged as one dumbbell and are now logged as both together. It runs only when the
+ * user asks for it, for one exercise, and a full copy of the record is taken first.
+ */
+export async function doubleWeightsBefore(exerciseId: number, before: DateStr, today: DateStr, now: number, database: AppDb = db): Promise<number> {
+  await takeSnapshot(database, 'before-doubling-weights', today, now)
+  return database.transaction('rw', database.set_logs, async () => {
+    const rows = (await database.set_logs.where('exercise_id').equals(exerciseId).toArray()).filter((row) => row.date < before && !!row.weight_kg)
+    for (const row of rows) await database.set_logs.update(row.id!, { weight_kg: (row.weight_kg ?? 0) * 2 })
+    return rows.length
+  })
+}
+
 export async function clearRest(sessionId: number, database: AppDb = db): Promise<void> {
   await database.sessions.update(sessionId, { rest_started_at: null, rest_seconds: null })
 }
@@ -263,7 +328,7 @@ export async function setSessionNotes(sessionId: number, notes: string, ctx: Wri
  * A session left open from an earlier day is closed at the time of its last set, not "now" —
  * otherwise a forgotten Finish would record a thirty-hour workout.
  */
-export async function finishSession(sessionId: number, notes: string, ctx: WriteContext, now: number, database: AppDb = db): Promise<void> {
+export async function finishSession(sessionId: number, notes: string, ctx: WriteContext, now: number, database: AppDb = db, title?: string): Promise<void> {
   await database.transaction('rw', database.sessions, database.set_logs, database.exercises, async () => {
     const session = await database.sessions.get(sessionId)
     if (!session) return
@@ -272,6 +337,13 @@ export async function finishSession(sessionId: number, notes: string, ctx: Write
     assertEditable(session.date, ctx.today, ctx.windowDays)
     const rows = await database.set_logs.where('session_id').equals(sessionId).toArray()
     const done = rows.filter((row) => row.done)
+    // A note written on an exercise lives on one row of its block: keep it on a row that stays.
+    for (const position of new Set(rows.map((row) => row.position))) {
+      const block = rows.filter((row) => row.position === position).sort((a, b) => a.set_index - b.set_index)
+      const note = block.find((row) => row.note)?.note
+      const keeper = block.find((row) => row.done)
+      if (note && keeper && keeper.note !== note) await database.set_logs.update(keeper.id!, { note })
+    }
     await database.set_logs.bulkDelete(rows.filter((row) => !row.done).map((row) => row.id!))
 
     const lastSetAt = done.reduce((max, row) => Math.max(max, row.done_at ?? 0), 0)
@@ -279,6 +351,7 @@ export async function finishSession(sessionId: number, notes: string, ctx: Write
     await database.sessions.update(sessionId, {
       ended_at: endedAt,
       notes: notes.trim(),
+      ...(title?.trim() ? { title: title.trim().slice(0, 60) } : {}),
       rest_started_at: null,
       rest_seconds: null,
       kinds: sessionKindsFrom(done, await loadExercises(database)),

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { Link } from '../../app/router'
 import { db } from '../../data/db'
 import type { DateStr, WeightEntry } from '../../data/types'
 import { addWeight, deleteWeight, sortWeights, toDisplay, toKg, updateWeight } from '../../data/weightRepo'
@@ -144,6 +145,10 @@ export default function WeightScreen() {
               Add weigh-in
             </Button>
           </Card>
+
+          <Link to="/progress/measurements" className="inline-flex min-h-11 items-center self-start px-1 text-[13.5px] font-medium text-cream underline underline-offset-2">
+            Body measurements
+          </Link>
 
           <section className="flex flex-col gap-2">
             <SectionTitle>Weigh-ins</SectionTitle>
