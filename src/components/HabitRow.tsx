@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { navigate } from '../app/router'
-import { toggleHabit } from '../data/habitRepo'
+import { setHabitDone, toggleHabit } from '../data/habitRepo'
 import type { DateStr, Habit } from '../data/types'
 import { completedBy } from '../engine/completion'
 import { clockHHMM, formatMediumDate } from '../engine/dates'
@@ -86,9 +86,17 @@ export function HabitRow({ habit, date, lead, sub, hint, trailing, quiet = false
       if (destination) navigate(destination)
       return
     }
-    toggleHabit(habitId, date, write, { time: date === today ? clockHHMM(new Date()) : null }).catch((error: unknown) => {
-      toast.show(error instanceof Error ? error.message : 'That could not be saved.', { tone: 'risk' })
-    })
+    const fail = (error: unknown) => toast.show(error instanceof Error ? error.message : 'That could not be saved.', { tone: 'risk' })
+    const time = date === today ? clockHHMM(new Date()) : null
+    toggleHabit(habitId, date, write, { time })
+      .then((nowDone) => {
+        // One quiet line with a way back, for the tick made by a slip of the thumb.
+        toast.show(nowDone ? `${version.name}: ${statusLabel('done', habit.polarity).toLowerCase()}.` : `${version.name}: tick removed.`, {
+          action: { label: 'Undo', onClick: () => void setHabitDone(habitId, date, !nowDone, write, { time }).catch(fail) },
+          duration: 4000,
+        })
+      })
+      .catch(fail)
   }
 
   const stateWord = statusLabel(status, habit.polarity)
@@ -104,7 +112,7 @@ export function HabitRow({ habit, date, lead, sub, hint, trailing, quiet = false
       >
         {lead !== undefined && <span className="tnum w-10 shrink-0 text-[12px] text-ink-3">{lead}</span>}
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-[14.5px] leading-snug text-ink">{version.name}</span>
+          <span className={cx('block truncate text-[14.5px] leading-snug text-ink', done && 'opacity-60')}>{version.name}</span>
           {secondLine && <span className="mt-0.5 block truncate text-[12.5px] text-ink-3">{secondLine}</span>}
         </span>
         {!quiet && <span className={cx('shrink-0 text-[11.5px] font-medium', STATUS_TEXT[status])}>{stateWord}</span>}

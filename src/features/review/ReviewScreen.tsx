@@ -184,7 +184,7 @@ export default function ReviewScreen({ params }: RouteProps) {
                 <Chip tone="warn">Open to correction until {formatMediumDate(addDays(end, settings.edit_window_days - 1))}</Chip>
               )}
               {start !== current && (
-                <Link to="/review" className="text-[13px] font-medium text-accent-ink">
+                <Link to="/review" className="text-[13px] font-medium text-cream underline underline-offset-2">
                   Go to this week
                 </Link>
               )}

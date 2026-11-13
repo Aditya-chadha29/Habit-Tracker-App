@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { Link } from '../../app/router'
 import { saveSettings } from '../../data/settingsRepo'
-import type { Settings, ThemePreference } from '../../data/types'
+import type { Settings } from '../../data/types'
 import { WEEKDAY_LONG } from '../../engine/dates'
 import { useCore } from '../../state/core'
 import { Card, SectionTitle } from '../../ui/Card'
@@ -13,12 +13,6 @@ import { Segmented } from '../../ui/Tabs'
 import { useToast } from '../../ui/Toast'
 
 type Save = (patch: Partial<Settings>) => void
-
-const THEMES: { id: ThemePreference; label: string }[] = [
-  { id: 'system', label: 'System' },
-  { id: 'light', label: 'Light' },
-  { id: 'dark', label: 'Dark' },
-]
 
 const UNITS = [
   { id: 'kg', label: 'kg' },
@@ -79,9 +73,6 @@ export default function SettingsScreen() {
     <Page title="Settings" width="narrow">
       <div className="flex flex-col gap-5">
         <Group title="General">
-          <Row title="Theme">
-            <Segmented options={THEMES} value={settings.theme} onChange={(theme) => save({ theme })} label="Theme" size="sm" />
-          </Row>
           <Row title="Week starts on">
             <span className="block w-[136px]">
               <Select aria-label="Week starts on" value={settings.week_start} onChange={(event) => setPendingWeekStart(Number(event.target.value))}>

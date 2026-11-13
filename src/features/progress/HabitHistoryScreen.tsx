@@ -166,7 +166,7 @@ export default function HabitHistoryScreen({ params }: RouteProps) {
       back="/progress"
       width="wide"
       actions={
-        <Link to={`/habits/${habit.id}`} className="inline-flex h-9 items-center rounded-control px-3 text-[13px] font-medium text-accent-ink hover:bg-surface-2">
+        <Link to={`/habits/${habit.id}`} className="inline-flex h-9 items-center rounded-control px-3 text-[13px] font-medium text-cream underline underline-offset-2 hover:bg-surface-2">
           Edit
         </Link>
       }

@@ -15,7 +15,7 @@ interface FieldIds {
 const FieldContext = createContext<FieldIds | null>(null)
 
 const CONTROL =
-  'w-full rounded-control bg-surface-2 px-3 text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)] outline-none transition-shadow duration-100 focus:shadow-[inset_0_0_0_1.5px_var(--color-accent-ink)] disabled:cursor-not-allowed disabled:opacity-60'
+  'w-full rounded-control bg-surface-2 px-3 text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)] transition-shadow duration-100 focus:shadow-[inset_0_0_0_1.5px_var(--color-accent-ink)] disabled:cursor-not-allowed disabled:opacity-60'
 const INVALID = 'shadow-[inset_0_0_0_1.5px_var(--color-risk)] focus:shadow-[inset_0_0_0_1.5px_var(--color-risk)]'
 
 interface FieldProps {

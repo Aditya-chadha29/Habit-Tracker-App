@@ -14,7 +14,6 @@ import { useCore } from '../../state/core'
 import { useLive } from '../../state/live'
 import { Button, IconButton } from '../../ui/Button'
 import { Card, SectionTitle } from '../../ui/Card'
-import { Chip } from '../../ui/Chip'
 import { EmptyState } from '../../ui/EmptyState'
 import { Field, Select, Stepper, TextInput } from '../../ui/Field'
 import { Icon } from '../../ui/icons'
@@ -110,9 +109,9 @@ function QuickLog({ open, onClose }: { open: boolean; onClose: () => void }) {
 }
 
 /**
- * Train, laid out like the first screen of a workout log: start an empty workout, or start one of
- * the routines. The routine the weekly programme has for today is listed first and marked. History
- * and the set-up of routines, exercises and the programme are one tap away in the header.
+ * Train opens on starting: today's routine with the one filled button, then an empty workout, the
+ * body map, and the other routines as rows. History and the set-up of routines, exercises and the
+ * programme are one tap away in the header.
  */
 export default function TrainScreen() {
   const { today, weekStart, habits, index, write } = useCore()
@@ -131,7 +130,9 @@ export default function TrainScreen() {
   const current = stale ?? inProgress
   const scheduledIds = workout.scheduled.map((routine) => routine.id)
   const active = allRoutines.filter((routine) => !routine.retired_on)
-  const routines = [...active.filter((routine) => scheduledIds.includes(routine.id)), ...active.filter((routine) => !scheduledIds.includes(routine.id))]
+  // The routine the programme has for today leads the screen; every other routine is a row below.
+  const todays = active.find((routine) => scheduledIds.includes(routine.id)) ?? null
+  const others = active.filter((routine) => routine.id !== todays?.id)
   const exercisesOf = (routineId: number): string =>
     items
       .filter((item) => item.routine_id === routineId)
@@ -162,7 +163,6 @@ export default function TrainScreen() {
       }
     >
       <div className="flex flex-col gap-6">
-        <BodyCard />
         {current && (
           <Card className="flex items-center gap-3 shadow-[inset_0_0_0_1.5px_var(--color-accent)]">
             <Icon name={stale ? 'alert-circle' : 'play'} size={20} className={stale ? 'shrink-0 text-warn' : 'shrink-0 text-accent-ink'} />
@@ -192,12 +192,27 @@ export default function TrainScreen() {
           </ul>
         )}
 
-        <section className="flex flex-col gap-2">
-          <SectionTitle>Quick start</SectionTitle>
-          <Button variant="secondary" size="lg" icon="plus" block disabled={!!workout.open} onClick={() => start(null)}>
-            Start empty workout
-          </Button>
-        </section>
+        {todays && (
+          <Card className="flex flex-col gap-3">
+            <div className="flex items-start gap-2">
+              <div className="min-w-0 flex-1">
+                <p className="eyebrow">Today</p>
+                <h2 className="mt-1 truncate text-[17px] font-semibold text-ink">{todays.name}</h2>
+                <p className="mt-1 line-clamp-2 text-[13px] leading-snug text-ink-3">{exercisesOf(todays.id!) || 'No exercises in this routine yet.'}</p>
+              </div>
+              <IconButton icon="edit" label={`Edit ${todays.name}`} onClick={() => navigate(`/train/setup/routine/${todays.id}`)} />
+            </div>
+            <Button variant={current ? 'secondary' : 'primary'} size="lg" block disabled={!!workout.open} onClick={() => start(todays.id!)}>
+              Start routine
+            </Button>
+          </Card>
+        )}
+
+        <Button variant="secondary" size="lg" icon="plus" block disabled={!!workout.open} onClick={() => start(null)}>
+          Start empty workout
+        </Button>
+
+        <BodyCard />
 
         <section className="flex flex-col gap-2">
           <SectionTitle
@@ -207,38 +222,36 @@ export default function TrainScreen() {
               </Link>
             }
           >
-            Routines · {routines.length}
+            {todays ? 'Other routines' : 'Routines'} · {others.length}
           </SectionTitle>
-          {routines.length === 0 ? (
+          {active.length === 0 ? (
             <EmptyState
               icon="train"
               title="No routines yet."
               body="A routine is a list of exercises you repeat: Push, Pull, Legs. Make one, then start it from here."
               action={
-                <Button variant="primary" icon="plus" onClick={() => navigate('/train/setup/routine/new')}>
+                <Button variant="secondary" icon="plus" onClick={() => navigate('/train/setup/routine/new')}>
                   New routine
                 </Button>
               }
             />
           ) : (
-            routines.map((routine) => {
-              const names = exercisesOf(routine.id!)
-              return (
-                <Card key={routine.id} className="flex flex-col gap-3">
-                  <div className="flex items-start gap-2">
+            others.length > 0 && (
+              <Card padded={false} className="divide-y divide-line overflow-hidden">
+                {others.map((routine) => (
+                  <div key={routine.id} className="flex items-center gap-1 py-1.5 pl-4 pr-2">
                     <div className="min-w-0 flex-1">
-                      <h2 className="truncate text-[16px] font-semibold text-ink">{routine.name}</h2>
-                      <p className="mt-1 line-clamp-2 text-[13px] leading-snug text-ink-3">{names || 'No exercises in this routine yet.'}</p>
+                      <h2 className="truncate text-[14.5px] font-medium text-ink">{routine.name}</h2>
+                      <p className="truncate text-[12.5px] text-ink-3">{exercisesOf(routine.id!) || 'No exercises yet.'}</p>
                     </div>
-                    {scheduledIds.includes(routine.id) && <Chip tone="accent">Today</Chip>}
-                    <IconButton icon="edit" size="sm" label={`Edit ${routine.name}`} onClick={() => navigate(`/train/setup/routine/${routine.id}`)} />
+                    <IconButton icon="edit" label={`Edit ${routine.name}`} onClick={() => navigate(`/train/setup/routine/${routine.id}`)} />
+                    <Button variant="secondary" disabled={!!workout.open} aria-label={`Start ${routine.name}`} onClick={() => start(routine.id!)}>
+                      Start
+                    </Button>
                   </div>
-                  <Button variant="primary" block disabled={!!workout.open} onClick={() => start(routine.id!)}>
-                    Start routine
-                  </Button>
-                </Card>
-              )
-            })
+                ))}
+              </Card>
+            )
           )}
         </section>
 

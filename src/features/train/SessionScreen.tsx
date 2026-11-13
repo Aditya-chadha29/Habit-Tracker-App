@@ -12,7 +12,7 @@ import { isEditable } from '../../engine/lock'
 import { bestSet, e1rm, formatDuration, formatSet, isWorkSet, sessionMinutes, volumeLoad, weightIn } from '../../engine/training'
 import { useCore } from '../../state/core'
 import { useKeyedLiveQuery } from '../../state/live'
-import { Button } from '../../ui/Button'
+import { Button, IconButton } from '../../ui/Button'
 import { Card } from '../../ui/Card'
 import { cx } from '../../ui/cx'
 import { EmptyState } from '../../ui/EmptyState'
@@ -20,9 +20,7 @@ import { Field, TextArea } from '../../ui/Field'
 import { Icon } from '../../ui/icons'
 import { ConfirmationDialog, Modal } from '../../ui/Overlay'
 import { Page } from '../../ui/Page'
-import { Segmented } from '../../ui/Tabs'
 import { useToast } from '../../ui/Toast'
-import { saveSettings } from '../../data/settingsRepo'
 import { ExercisePicker } from './ExercisePicker'
 import { blocksOf, useExercises, useNow } from './hooks'
 import { BodyFigures } from './BodyCard'
@@ -60,11 +58,6 @@ function useWakeLock(active: boolean): boolean {
   }, [active])
   return held
 }
-
-const UNITS = [
-  { id: 'kg', label: 'kg' },
-  { id: 'lb', label: 'lb' },
-] as const
 
 export default function SessionScreen({ params }: RouteProps) {
   const sessionId = Number(params.id)
@@ -110,6 +103,8 @@ export default function SessionScreen({ params }: RouteProps) {
   const [picking, setPicking] = useState(false)
   const [finishing, setFinishing] = useState(false)
   const [discarding, setDiscarding] = useState(false)
+  // Finished exercises fold to their heading; these positions were opened again by hand.
+  const [reopened, setReopened] = useState<ReadonlySet<number>>(new Set())
   const [notes, setNotes] = useState('')
   const buzzed = useRef<number | null>(null)
 
@@ -137,6 +132,14 @@ export default function SessionScreen({ params }: RouteProps) {
   const fail = (error: unknown) => toast.show(error instanceof Error ? error.message : 'That could not be saved.', { tone: 'risk' })
   const elapsed = live && session.started_at ? formatDuration((now - session.started_at) / 1000) : null
   const minutes = sessionMinutes(session)
+
+  const blockDone = (block: { sets: SetLog[] }) => block.sets.length > 0 && block.sets.every((set) => set.done)
+  const toggleBlock = (position: number) =>
+    setReopened((current) => {
+      const next = new Set(current)
+      if (!next.delete(position)) next.add(position)
+      return next
+    })
 
   const finish = async () => {
     try {
@@ -227,11 +230,10 @@ export default function SessionScreen({ params }: RouteProps) {
           </div>
         )}
 
-        {!session.quick && blocks.length > 0 && editable && (
-          <div className="flex items-center justify-between gap-3 px-1">
-            <span className="text-[13px] text-ink-2">Log weights in</span>
-            <Segmented options={UNITS} value={unit} onChange={(next) => void saveSettings({ weight_unit: next }).catch(fail)} label="Weight unit" size="sm" />
-          </div>
+        {!session.quick && blocks.length > 0 && (
+          <p className="px-1 text-[13px] text-ink-2">
+            {blocks.filter(blockDone).length} of {blocks.length} exercises done
+          </p>
         )}
 
         {blocks.length === 0 && !session.quick && (
@@ -240,7 +242,7 @@ export default function SessionScreen({ params }: RouteProps) {
             title="No exercises in this session yet."
             action={
               editable ? (
-                <Button variant="primary" icon="plus" onClick={() => setPicking(true)}>
+                <Button variant="secondary" icon="plus" onClick={() => setPicking(true)}>
                   Add an exercise
                 </Button>
               ) : undefined
@@ -260,6 +262,7 @@ export default function SessionScreen({ params }: RouteProps) {
           const heaviest = lastWork.reduce((max, set) => Math.max(max, set.weight_kg ?? 0), 0)
           const reachedTop = live && top !== null && exercise?.kind === 'weight_reps' && lastWork.length > 0 && lastWork.every((set) => (set.reps ?? 0) >= top)
           const hint = reachedTop ? `All sets reached ${top} reps last time. Next step: ${weightIn(heaviest + (exercise?.increment_kg ?? settings.default_increment_kg), unit)} ${unit}.` : null
+          const folded = live && blockDone(block) && !reopened.has(block.position)
           return (
             <Card key={block.position} padded={false} className="flex flex-col gap-2 px-2 py-3">
               <div className="flex items-start gap-2 px-1.5">
@@ -276,9 +279,18 @@ export default function SessionScreen({ params }: RouteProps) {
                 <span className={cx('tnum shrink-0 pt-0.5 text-[13px] font-medium', done === block.sets.length && done > 0 ? 'text-ok' : 'text-ink-2')}>
                   {done} / {block.sets.length}
                 </span>
+                {live && blockDone(block) && (
+                  <IconButton
+                    icon={folded ? 'chevron-down' : 'chevron-up'}
+                    label={`${folded ? 'Show' : 'Hide'} the sets of ${exercise?.name ?? 'this exercise'}`}
+                    aria-expanded={!folded}
+                    onClick={() => toggleBlock(block.position)}
+                    className="-my-2"
+                  />
+                )}
               </div>
-              {hint && <p className="px-1.5 text-[12.5px] leading-snug text-ink-2">{hint}</p>}
-              <div className="flex flex-col gap-1">
+              {!folded && hint && <p className="px-1.5 text-[12.5px] leading-snug text-ink-2">{hint}</p>}
+              {!folded && <div className="flex flex-col gap-1">
                 {block.sets.map((set, i) => (
                   <SetRow
                     key={set.id}
@@ -292,8 +304,8 @@ export default function SessionScreen({ params }: RouteProps) {
                     bestBefore={earlier?.get(block.exerciseId) ?? null}
                   />
                 ))}
-              </div>
-              {editable && (
+              </div>}
+              {editable && !folded && (
                 <div className="flex flex-col gap-1 px-1.5">
                   <Button variant="secondary" icon="plus" block onClick={() => addSetRow(sessionId, block.position, write).catch(fail)}>
                     Add set
@@ -313,7 +325,7 @@ export default function SessionScreen({ params }: RouteProps) {
         })}
 
         {editable && !session.quick && blocks.length > 0 && (
-          <Button variant="primary" icon="plus" block onClick={() => setPicking(true)}>
+          <Button variant="secondary" icon="plus" block onClick={() => setPicking(true)}>
             Add exercise
           </Button>
         )}

@@ -5,8 +5,7 @@
  * these generate (bg-surface, text-ink-2, border-line, text-ok …) and never a literal colour.
  *
  * The look is sakura at dusk: deep navy and charcoal surfaces, one precious pink, warm cream for
- * editorial text. Dark is the bare default and the design's home; light re-points the same
- * tokens to a blossom-paper version so the two are one design.
+ * editorial text. Dark is the only theme (the user chose dark only on 2026-11-13).
  *
  *   ground      the page behind everything
  *   surface     cards            surface-2  insets, inputs, hovered rows     surface-3  pressed
@@ -60,78 +59,11 @@
   --shadow-card: 0 0 0 1px var(--color-line);
   --shadow-pop: 0 18px 50px -12px rgb(0 0 0 / 0.6), 0 0 0 1px var(--color-line-strong);
   --shadow-glow: 0 10px 24px -10px rgb(245 156 168 / 0.6);
-  /* How strongly the blossom shows in a screen's corner. Night only: on paper it is hidden. */
+  /* How strongly the blossom shows in a screen's corner. */
   --blossom-opacity: 0.9;
 }
 
-/* The light values, written once and applied by either route below. */
 @layer base {
-  @media (prefers-color-scheme: light) {
-    :root:not([data-theme='dark']) {
-      --color-ground: #f7f1ee;
-      --color-surface: #fffbf9;
-      --color-surface-2: #f3e9e5;
-      --color-surface-3: #e9dcd7;
-      --color-line: #eadfda;
-      --color-line-strong: #cdbbb5;
-      --color-ink: #1b1620;
-      --color-ink-2: #4d4450;
-      --color-ink-3: #6f6470;
-      --color-accent: #b8456a;
-      --color-accent-pressed: #9e3857;
-      --color-accent-ink: #a33a5d;
-      --color-on-accent: #ffffff;
-      --color-cream: #2a1a1f;
-      --color-petal: #a33a5d;
-      --color-peach: #9a5a2a;
-      --color-ok: #a33a5d;
-      --color-warn: #8a5a00;
-      --color-risk: #b3261e;
-      --color-danger: #b3261e;
-      --color-mind: #6b4fc0;
-      --color-body: #a2571a;
-      --color-learning: #2f5fb0;
-      --color-exercise: #2e6b4a;
-      --shadow-card: 0 1px 2px rgb(42 26 31 / 0.05), 0 0 0 1px var(--color-line);
-      --shadow-pop: 0 18px 50px -12px rgb(42 26 31 / 0.25), 0 0 0 1px var(--color-line-strong);
-      --shadow-glow: 0 8px 20px -10px rgb(184 69 106 / 0.55);
-      --blossom-opacity: 0;
-      color-scheme: light;
-    }
-  }
-
-  :root[data-theme='light'] {
-    --color-ground: #f7f1ee;
-    --color-surface: #fffbf9;
-    --color-surface-2: #f3e9e5;
-    --color-surface-3: #e9dcd7;
-    --color-line: #eadfda;
-    --color-line-strong: #cdbbb5;
-    --color-ink: #1b1620;
-    --color-ink-2: #4d4450;
-    --color-ink-3: #6f6470;
-    --color-accent: #b8456a;
-    --color-accent-pressed: #9e3857;
-    --color-accent-ink: #a33a5d;
-    --color-on-accent: #ffffff;
-    --color-cream: #2a1a1f;
-    --color-petal: #a33a5d;
-    --color-peach: #9a5a2a;
-    --color-ok: #a33a5d;
-    --color-warn: #8a5a00;
-    --color-risk: #b3261e;
-    --color-danger: #b3261e;
-    --color-mind: #6b4fc0;
-    --color-body: #a2571a;
-    --color-learning: #2f5fb0;
-    --color-exercise: #2e6b4a;
-    --shadow-card: 0 1px 2px rgb(42 26 31 / 0.05), 0 0 0 1px var(--color-line);
-    --shadow-pop: 0 18px 50px -12px rgb(42 26 31 / 0.25), 0 0 0 1px var(--color-line-strong);
-    --shadow-glow: 0 8px 20px -10px rgb(184 69 106 / 0.55);
-    --blossom-opacity: 0;
-    color-scheme: light;
-  }
-
   :root {
     color-scheme: dark;
   }

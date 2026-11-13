@@ -60,7 +60,7 @@ export function CoreProvider({ children, splash = null }: { children: ReactNode;
 
   const settings = useMemo(() => settingsFromRows(settingRows ?? []), [settingRows])
   const clock = useClock(settings.day_start_hour)
-  const theme = useAppliedTheme(settings.theme)
+  const theme = useAppliedTheme()
 
   const index = useMemo(
     () =>

@@ -3,13 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <script>
-      // Applies a saved theme before anything paints. Kept in step with src/state/theme.ts.
-      (function () {
-        try {
-          var t = localStorage.getItem('habit-tracker-theme')
-          if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t)
-        } catch {}
-      })()
+      // The app is dark only. Kept in step with src/state/theme.ts.
+      document.documentElement.setAttribute('data-theme', 'dark')
     </script>
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />

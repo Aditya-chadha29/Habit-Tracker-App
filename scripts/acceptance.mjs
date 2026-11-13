@@ -168,7 +168,7 @@ async function scenarioB() {
     check('Gym starts pending and cannot be ticked by hand', /Pending/.test(before) && (await app.habitRow('Gym').getAttribute('aria-pressed')) === null, before)
 
     await app.open('/train')
-    await app.page.getByRole('button', { name: 'Start routine', exact: true }).first().click()
+    await app.page.getByRole('button', { name: /^Start (?!empty)/ }).first().click()
     await app.page.waitForURL(/#\/train\/session\//, { timeout: 10000 })
     await app.settle()
     for (const cell of await app.page.locator('main input[aria-label^="Set 1 "]').all()) await cell.fill('10')

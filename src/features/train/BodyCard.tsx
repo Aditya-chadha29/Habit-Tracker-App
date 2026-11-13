@@ -30,6 +30,8 @@ const ON_BODY: Record<Exclude<MuscleGroup, 'cardio'>, Muscle[]> = {
   core: ['abs', 'obliques'],
 }
 const GROUPS = Object.keys(ON_BODY) as (keyof typeof ON_BODY)[]
+/** How many muscles the list shows before "Show all". */
+const SHOWN = 6
 
 /** The three strengths of shading. The set count is always printed too. */
 const SHADES = [
@@ -43,7 +45,7 @@ const level = (sets: number): number => (sets <= 0 ? 0 : sets < 5 ? 1 : sets < 1
 const showSets = (sets: number): string => String(Math.round(sets * 10) / 10)
 
 /** The front and back drawing alone, shaded from a list of muscle rows. */
-export function BodyFigures({ rows, onPick }: { rows: readonly MuscleWeekRow[]; onPick?: (group: keyof typeof ON_BODY) => void }) {
+export function BodyFigures({ rows, onPick, width = 124 }: { rows: readonly MuscleWeekRow[]; onPick?: (group: keyof typeof ON_BODY) => void; width?: number }) {
   const setsOf = (group: MuscleGroup) => rows.find((row) => row.muscle === group)?.sets ?? 0
   const data: IExerciseData[] = GROUPS.filter((group) => setsOf(group) > 0).map((group) => ({ name: group, muscles: ON_BODY[group], frequency: level(setsOf(group)) }))
   const pick = (stat: { muscle?: Muscle }) => {
@@ -54,7 +56,7 @@ export function BodyFigures({ rows, onPick }: { rows: readonly MuscleWeekRow[]; 
     <div className="flex items-start gap-2">
       {(['anterior', 'posterior'] as const).map((type) => (
         <div key={type} className="min-w-0 flex-1" aria-hidden="true">
-          <Model data={data} type={type} onClick={pick} bodyColor="var(--color-surface-3)" highlightedColors={SHADES} style={{ width: '100%', maxWidth: 124, margin: '0 auto' }} />
+          <Model data={data} type={type} onClick={pick} bodyColor="var(--color-surface-3)" highlightedColors={SHADES} style={{ width: '100%', maxWidth: width, margin: '0 auto' }} />
         </div>
       ))}
     </div>
@@ -73,6 +75,7 @@ export function BodyCard() {
   const thisWeek = weekStartOf(today, weekStart)
   const [start, setStart] = useState(thisWeek)
   const [picked, setPicked] = useState<keyof typeof ON_BODY | null>(null)
+  const [showAll, setShowAll] = useState(false)
   const end = addDays(start, 6)
 
   const rows = useMemo(() => muscleWeek(sets, byId, start, end > today ? today : end), [sets, byId, start, end, today])
@@ -81,6 +84,7 @@ export function BodyCard() {
   const missing = GROUPS.filter((group) => !trained.includes(group))
   const toggle = (group: keyof typeof ON_BODY) => setPicked((current) => (current === group ? null : group))
   const detail = picked ? of(picked) : undefined
+  const listed = showAll ? trained : trained.slice(0, SHOWN)
 
   return (
     <Card className="flex flex-col gap-3">
@@ -89,7 +93,39 @@ export function BodyCard() {
         <IconButton icon="chevron-left" label="Week before" onClick={() => setStart(addDays(start, -7))} />
         <IconButton icon="chevron-right" label="Week after" disabled={start >= thisWeek} onClick={() => setStart(addDays(start, 7))} />
       </div>
-      <BodyFigures rows={rows} onPick={toggle} />
+      <div className="flex items-start gap-3">
+        <div className="w-[176px] shrink-0">
+          <BodyFigures rows={rows} onPick={toggle} width={84} />
+        </div>
+        <div className="min-w-0 flex-1">
+          {trained.length === 0 ? (
+            <p className="pt-1 text-[13.5px] leading-relaxed text-ink-3">No sets logged in this week.</p>
+          ) : (
+            <ul className="flex flex-col">
+              {listed.map((group) => (
+                <li key={group}>
+                  <button
+                    type="button"
+                    onClick={() => toggle(group)}
+                    aria-pressed={picked === group}
+                    className={cx('flex min-h-11 w-full cursor-pointer items-center justify-between gap-2 text-[13.5px]', picked === group ? 'font-semibold text-accent-ink' : 'text-ink')}
+                  >
+                    <span className="truncate">{MUSCLE_LABEL[group]}</span>
+                    <span className="tnum font-medium">{showSets(of(group)!.sets)}</span>
+                  </button>
+                </li>
+              ))}
+              {trained.length > SHOWN && (
+                <li>
+                  <button type="button" onClick={() => setShowAll(!showAll)} className="min-h-11 w-full cursor-pointer text-left text-[13px] text-ink-2 underline underline-offset-2">
+                    {showAll ? 'Show fewer' : `Show all ${trained.length}`}
+                  </button>
+                </li>
+              )}
+            </ul>
+          )}
+        </div>
+      </div>
 
       {picked && (
         <div className="rounded-control bg-surface-2 px-3 py-2.5 text-[13.5px] leading-relaxed">
@@ -101,24 +137,6 @@ export function BodyCard() {
         </div>
       )}
 
-      {trained.length === 0 ? (
-        <p className="text-[13.5px] text-ink-3">No sets logged in this week.</p>
-      ) : (
-        <ul className="grid grid-cols-2 gap-x-4 gap-y-0.5">
-          {trained.map((group) => (
-            <li key={group}>
-              <button
-                type="button"
-                onClick={() => toggle(group)}
-                className={cx('flex min-h-11 w-full cursor-pointer items-center justify-between gap-2 text-[13.5px]', picked === group ? 'text-accent-ink' : 'text-ink')}
-              >
-                <span className="truncate">{MUSCLE_LABEL[group]}</span>
-                <span className="tnum font-medium">{showSets(of(group)!.sets)}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
       {missing.length > 0 && trained.length > 0 && <p className="text-[12.5px] leading-relaxed text-ink-3">No sets: {missing.map((group) => MUSCLE_LABEL[group]).join(', ')}.</p>}
     </Card>
   )

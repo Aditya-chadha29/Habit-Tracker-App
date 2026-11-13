@@ -119,7 +119,7 @@ export default function AreaScreen({ params }: RouteProps) {
               title={`No habits in ${area.label} yet.`}
               body="Add one in Habits and choose this pillar."
               action={
-                <Link to="/habits/new" className="text-[14px] font-medium text-accent-ink">
+                <Link to="/habits/new" className="text-[14px] font-medium text-cream underline underline-offset-2">
                   Add a habit
                 </Link>
               }

@@ -80,6 +80,10 @@ export default function TodayScreen() {
           <ProgressBar value={score.done} max={Math.max(1, score.due)} tone="accent" label={`${score.done} of ${score.due} done`} className="mt-3" />
         </Card>
 
+        {score.due > 0 && (
+          <p className="px-1 text-[13.5px] text-ink-2">{score.due - score.done > 0 ? `${score.due - score.done} left` : isToday ? 'All done for today' : 'All done on this day'}</p>
+        )}
+
         {sections.length === 0 && !showFlexible && (
           <EmptyState
             icon="check"

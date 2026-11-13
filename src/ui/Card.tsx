@@ -48,7 +48,7 @@ export function SectionTitle({ children, action, className }: { children: ReactN
   return (
     <div className={cx('flex items-end justify-between gap-3 px-1', className)}>
       <h2 className="eyebrow">{children}</h2>
-      {action && <div className="text-[13px] text-accent-ink">{action}</div>}
+      {action && <div className="text-[13px] text-cream underline underline-offset-2">{action}</div>}
     </div>
   )
 }

@@ -465,7 +465,7 @@ function Editor({ habit }: { habit: Habit | null }) {
 
         {habit && (
           <div className="flex flex-wrap items-center justify-center gap-2">
-            <Link to={`/progress/habit/${habit.id}`} className="inline-flex h-11 items-center rounded-control px-4 text-[14px] font-medium text-accent-ink hover:bg-surface-2">
+            <Link to={`/progress/habit/${habit.id}`} className="inline-flex h-11 items-center rounded-control px-4 text-[14px] font-medium text-cream underline underline-offset-2 hover:bg-surface-2">
               History
             </Link>
             {retired ? (

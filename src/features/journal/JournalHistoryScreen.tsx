@@ -68,7 +68,7 @@ export default function JournalHistoryScreen() {
                     <h3 className="text-[14px] font-semibold text-ink">{formatMediumDate(entry.date)}</h3>
                     <Chip>{KIND_LABEL[entry.kind]}</Chip>
                     {editable && entry.kind !== 'weekly' ? (
-                      <Link to={`/journal?d=${entry.date}&kind=${entry.kind}`} className="ml-auto text-[13px] font-medium text-accent-ink">
+                      <Link to={`/journal?d=${entry.date}&kind=${entry.kind}`} className="ml-auto text-[13px] font-medium text-cream underline underline-offset-2">
                         Open
                       </Link>
                     ) : (

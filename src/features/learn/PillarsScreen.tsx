@@ -214,7 +214,7 @@ export default function PillarsScreen() {
                     <span className="block truncate text-[14.5px] text-ink-2">{pillar.name}</span>
                     <span className="block text-[12.5px] text-ink-3">Retired {pillar.retired_on ? formatMediumDate(pillar.retired_on) : ''}</span>
                   </span>
-                  <span className="text-[13px] font-medium text-accent-ink">Restore or delete</span>
+                  <span className="text-[13px] font-medium text-cream underline underline-offset-2">Restore or delete</span>
                 </button>
               ))}
             </Card>

@@ -68,7 +68,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                   toast.action?.onClick()
                   dismiss()
                 }}
-                className="h-9 shrink-0 cursor-pointer rounded-[7px] px-3 text-[13.5px] font-semibold text-accent-ink hover:bg-surface-2"
+                className="h-11 shrink-0 cursor-pointer rounded-[7px] px-3 text-[13.5px] font-semibold text-cream underline underline-offset-2 hover:bg-surface-2"
               >
                 {toast.action.label}
               </button>
@@ -77,7 +77,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               type="button"
               aria-label="Dismiss"
               onClick={dismiss}
-              className={cx('flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-[7px] text-ink-3 hover:bg-surface-2', toast.action && 'hidden')}
+              className={cx('flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-[7px] text-ink-3 hover:bg-surface-2', toast.action && 'hidden')}
             >
               <Icon name="close" size={15} />
             </button>

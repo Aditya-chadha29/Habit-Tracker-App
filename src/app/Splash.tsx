@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Scene } from '../components/Scene'
+import { toLocalDateStr } from '../engine/dates'
 import { cx } from '../ui/cx'
 
 /**
@@ -28,13 +29,30 @@ export function Splash({ quiet = false }: { quiet?: boolean }) {
 const OPENING_MS = 1600
 const FADE_MS = 450
 
+const OPENED_KEY = 'ikikata-opened-on'
+
+/** True the first time the app is opened on a day; remembers that it has been. */
+function firstOpeningToday(): boolean {
+  const today = toLocalDateStr(new Date())
+  try {
+    if (localStorage.getItem(OPENED_KEY) === today) return false
+    localStorage.setItem(OPENED_KEY, today)
+  } catch {
+    // Storage blocked: show it, as before.
+  }
+  return true
+}
+
+/** Decided once per launch, so a re-render can never change the answer. */
+const SHOW_OPENING = firstOpeningToday()
+
 /**
- * The opening screen: shown once each time the app is opened, over the app as it gets ready
- * underneath, then faded away. It is never shown again while the app stays open, and a tap
- * dismisses it at once for anyone who does not want to wait.
+ * The opening screen: shown the first time the app is opened each day, over the app as it gets
+ * ready underneath, then faded away. A tap dismisses it at once for anyone who does not want to
+ * wait.
  */
 export function Opening() {
-  const [phase, setPhase] = useState<'showing' | 'leaving' | 'gone'>('showing')
+  const [phase, setPhase] = useState<'showing' | 'leaving' | 'gone'>(SHOW_OPENING ? 'showing' : 'gone')
 
   useEffect(() => {
     if (phase === 'gone') return

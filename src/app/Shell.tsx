@@ -110,7 +110,7 @@ function NotFound() {
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center">
       <p className="text-[15px] text-ink-2">That page does not exist.</p>
-      <Link to="/" className="text-[14px] font-medium text-accent-ink">
+      <Link to="/" className="text-[14px] font-medium text-cream underline underline-offset-2">
         Go to Today
       </Link>
     </div>
