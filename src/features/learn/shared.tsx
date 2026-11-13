@@ -274,6 +274,7 @@ export function SessionSheet({ resource, lane, finishing = false, minutes: timed
   const [reached, setReached] = useState(timed && resource.progress_unit === 'minutes' ? resource.progress_current + timed : resource.progress_current)
   const [notes, setNotes] = useState('')
   const [finished, setFinished] = useState(finishing)
+  const [verdict, setVerdict] = useState('')
   const first = firstEditableDate(today, settings.edit_window_days)
   const days: DateStr[] = []
   for (let day = today; day >= first; day = addDays(day, -1)) days.push(day)
@@ -282,7 +283,7 @@ export function SessionSheet({ resource, lane, finishing = false, minutes: timed
   const save = async () => {
     try {
       await logSession(
-        { resource_id: resource.id!, date, lane, minutes, progress_after: counted ? reached : null, notes, finished },
+        { resource_id: resource.id!, date, lane, minutes, progress_after: counted ? reached : null, notes, finished, verdict },
         write,
         Date.now(),
       )
@@ -341,6 +342,11 @@ export function SessionSheet({ resource, lane, finishing = false, minutes: timed
           <span className="min-w-0 flex-1 text-[14px] text-ink">This finishes it</span>
           <Switch label="This session finishes the resource" checked={finished} onChange={setFinished} />
         </div>
+        {finished && (
+          <Field label="Verdict" hint="Optional. One line on what it was worth.">
+            <TextInput value={verdict} onChange={(event) => setVerdict(event.target.value)} maxLength={140} />
+          </Field>
+        )}
       </div>
     </Modal>
   )

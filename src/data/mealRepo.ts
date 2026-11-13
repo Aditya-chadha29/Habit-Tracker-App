@@ -12,6 +12,7 @@ import { versionOn } from '../engine/timeline'
 export interface MealPatch {
   text?: string
   ate_out?: boolean
+  protein?: boolean
   /** Local 'HH:MM', or null to clear. */
   time?: string | null
 }
@@ -36,6 +37,7 @@ export async function saveMeal(
     const next: Meal = { text: '', ate_out: false, time: null, ...existing, date, slot }
     if (patch.text !== undefined) next.text = patch.text.trim()
     if (patch.ate_out !== undefined) next.ate_out = patch.ate_out
+    if (patch.protein !== undefined) next.protein = patch.protein
     if (patch.time !== undefined) next.time = patch.time
     const firstWords = next.text !== '' && !(existing?.text ?? '').trim()
     if (firstWords && !next.time && link.time) next.time = link.time
@@ -61,4 +63,32 @@ export async function mealsOn(date: DateStr, database: AppDb = db): Promise<Meal
 export async function mealsBetween(from: DateStr, to: DateStr, database: AppDb = db): Promise<Meal[]> {
   const rows = await database.meals.where('date').between(from, to, true, true).toArray()
   return rows.filter((meal) => meal.text.trim() !== '' || meal.ate_out).sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
+}
+
+/** How many favourites are offered for a meal. */
+export const FAVOURITE_MEALS = 4
+
+/** The descriptions written most often for a slot (at least twice), most frequent first. */
+export function favouriteMeals(meals: readonly Meal[], slot: string, limit = FAVOURITE_MEALS): string[] {
+  const counts = new Map<string, { text: string; count: number; last: DateStr }>()
+  for (const meal of meals) {
+    const text = meal.text.trim()
+    if (meal.slot !== slot || !text) continue
+    const key = text.toLowerCase()
+    const row = counts.get(key)
+    if (!row) counts.set(key, { text, count: 1, last: meal.date })
+    else {
+      row.count += 1
+      // The spelling of the most recent use is the one offered.
+      if (meal.date > row.last) {
+        row.last = meal.date
+        row.text = text
+      }
+    }
+  }
+  return [...counts.values()]
+    .filter((row) => row.count >= 2)
+    .sort((a, b) => b.count - a.count || (a.last < b.last ? 1 : -1))
+    .slice(0, limit)
+    .map((row) => row.text)
 }

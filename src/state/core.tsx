@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { createContext, useContext, useMemo, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useMemo, type ReactNode } from 'react'
 import { db } from '../data/db'
 import type { WriteContext } from '../data/habitRepo'
 import { settingsFromRows } from '../data/settingsRepo'
@@ -66,6 +66,9 @@ export function CoreProvider({ children, splash = null }: { children: ReactNode;
   const settings = useMemo(() => settingsFromRows(settingRows ?? []), [settingRows])
   const clock = useClock(settings.day_start_hour)
   const theme = useAppliedTheme()
+  useEffect(() => {
+    document.documentElement.style.setProperty('--text-scale', String(settings.text_scale))
+  }, [settings.text_scale])
 
   const index = useMemo(
     () =>

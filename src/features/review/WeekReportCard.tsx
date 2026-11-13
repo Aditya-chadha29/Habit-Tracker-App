@@ -94,7 +94,13 @@ export function WeekReportCard({ start }: { start: DateStr }) {
             </Link>
           </p>
         )}
-        <Rows title="Diet" rows={report.diet} />
+<Rows title="Diet" rows={report.diet} />
+        {settings.eat_out_weekly_cap !== null && (
+          <p className={report.mealsOut > settings.eat_out_weekly_cap ? 'text-[13px] leading-relaxed font-medium text-warn' : 'text-[13px] leading-relaxed text-ink-2'}>
+            Eaten out: {report.mealsOut} of {settings.eat_out_weekly_cap}
+            {report.mealsOut > settings.eat_out_weekly_cap ? ', over the limit.' : '.'}
+          </p>
+        )}
         {report.reasons.length > 0 && (
           <p className="text-[13px] leading-relaxed text-ink-2">
             Misses with a reason: {report.reasons.map((row) => `${REASON_LABEL[row.reason].toLowerCase()} ${row.count}`).join(', ')}.

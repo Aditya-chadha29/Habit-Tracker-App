@@ -141,6 +141,8 @@ export interface SessionInput {
   notes: string
   /** This session finished the resource. */
   finished: boolean
+  /** One line on what it was worth, when it is finished. */
+  verdict?: string
 }
 
 /**
@@ -185,6 +187,7 @@ export async function logSession(input: SessionInput, ctx: WriteContext, now: nu
     if (input.finished) {
       patch.status = 'completed'
       patch.completed_on = input.date
+      if (input.verdict?.trim()) patch.verdict = input.verdict.trim().slice(0, 140)
       patch.queue_position = null
     } else if (resource.status !== 'completed' && resource.status !== 'archived') {
       patch.status = 'in_progress'

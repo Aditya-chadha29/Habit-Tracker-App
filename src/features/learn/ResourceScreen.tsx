@@ -7,7 +7,7 @@ import {
 } from '../../data/learningRepo'
 import type { LearningLane } from '../../data/types'
 import { formatFullDate, formatMediumDate } from '../../engine/dates'
-import { isSafeUrl, progressFraction, progressLabel, queueOf, TYPE_LABEL } from '../../engine/learning'
+import { finishEstimate, isSafeUrl, progressFraction, progressLabel, queueOf, TYPE_LABEL } from '../../engine/learning'
 import { isEditable } from '../../engine/lock'
 import { useCore } from '../../state/core'
 import { useKeyedLiveQuery } from '../../state/live'
@@ -67,6 +67,7 @@ export default function ResourceScreen({ params }: RouteProps) {
   const lane: LearningLane = isActiveBook && !inQueue ? 'reading' : 'learning'
   const timing = timer?.resourceId === resource.id
   const open = resource.status !== 'completed' && resource.status !== 'archived'
+  const estimate = finishEstimate(resource, sessions ?? [], today)
 
   return (
     <Page
@@ -88,6 +89,7 @@ export default function ResourceScreen({ params }: RouteProps) {
               <div>
                 {fraction !== null && <ProgressBar value={fraction} max={1} label={`${Math.round(fraction * 100)} percent complete`} />}
                 <p className="mt-1.5 text-[13px] text-ink-2">{[progressLabel(resource), resource.position_note].filter(Boolean).join(' · ')}</p>
+                {estimate && <p className="mt-1 text-[13px] text-ink-3">At this pace: finished around {formatMediumDate(estimate)}.</p>}
               </div>
             )}
             {resource.url && isSafeUrl(resource.url) && (
@@ -100,7 +102,6 @@ export default function ResourceScreen({ params }: RouteProps) {
             <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-[13px]">
               {[
                 ['Topic', resource.topic],
-                ['Priority', resource.priority === 1 ? 'High' : resource.priority === 3 ? 'Low' : 'Normal'],
                 ['Added', formatFullDate(resource.created_on)],
                 ['Started', resource.started_on ? formatFullDate(resource.started_on) : ''],
                 ['Completed', resource.completed_on ? formatFullDate(resource.completed_on) : ''],
@@ -175,7 +176,9 @@ export default function ResourceScreen({ params }: RouteProps) {
           {resource.status === 'completed' && (
             <Card className="flex items-center gap-3">
               <Icon name="check-circle" size={20} className="shrink-0 text-ok" />
-              <p className="min-w-0 flex-1 text-[14px] text-ink-2">Completed{resource.completed_on ? ` on ${formatFullDate(resource.completed_on)}` : ''}.</p>
+              <p className="min-w-0 flex-1 text-[14px] text-ink-2">
+                Completed{resource.completed_on ? ` on ${formatFullDate(resource.completed_on)}` : ''}.{resource.verdict ? ` ${resource.verdict}` : ''}
+              </p>
               <Button variant="secondary" size="sm" onClick={() => run(() => addToQueue(resource.id!), 'Back in the queue.')}>
                 Study again
               </Button>

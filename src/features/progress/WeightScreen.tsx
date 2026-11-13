@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link } from '../../app/router'
 import { db } from '../../data/db'
+import { saveSettings } from '../../data/settingsRepo'
 import type { DateStr, WeightEntry } from '../../data/types'
 import { addWeight, deleteWeight, sortWeights, toDisplay, toKg, updateWeight } from '../../data/weightRepo'
 import { addDays, formatMediumDate, formatShortDate, relativeDayLabel } from '../../engine/dates'
@@ -29,6 +30,8 @@ const SPANS = [
 ] as const
 
 const NONE: WeightEntry[] = []
+/** How many weigh-ins the trend line averages over. */
+const AVERAGE_OVER = 7
 
 /** Body weight over time. Not a daily requirement — a record to look back on. */
 export default function WeightScreen() {
@@ -57,6 +60,20 @@ export default function WeightScreen() {
   const change = latest && before ? Math.round((toDisplay(latest.kg, unit) - toDisplay(before.kg, unit)) * 10) / 10 : null
   const spanChange = shown.length >= 2 ? Math.round((toDisplay(shown[shown.length - 1].kg, unit) - toDisplay(shown[0].kg, unit)) * 10) / 10 : null
   const signed = (n: number) => `${n > 0 ? '+' : ''}${n}`
+  const goal = settings.goal_weight_kg
+  // The average of each weigh-in and the six before it: the line under the day-to-day noise.
+  const averageAt = (entry: WeightEntry): number | null => {
+    const at = entries.indexOf(entry)
+    if (at < AVERAGE_OVER - 1) return null
+    const window = entries.slice(at - AVERAGE_OVER + 1, at + 1)
+    return toDisplay(window.reduce((total, row) => total + row.kg, 0) / window.length, unit)
+  }
+  const saveGoal = (raw: string) => {
+    const parsed = raw.trim() ? parseNumber(raw) : null
+    const kg = parsed === null ? null : toKg(parsed, unit)
+    if (kg !== null && (kg < 20 || kg > 400)) return toast.show('That goal does not look right.', { tone: 'risk' })
+    if (kg !== goal) saveSettings({ goal_weight_kg: kg }).catch(() => toast.show('The goal could not be saved.', { tone: 'risk' }))
+  }
 
   const add = async () => {
     const parsed = parseNumber(value)
@@ -103,7 +120,11 @@ export default function WeightScreen() {
             {shown.length >= 2 ? (
               <>
                 <LineChart
-                  series={[{ label: 'Weight', tone: 'accent', points: shown.map((entry) => ({ x: entry.date, y: toDisplay(entry.kg, unit) })) }]}
+                  series={[
+                    { label: 'Weight', tone: 'accent', points: shown.map((entry) => ({ x: entry.date, y: toDisplay(entry.kg, unit) })) },
+                    ...(shown.length >= AVERAGE_OVER ? [{ label: `Average of ${AVERAGE_OVER}`, tone: 'neutral' as const, points: shown.map((entry) => ({ x: entry.date, y: averageAt(entry) })) }] : []),
+                    ...(goal !== null ? [{ label: 'Goal', tone: 'warn' as const, points: shown.map((entry) => ({ x: entry.date, y: toDisplay(goal, unit) })) }] : []),
+                  ]}
                   xFormat={formatShortDate}
                   yFormat={(v) => `${Math.round(v * 10) / 10}`}
                   height={220}
@@ -118,6 +139,19 @@ export default function WeightScreen() {
             ) : (
               <p className="py-6 text-[13.5px] text-ink-3">Need more history. A line appears with two weigh-ins in the period; {shown.length} so far.</p>
             )}
+            <label className="flex items-center gap-3 border-t border-line pt-3 text-[13.5px] text-ink-2">
+              <span className="min-w-0 flex-1">Goal weight ({unit}), drawn as a line</span>
+              <input
+                key={`${goal}-${unit}`}
+                type="text"
+                inputMode="decimal"
+                defaultValue={goal === null ? '' : String(toDisplay(goal, unit))}
+                placeholder="None"
+                aria-label={`Goal weight in ${unit}`}
+                onBlur={(event) => saveGoal(event.target.value)}
+                className="tnum h-11 w-24 rounded-control bg-surface-2 px-3 text-right text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)]"
+              />
+            </label>
           </Card>
         </div>
 

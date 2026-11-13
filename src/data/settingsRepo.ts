@@ -39,6 +39,9 @@ export const DEFAULT_SETTINGS: Settings = {
   active_book_id: null,
   cutover_date: null,
   data_format: DATA_FORMAT,
+  eat_out_weekly_cap: null,
+  goal_weight_kg: null,
+  text_scale: 1,
 }
 
 function clampInt(value: unknown, min: number, max: number, fallback: number): number {
@@ -80,6 +83,9 @@ export function settingsFromRows(rows: readonly SettingRow[]): Settings {
   const cutover = get('cutover_date')
   const book = get('active_book_id')
   const increment = get('default_increment_kg')
+  const cap = get('eat_out_weekly_cap')
+  const goal = get('goal_weight_kg')
+  const scale = get('text_scale')
 
   return {
     name: typeof get('name') === 'string' ? (get('name') as string) : d.name,
@@ -100,6 +106,9 @@ export function settingsFromRows(rows: readonly SettingRow[]): Settings {
     active_book_id: typeof book === 'number' ? book : null,
     cutover_date: typeof cutover === 'string' ? cutover : null,
     data_format: clampInt(get('data_format'), 1, 1_000_000, DATA_FORMAT),
+    eat_out_weekly_cap: typeof cap === 'number' && Number.isInteger(cap) && cap >= 1 && cap <= 21 ? cap : null,
+    goal_weight_kg: typeof goal === 'number' && goal >= 20 && goal <= 400 ? goal : null,
+    text_scale: scale === 1.1 || scale === 1.2 ? scale : 1,
   }
 }
 

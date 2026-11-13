@@ -157,3 +157,26 @@ export function learningStats(
     by_type: [...byType.entries()].map(([type, total]) => ({ type, sessions: total })).sort((a, b) => b.sessions - a.sessions),
   }
 }
+
+/**
+ * When a resource would be finished at the pace of its sessions so far, or null when there is
+ * too little to go on: it needs a total, some progress, and two sessions on different days.
+ */
+export function finishEstimate(
+  resource: Pick<LearningResource, 'progress_total' | 'progress_current' | 'status'>,
+  sessions: readonly Pick<LearningSession, 'date' | 'progress_before'>[],
+  today: DateStr,
+): DateStr | null {
+  const total = resource.progress_total
+  if (!total || resource.progress_current <= 0 || resource.progress_current >= total) return null
+  if (resource.status === 'completed' || resource.status === 'archived' || sessions.length < 2) return null
+  const first = [...sessions].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : a.progress_before - b.progress_before))[0]
+  const days = daysBetween(first.date, today)
+  const gained = resource.progress_current - first.progress_before
+  if (days < 1 || gained <= 0) return null
+  const left = Math.ceil((total - resource.progress_current) / (gained / days))
+  if (left > 3650) return null
+  const date = new Date(Number(today.slice(0, 4)), Number(today.slice(5, 7)) - 1, Number(today.slice(8, 10)) + left)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+}

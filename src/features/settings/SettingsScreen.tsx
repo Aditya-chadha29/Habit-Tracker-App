@@ -14,6 +14,12 @@ import { useToast } from '../../ui/Toast'
 
 type Save = (patch: Partial<Settings>) => void
 
+const SCALES = [
+  { id: '1', label: 'Normal' },
+  { id: '1.1', label: 'Large' },
+  { id: '1.2', label: 'Larger' },
+] as const
+
 const UNITS = [
   { id: 'kg', label: 'kg' },
   { id: 'lb', label: 'lb' },
@@ -116,6 +122,12 @@ export default function SettingsScreen() {
                 ))}
               </Select>
             </span>
+          </Row>
+          <Row title="Meals out per week, at most">
+            <Stepper label="Meals eaten out allowed in a week; zero for no limit" value={settings.eat_out_weekly_cap ?? 0} onChange={(value) => save({ eat_out_weekly_cap: value > 0 ? value : null })} min={0} max={21} format={(value) => (value === 0 ? 'None' : String(value))} />
+          </Row>
+          <Row title="Text size">
+            <Segmented options={SCALES} value={String(settings.text_scale)} onChange={(scale) => save({ text_scale: Number(scale) as Settings['text_scale'] })} label="Text size" size="sm" />
           </Row>
           <Row title="Days that can be corrected">
             <Stepper label="Days that can be corrected" value={editDays} onChange={(value) => save({ edit_window_days: value })} min={1} max={60} unit="days" />

@@ -300,6 +300,8 @@ export interface Meal {
   slot: string
   text: string
   ate_out: boolean
+  /** The meal had a real serving of protein. Absent on rows written before the mark existed. */
+  protein?: boolean
   /** Local 'HH:MM', or null. */
   time?: string | null
 }
@@ -364,6 +366,8 @@ export interface LearningResource {
   started_on: DateStr | null
   completed_on: DateStr | null
   archived_on: DateStr | null
+  /** One line on what it was worth, written when it was finished. */
+  verdict?: string
 }
 
 /** Which daily commitment a session counts toward. Set by where it was logged from: the learning
@@ -554,6 +558,12 @@ export interface Settings {
   cutover_date: DateStr | null
   /** Bumped when stored data stops being readable by older builds. */
   data_format: number
+  /** Meals eaten out the user allows in a week; null = no limit set. */
+  eat_out_weekly_cap: number | null
+  /** A weight to draw as a line on the weight chart, in kg; null = none. */
+  goal_weight_kg: number | null
+  /** How large everything is drawn. */
+  text_scale: 1 | 1.1 | 1.2
 }
 
 export interface SettingRow {

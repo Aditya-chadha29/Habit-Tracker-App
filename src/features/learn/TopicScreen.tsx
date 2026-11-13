@@ -1,5 +1,6 @@
 import { useState } from "react"
 import type { RouteProps } from "../../app/router"
+import { formatMediumDate } from "../../engine/dates"
 import { Button, IconButton } from "../../ui/Button"
 import { Card, SectionTitle } from "../../ui/Card"
 import { EmptyState } from "../../ui/EmptyState"
@@ -73,7 +74,14 @@ export default function TopicScreen({ params }: RouteProps) {
               </SectionTitle>
               <Card padded={false} className="divide-y divide-line overflow-hidden">
                 {group.rows.map((resource) => (
-                  <ResourceRow key={resource.id} resource={resource} />
+                  <div key={resource.id}>
+                    <ResourceRow resource={resource} />
+                    {resource.status === "completed" && (resource.completed_on || resource.verdict) && (
+                      <p className="-mt-1 px-4 pb-2.5 text-[12.5px] leading-snug text-ink-3">
+                        {[resource.completed_on ? "Finished " + formatMediumDate(resource.completed_on) : "", resource.verdict ?? ""].filter(Boolean).join(" · ")}
+                      </p>
+                    )}
+                  </div>
                 ))}
               </Card>
             </section>

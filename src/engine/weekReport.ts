@@ -19,6 +19,8 @@ export interface WeekReport {
   untrained: string[]
   /** Exercises whose best estimated one-rep max was beaten this week. */
   newBests: string[]
+  /** Meals eaten out this week. */
+  mealsOut: number
   /** Misses this week that were given a reason, most frequent first. */
   reasons: { reason: MissReason; count: number }[]
 }
@@ -113,8 +115,11 @@ export function weekReport(input: ReportInput): WeekReport {
   }
   const reasons = [...reasonCounts].map(([reason, count]) => ({ reason, count })).sort((a, b) => b.count - a.count)
 
+  const withProtein = (days: readonly DateStr[]) => `${meals(days).filter((meal) => meal.protein).length} of ${meals(days).length}`
+
   return {
     reasons,
+    mealsOut: meals(thisWeek).filter((meal) => meal.ate_out).length,
     gym: [
       { label: 'Days trained', value: trained(thisWeek), before: trained(lastWeek) },
       { label: 'Work sets', value: work(thisWeek), before: work(lastWeek) },
@@ -127,6 +132,7 @@ export function weekReport(input: ReportInput): WeekReport {
       { label: 'Water', value: doneOfDue(input, thisWeek, named(/water/i)), before: doneOfDue(input, lastWeek, named(/water/i)) },
       { label: 'Protein', value: doneOfDue(input, thisWeek, named(/^protein/i)), before: doneOfDue(input, lastWeek, named(/^protein/i)) },
       { label: 'Supplements', value: doneOfDue(input, thisWeek, (item) => item.habit.kind === 'supplement'), before: doneOfDue(input, lastWeek, (item) => item.habit.kind === 'supplement') },
+      { label: 'Meals with protein', value: withProtein(thisWeek), before: withProtein(lastWeek) },
     ],
     untrained: input.muscleNames.filter((muscle) => !worked.has(muscle)),
     newBests,

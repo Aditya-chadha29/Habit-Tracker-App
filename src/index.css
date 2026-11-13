@@ -74,6 +74,13 @@
     height: 100%;
   }
 
+  /* Text size (Settings): the whole app is drawn larger, and its box is shrunk by the same
+     factor so that it still fits the screen exactly. */
+  #root {
+    zoom: var(--text-scale, 1);
+    height: calc(100% / var(--text-scale, 1));
+  }
+
   body {
     margin: 0;
     background: var(--color-ground);

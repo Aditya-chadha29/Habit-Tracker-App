@@ -556,6 +556,20 @@ async function carryWeeklyRecords({ db, today, now }: MigrationContext): Promise
   return { weights, notes }
 }
 
+/**
+ * Water is counted in glasses (the roadmap of 2026-11-13). Only what is recorded with the tick
+ * changes: a tick still completes the habit exactly as before, so no day is rescored.
+ */
+async function waterByTheGlass({ db }: MigrationContext): Promise<{ changed: number[] }> {
+  const changed: number[] = []
+  for (const habit of await db.habits.toArray()) {
+    if (habit.retired_on || habit.kind === 'meal' || !/water/i.test(habit.name) || habit.measure?.type !== 'boolean') continue
+    await db.habits.update(habit.id!, { measure: { type: 'count', target: 10, unit: 'glasses' } })
+    changed.push(habit.id!)
+  }
+  return { changed }
+}
+
 export const MIGRATIONS: Migration[] = [
   { id: '001-cutover', run: runCutover },
   { id: '002-training-library', run: seedTrainingLibrary },
@@ -575,6 +589,7 @@ export const MIGRATIONS: Migration[] = [
   { id: '016-morning-order', run: morningOrder },
   { id: '017-november-tidy', run: novemberTidy },
   { id: '018-secondary-muscles', run: secondaryMuscles },
+  { id: '019-water-by-the-glass', run: waterByTheGlass },
 ]
 
 export async function pendingMigrations(db: AppDb, migrations: Migration[] = MIGRATIONS): Promise<Migration[]> {
