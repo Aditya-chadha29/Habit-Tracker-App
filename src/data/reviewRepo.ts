@@ -62,7 +62,7 @@ export async function saveReflection(
 /** Reads everything a week's statistics are computed from. */
 async function loadWeek(period: Period, today: DateStr, settings: Settings, previous: WeekStats[], database: AppDb) {
   const from = addDays(period.start, -7)
-  const [habits, entries, sessions, learningAll, journalDates, weights, setLogs, exercises, resources, pillars] = await Promise.all([
+  const [habits, entries, sessions, learningAll, journalDates, weights, setLogs, exercises, resources, pillars, marks] = await Promise.all([
     database.habits.orderBy('sort_order').toArray(),
     database.entries.where('date').between(period.start, period.end, true, true).toArray(),
     database.sessions.where('date').between(period.start, period.end, true, true).toArray(),
@@ -73,10 +73,11 @@ async function loadWeek(period: Period, today: DateStr, settings: Settings, prev
     database.exercises.toArray(),
     database.learning_resources.toArray(),
     database.learning_pillars.toArray(),
+    database.day_marks.toArray(),
   ])
   return computeWeekStats({
     habits,
-    index: buildCompletionIndex({ entries, sessions, learningSessions: learningAll, journalDates: journalDates as DateStr[] }),
+    index: buildCompletionIndex({ entries, sessions, learningSessions: learningAll, journalDates: journalDates as DateStr[], daysOff: marks.map((mark) => mark.date) }),
     period,
     today,
     areas: [...settings.areas].sort((a, b) => a.sort_order - b.sort_order),

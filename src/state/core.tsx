@@ -3,7 +3,7 @@ import { createContext, useContext, useMemo, type ReactNode } from 'react'
 import { db } from '../data/db'
 import type { WriteContext } from '../data/habitRepo'
 import { settingsFromRows } from '../data/settingsRepo'
-import type { AreaConfig, DateStr, Habit, Settings } from '../data/types'
+import type { AreaConfig, DateStr, DayMarkKind, Habit, Settings } from '../data/types'
 import { buildCompletionIndex, type CompletionIndex } from '../engine/completion'
 import { useClock } from './clock'
 import { useAppliedTheme } from './theme'
@@ -31,6 +31,8 @@ export interface Core {
   index: CompletionIndex
   /** Pass to any repository write that carries a date, so the history lock can be enforced. */
   write: WriteContext
+  /** Days marked as a day off, with their kind. */
+  dayMarks: ReadonlyMap<DateStr, DayMarkKind>
   /** Which theme is actually on screen, for charts that need literal colours. */
   theme: 'dark' | 'light'
 }
@@ -58,6 +60,9 @@ export function CoreProvider({ children, splash = null }: { children: ReactNode;
   // ("Unable to open cursor"), and this runs at every start.
   const journalDates = useLiveQuery(async () => [...new Set((await db.journal_entries.toArray()).map((entry) => entry.date))] as DateStr[], [])
 
+  const marks = useLiveQuery(() => db.day_marks.toArray(), [])
+  const dayMarks = useMemo(() => new Map((marks ?? []).map((mark) => [mark.date, mark.kind] as const)), [marks])
+
   const settings = useMemo(() => settingsFromRows(settingRows ?? []), [settingRows])
   const clock = useClock(settings.day_start_hour)
   const theme = useAppliedTheme()
@@ -69,8 +74,9 @@ export function CoreProvider({ children, splash = null }: { children: ReactNode;
         sessions: sessions ?? [],
         learningSessions: learningSessions ?? [],
         journalDates: journalDates ?? [],
+        daysOff: (marks ?? []).map((mark) => mark.date),
       }),
-    [entries, sessions, learningSessions, journalDates],
+    [entries, sessions, learningSessions, journalDates, marks],
   )
 
   const loaded =
@@ -79,7 +85,8 @@ export function CoreProvider({ children, splash = null }: { children: ReactNode;
     entries !== undefined &&
     sessions !== undefined &&
     learningSessions !== undefined &&
-    journalDates !== undefined
+    journalDates !== undefined &&
+    marks !== undefined
 
   const value = useMemo<Core | null>(() => {
     if (!loaded) return null
@@ -91,10 +98,11 @@ export function CoreProvider({ children, splash = null }: { children: ReactNode;
       areas: [...settings.areas].sort((a, b) => a.sort_order - b.sort_order),
       habits: habits ?? [],
       index,
+      dayMarks,
       write: { today: clock.today, windowDays: settings.edit_window_days },
       theme,
     }
-  }, [loaded, clock.today, clock.hour, settings, habits, index, theme])
+  }, [loaded, clock.today, clock.hour, settings, habits, index, dayMarks, theme])
 
   if (!value) return <>{splash}</>
   return <CoreContext.Provider value={value}>{children}</CoreContext.Provider>

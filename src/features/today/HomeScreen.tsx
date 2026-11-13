@@ -16,6 +16,7 @@ import { Page } from '../../ui/Page'
 import { useLearningNow } from '../learn/hooks'
 import { useQuoteOfDay } from '../quotes/hooks'
 import { useTodaysWorkout } from '../train/hooks'
+import { PlanCard } from './PlanCard'
 
 /** The order the user asked for on Home: Learning and Exercise first, then Mind and Body. */
 const HOME_ORDER = ['learning', 'exercise', 'mind', 'body']
@@ -110,6 +111,10 @@ export default function HomeScreen() {
               )
             })}
           </nav>
+
+          <div className="order-3 empty:hidden lg:order-none">
+            <PlanCard />
+          </div>
 
         </div>
 

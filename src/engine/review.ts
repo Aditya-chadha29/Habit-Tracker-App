@@ -66,7 +66,7 @@ function habitResults(input: WeekInput, targets: TargetResult[]): HabitWeekResul
     let done = 0
     let due = 0
     for (let date = period.start; date <= last; date = addDays(date, 1)) {
-      if (!isDueOn(habit, date)) continue
+      if (!isDueOn(habit, date, index.daysOff)) continue
       due += 1
       if (isComplete(habit, date, index)) done += 1
     }

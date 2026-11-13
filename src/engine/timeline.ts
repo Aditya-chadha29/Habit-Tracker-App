@@ -50,7 +50,8 @@ export function matchesDayRule(rule: DayRule, date: DateStr): boolean {
 }
 
 /** Expected on this particular day, and so part of that day's score. */
-export function isDueOn(habit: Habit, date: DateStr): boolean {
+export function isDueOn(habit: Habit, date: DateStr, daysOff?: ReadonlySet<DateStr>): boolean {
+  if (daysOff?.has(date)) return false
   const version = versionOn(habit, date)
   return !!version && version.active && matchesDayRule(version.day, date)
 }

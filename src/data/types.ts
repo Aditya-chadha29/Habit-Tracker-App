@@ -119,6 +119,38 @@ export interface Entry {
   note?: string
   /** Local wall-clock time of the tick, 'HH:MM'. Display only. */
   time?: string | null
+  /** Why a due day was missed, when the user chose to say. Absent on most rows. */
+  reason?: MissReason | null
+}
+
+export type MissReason = 'late_night' | 'travel' | 'sick' | 'forgot' | 'no_time'
+
+// ─── Days off and plans ──────────────────────────────────────────────────────────────────────
+
+export type DayMarkKind = 'rest' | 'travel' | 'sick'
+
+/** A day set aside: nothing is due on it, so nothing on it can be missed. One row per day. */
+export interface DayMark {
+  date: DateStr
+  kind: DayMarkKind
+  note: string
+}
+
+/** Up to three lines written the evening before. Keyed by the day the plan is FOR. */
+export interface DayPlan {
+  date: DateStr
+  items: string[]
+}
+
+/** Body measurements in centimetres. */
+export interface Measurement {
+  id?: number
+  date: DateStr
+  waist_cm?: number | null
+  chest_cm?: number | null
+  arm_cm?: number | null
+  note: string
+  created_at: number
 }
 
 // ─── Day routines ────────────────────────────────────────────────────────────────────────────

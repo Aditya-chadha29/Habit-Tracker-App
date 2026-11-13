@@ -67,6 +67,9 @@ const DATE_FIELDS: Record<string, string> = {
   weekly_reviews: 'week_start',
   weekly_records: 'week_monday',
   daily_notes: 'date',
+  day_marks: 'date',
+  day_plans: 'date',
+  measurements: 'date',
 }
 
 /** Rows that point at a row in another table: [table, field, target table, what it is]. */

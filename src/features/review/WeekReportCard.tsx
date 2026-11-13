@@ -1,6 +1,9 @@
 import { useMemo } from 'react'
+import { Link } from '../../app/router'
+import { REASON_LABEL } from '../../components/MissReason'
 import { db } from '../../data/db'
-import type { DateStr, Exercise, Meal, MuscleGroup, Session, SetLog, WeightEntry } from '../../data/types'
+import type { DateStr, Entry, Exercise, Meal, MuscleGroup, Session, SetLog, WeightEntry } from '../../data/types'
+import { addDays, weekStartOf } from '../../engine/dates'
 import { weekReport, type ReportRow } from '../../engine/weekReport'
 import { useCore } from '../../state/core'
 import { useLive } from '../../state/live'
@@ -12,6 +15,7 @@ const NO_SESSIONS: Session[] = []
 const NO_EXERCISES: Exercise[] = []
 const NO_MEALS: Meal[] = []
 const NO_WEIGHTS: WeightEntry[] = []
+const NO_ENTRIES: Entry[] = []
 const MUSCLES: MuscleGroup[] = ['chest', 'back', 'traps', 'shoulders', 'biceps', 'triceps', 'forearms', 'quads', 'hamstrings', 'glutes', 'calves', 'core']
 
 function Rows({ title, rows }: { title: string; rows: ReportRow[] }) {
@@ -35,21 +39,25 @@ function Rows({ title, rows }: { title: string; rows: ReportRow[] }) {
 
 /** The week's gym and diet in plain figures, beside the week before. Worked out on this device. */
 export function WeekReportCard({ start }: { start: DateStr }) {
-  const { today, habits, index, settings } = useCore()
+  const { today, habits, index, settings, weekStart } = useCore()
   const sets = useLive(() => db.set_logs.toArray(), [], NO_SETS)
   const sessions = useLive(() => db.sessions.toArray(), [], NO_SESSIONS)
   const exercises = useLive(() => db.exercises.toArray(), [], NO_EXERCISES)
   const meals = useLive(() => db.meals.toArray(), [], NO_MEALS)
   const weights = useLive(() => db.weight_entries.toArray(), [], NO_WEIGHTS)
+  // Only the ticks that carry a reason: a few rows, read without a cursor.
+  const reasoned = useLive(async () => (await db.entries.where('date').between(start, addDays(start, 6), true, true).toArray()).filter((entry) => entry.reason), [start], NO_ENTRIES)
+  const isThisWeek = start === weekStartOf(today, weekStart)
+  const weighedThisWeek = weights.some((row) => row.date >= start && row.date <= addDays(start, 6))
   const report = useMemo(
     () =>
       weekReport({
-        start, today, habits, index, sessions, sets, meals, weights,
+        start, today, habits, index, sessions, sets, meals, weights, entries: reasoned,
         exercisesById: new Map(exercises.map((exercise) => [exercise.id!, exercise])),
         muscleNames: MUSCLES,
         unit: settings.weight_unit,
       }),
-    [start, today, habits, index, sessions, sets, meals, weights, exercises, settings.weight_unit],
+    [start, today, habits, index, sessions, sets, meals, weights, exercises, settings.weight_unit, reasoned],
   )
   return (
     <section className="flex flex-col gap-2">
@@ -60,7 +68,20 @@ export function WeekReportCard({ start }: { start: DateStr }) {
         <p className="text-[13px] leading-relaxed text-ink-2">
           {report.untrained.length ? `No sets: ${report.untrained.map((muscle) => MUSCLE_LABEL[muscle as MuscleGroup]).join(', ')}.` : 'Every muscle group has sets.'}
         </p>
+{isThisWeek && !weighedThisWeek && (
+          <p className="text-[13px] leading-relaxed text-ink-2">
+            No weight logged this week.{' '}
+            <Link to="/progress/weight" className="inline-flex min-h-11 items-center font-medium text-cream underline underline-offset-2">
+              Log weight
+            </Link>
+          </p>
+        )}
         <Rows title="Diet" rows={report.diet} />
+        {report.reasons.length > 0 && (
+          <p className="text-[13px] leading-relaxed text-ink-2">
+            Misses with a reason: {report.reasons.map((row) => `${REASON_LABEL[row.reason].toLowerCase()} ${row.count}`).join(', ')}.
+          </p>
+        )}
       </Card>
     </section>
   )

@@ -18,6 +18,8 @@ export interface CompletionIndex {
   learning: ReadonlySet<DateStr>
   reading: ReadonlySet<DateStr>
   journal: ReadonlySet<DateStr>
+  /** Days set aside as rest, travel or sick: nothing is due on them. */
+  daysOff: ReadonlySet<DateStr>
 }
 
 export interface CompletionInput {
@@ -25,6 +27,7 @@ export interface CompletionInput {
   sessions: readonly Pick<Session, 'date' | 'ended_at' | 'kinds'>[]
   learningSessions: readonly Pick<LearningSession, 'date' | 'lane'>[]
   journalDates: readonly DateStr[]
+  daysOff?: readonly DateStr[]
 }
 
 export function entryKey(habitId: number, date: DateStr): string {
@@ -61,7 +64,7 @@ export function buildCompletionIndex(input: CompletionInput): CompletionIndex {
     else learning.add(session.date)
   }
 
-  return { manual, values, workout, cardio, learning, reading, journal: new Set(input.journalDates) }
+  return { manual, values, workout, cardio, learning, reading, journal: new Set(input.journalDates), daysOff: new Set(input.daysOff ?? []) }
 }
 
 export const EMPTY_INDEX: CompletionIndex = buildCompletionIndex({

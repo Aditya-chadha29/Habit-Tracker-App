@@ -10,6 +10,8 @@ import { Button } from '../ui/Button'
 import { Field, Stepper, TextInput } from '../ui/Field'
 import { Modal } from '../ui/Overlay'
 import { useToast } from '../ui/Toast'
+import { dayStatus } from '../engine/status'
+import { ReasonChips } from './MissReason'
 
 const STEP: Record<string, number> = { count: 1, duration: 5, numeric: 0.5, quantity: 1 }
 
@@ -18,7 +20,7 @@ const STEP: Record<string, number> = { count: 1, duration: 5, numeric: 0.5, quan
  * how many minutes, and an optional note.
  */
 export function EntrySheet({ habit, date, onClose }: { habit: Habit; date: DateStr; onClose: () => void }) {
-  const { write, today } = useCore()
+  const { write, today, index } = useCore()
   const toast = useToast()
   const habitId = habit.id!
   const { data: entry, loaded } = useKeyedLiveQuery(`${habitId}|${date}`, async () => {
@@ -85,6 +87,11 @@ export function EntrySheet({ habit, date, onClose }: { habit: Habit; date: DateS
               size="lg"
             />
           </Field>
+          {dayStatus(habit, date, today, index) === 'missed' && (
+            <Field label="Reason for the miss" hint="Optional.">
+              <ReasonChips habitId={habitId} date={date} />
+            </Field>
+          )}
           <Field label="Note" hint="Optional.">
             <TextInput value={shownNote} onChange={(event) => setNote(event.target.value)} maxLength={200} />
           </Field>

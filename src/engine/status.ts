@@ -14,7 +14,7 @@ export function dayStatus(habit: Habit, date: DateStr, today: DateStr, index: Co
   const version = versionOn(habit, date)
   if (!version || !version.active) return 'inactive'
   if (date <= today && isComplete(habit, date, index)) return 'done'
-  if (version.day.kind === 'flexible' || !matchesDayRule(version.day, date)) return 'not_due'
+  if (version.day.kind === 'flexible' || !matchesDayRule(version.day, date) || index.daysOff.has(date)) return 'not_due'
   if (date > today) return 'upcoming'
   return date === today ? 'pending' : 'missed'
 }

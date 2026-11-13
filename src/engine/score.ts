@@ -43,9 +43,13 @@ function bump(map: Map<AreaId, Tally>, area: AreaId, done: number, due: number):
   }
 }
 
-/** The habits due on a date, in the order given, each with whether it was done. */
-export function dueItems(habits: readonly Habit[], date: DateStr, index: CompletionIndex): DayItem[] {
+/**
+ * The habits due on a date, in the order given, each with whether it was done. On a day off
+ * nothing is due; `includeDayOff` lists what would have been, for showing rows that stay tickable.
+ */
+export function dueItems(habits: readonly Habit[], date: DateStr, index: CompletionIndex, includeDayOff = false): DayItem[] {
   const items: DayItem[] = []
+  if (!includeDayOff && index.daysOff.has(date)) return items
   for (const habit of habits) {
     const version = versionOn(habit, date)
     if (!version || !version.active || !matchesDayRule(version.day, date)) continue

@@ -1,11 +1,12 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useQueryState } from '../../app/router'
 import { DayNav } from '../../components/DayNav'
 import { HabitGroup, NoteRow } from '../../components/HabitGroup'
 import { HabitRow } from '../../components/HabitRow'
 import { MealRow } from '../../components/MealRow'
+import { setDayMark } from '../../data/dayRepo'
 import { setManyDone } from '../../data/habitRepo'
-import type { DateStr } from '../../data/types'
+import type { DateStr, DayMarkKind } from '../../data/types'
 import { clockHHMM, isValidDateStr } from '../../engine/dates'
 import { describeTarget } from '../../engine/describe'
 import { firstEditableDate } from '../../engine/lock'
@@ -16,6 +17,7 @@ import { useCore } from '../../state/core'
 import { Button } from '../../ui/Button'
 import { Card } from '../../ui/Card'
 import { EmptyState } from '../../ui/EmptyState'
+import { Modal } from '../../ui/Overlay'
 import { Page } from '../../ui/Page'
 import { ProgressBar } from '../../ui/Progress'
 import { useToast } from '../../ui/Toast'
@@ -32,8 +34,15 @@ import { buildDayView, type DaySection } from './sections'
  *  pillar and group only. */
 const NO_ROUTINES: never[] = []
 
+const DAY_OFF: { kind: DayMarkKind; label: string; body: string }[] = [
+  { kind: 'rest', label: 'Rest', body: 'A planned day of rest.' },
+  { kind: 'travel', label: 'Travel', body: 'Away from the usual routine.' },
+  { kind: 'sick', label: 'Sick', body: 'Unwell.' },
+]
+
 export default function TodayScreen() {
-  const { today, settings, weekStart, areas, habits, index, write } = useCore()
+  const { today, settings, weekStart, areas, habits, index, write, dayMarks } = useCore()
+  const [choosingOff, setChoosingOff] = useState(false)
   const toast = useToast()
   const [rawDate, setDate] = useQueryState('d', today)
 
@@ -47,6 +56,11 @@ export default function TodayScreen() {
   const sections = view.sections
   const showFlexible = view.flexible.length > 0
   const pct = percent(score)
+  const off = dayMarks.get(date) ?? null
+  const markOff = (kind: DayMarkKind | null) => {
+    setChoosingOff(false)
+    setDayMark(date, kind, write).catch((error: unknown) => toast.show(error instanceof Error ? error.message : 'That could not be saved.', { tone: 'risk' }))
+  }
 
   const completeSection = async (section: DaySection) => {
     try {
@@ -69,6 +83,17 @@ export default function TodayScreen() {
       <div className="flex flex-col gap-5">
         <DayNav date={date} onChange={setDate} />
 
+        {off ? (
+          <Card className="flex items-center gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="text-[17px] font-semibold text-ink">Day off: {off}</p>
+              <p className="mt-1 text-[13px] leading-relaxed text-ink-3">Nothing is due, so nothing can be missed. Ticks still save but are not counted.</p>
+            </div>
+            <Button variant="secondary" onClick={() => setChoosingOff(true)}>
+              Change
+            </Button>
+          </Card>
+        ) : (
         <Card>
           <div className="flex items-baseline gap-2">
             <span className="tnum text-[32px] leading-none font-semibold tracking-tight text-ink">
@@ -79,9 +104,15 @@ export default function TodayScreen() {
           </div>
           <ProgressBar value={score.done} max={Math.max(1, score.due)} tone="accent" label={`${score.done} of ${score.due} done`} className="mt-3" />
         </Card>
+        )}
 
         {score.due > 0 && (
-          <p className="px-1 text-[13.5px] text-ink-2">{score.due - score.done > 0 ? `${score.due - score.done} left` : isToday ? 'All done for today' : 'All done on this day'}</p>
+          <div className="flex min-h-11 items-center justify-between gap-3 px-1">
+            <p className="text-[13.5px] text-ink-2">{score.due - score.done > 0 ? `${score.due - score.done} left` : isToday ? 'All done for today' : 'All done on this day'}</p>
+            <button type="button" onClick={() => setChoosingOff(true)} className="min-h-11 cursor-pointer text-[13px] text-ink-2 underline underline-offset-2">
+              Day off
+            </button>
+          </div>
         )}
 
         {sections.length === 0 && !showFlexible && (
@@ -97,7 +128,7 @@ export default function TodayScreen() {
             <HabitGroup
               key={section.key}
               title={section.title}
-              tally={section.tally}
+              tally={off ? undefined : section.tally}
               action={
                 section.routineId !== null && section.openTickable.length > 1 ? (
                   <Button variant="ghost" size="sm" onClick={() => completeSection(section)}>
@@ -140,6 +171,32 @@ export default function TodayScreen() {
           )}
         </div>
       </div>
+
+      <Modal open={choosingOff} onClose={() => setChoosingOff(false)} title="Day off" size="sm">
+        <div className="flex flex-col gap-2">
+          <p className="pb-1 text-[13.5px] leading-relaxed text-ink-2">On a day off nothing is due, so the day is left out of every score. Weekly targets are unchanged.</p>
+          {DAY_OFF.map((option) => (
+            <button
+              key={option.kind}
+              type="button"
+              aria-pressed={off === option.kind}
+              onClick={() => markOff(option.kind)}
+              className="flex min-h-[52px] cursor-pointer items-center gap-3 rounded-control bg-surface-2 px-4 text-left shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-surface-3"
+            >
+              <span className="min-w-0 flex-1">
+                <span className="block text-[14.5px] font-medium text-ink">{option.label}</span>
+                <span className="block text-[12.5px] text-ink-3">{option.body}</span>
+              </span>
+              {off === option.kind && <span className="text-[12.5px] font-medium text-ink-2">Chosen</span>}
+            </button>
+          ))}
+          {off && (
+            <Button variant="ghost" onClick={() => markOff(null)}>
+              Not a day off
+            </Button>
+          )}
+        </div>
+      </Modal>
     </Page>
   )
 }

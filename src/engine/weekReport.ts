@@ -1,4 +1,4 @@
-import type { DateStr, Exercise, Habit, Meal, Session, SetLog, WeightEntry } from '../data/types'
+import type { DateStr, Entry, Exercise, Habit, Meal, MissReason, Session, SetLog, WeightEntry } from '../data/types'
 import type { CompletionIndex } from './completion'
 import { addDays, dateRange, minDate } from './dates'
 import { muscleWeek } from './history'
@@ -19,6 +19,8 @@ export interface WeekReport {
   untrained: string[]
   /** Exercises whose best estimated one-rep max was beaten this week. */
   newBests: string[]
+  /** Misses this week that were given a reason, most frequent first. */
+  reasons: { reason: MissReason; count: number }[]
 }
 
 interface ReportInput {
@@ -32,6 +34,8 @@ interface ReportInput {
   meals: readonly Meal[]
   weights: readonly WeightEntry[]
   muscleNames: readonly string[]
+  /** Ticks, for the reasons given for misses. Optional: older callers pass none. */
+  entries?: readonly Pick<Entry, 'date' | 'done' | 'reason'>[]
   unit?: WeightUnit
 }
 
@@ -88,7 +92,15 @@ export function weekReport(input: ReportInput): WeekReport {
     if (before !== undefined && estimate > before && name) newBests.push(name)
   }
 
+  const reasonCounts = new Map<MissReason, number>()
+  for (const entry of input.entries ?? []) {
+    if (entry.done || !entry.reason || !within(entry.date, thisWeek)) continue
+    reasonCounts.set(entry.reason, (reasonCounts.get(entry.reason) ?? 0) + 1)
+  }
+  const reasons = [...reasonCounts].map(([reason, count]) => ({ reason, count })).sort((a, b) => b.count - a.count)
+
   return {
+    reasons,
     gym: [
       { label: 'Days trained', value: trained(thisWeek), before: trained(lastWeek) },
       { label: 'Work sets', value: work(thisWeek), before: work(lastWeek) },

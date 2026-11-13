@@ -15,6 +15,7 @@ import { Icon } from '../ui/icons'
 import { Tick } from '../ui/Tick'
 import { useToast } from '../ui/Toast'
 import { EntrySheet } from './EntrySheet'
+import { MissReasonSheet } from './MissReason'
 
 const STATUS_TEXT: Record<DayStatus, string> = {
   done: 'text-ok',
@@ -51,6 +52,7 @@ export function HabitRow({ habit, date, lead, sub, hint, trailing, quiet = false
   const { index, today, write, settings } = useCore()
   const toast = useToast()
   const [detailsOpen, setDetailsOpen] = useState(false)
+  const [reasonOpen, setReasonOpen] = useState(false)
   const version = versionOn(habit, date)
   if (!version || habit.id === undefined) return null
 
@@ -133,7 +135,11 @@ export function HabitRow({ habit, date, lead, sub, hint, trailing, quiet = false
           className="self-center"
         />
       )}
+      {status === 'missed' && editable && !(measured && tickable) && (
+        <IconButton icon="more" size="md" label={`Reason ${version.name} was missed`} onClick={() => setReasonOpen(true)} className="self-center" />
+      )}
       {trailing}
+      {reasonOpen && <MissReasonSheet habit={habit} date={date} onClose={() => setReasonOpen(false)} />}
       {detailsOpen && <EntrySheet habit={habit} date={date} onClose={() => setDetailsOpen(false)} />}
     </div>
   )

@@ -1,7 +1,7 @@
 import { db, type AppDb } from './db'
 import type {
   AreaId, CompletionSource, DateStr, DayRule, Dose, Entry, Habit, HabitKind, HabitVersion, Measure,
-  PeriodTarget, Polarity,
+  MissReason, PeriodTarget, Polarity,
 } from './types'
 import { assertEditable } from '../engine/lock'
 import { appendVersion, currentVersion, habitProblems, versionOn, type VersionPatch } from '../engine/timeline'
@@ -246,6 +246,18 @@ export async function toggleHabit(
     const next = !(existing?.done ?? false)
     await setHabitDone(habitId, date, next, ctx, details, database)
     return next
+  })
+}
+
+/** Records why a due day was missed, or clears it with null. Never changes whether it was done. */
+export async function setMissReason(habitId: number, date: DateStr, reason: MissReason | null, ctx: WriteContext, database: AppDb = db): Promise<void> {
+  assertEditable(date, ctx.today, ctx.windowDays)
+  await database.transaction('rw', database.habits, database.entries, async () => {
+    const habit = await database.habits.get(habitId)
+    if (!habit) throw new Error('That habit no longer exists.')
+    const existing = await database.entries.where('[habit_id+date]').equals([habitId, date]).first()
+    if (existing) await database.entries.update(existing.id!, { reason })
+    else if (reason !== null) await database.entries.add({ habit_id: habitId, date, done: false, value: null, note: '', time: null, reason })
   })
 }
 

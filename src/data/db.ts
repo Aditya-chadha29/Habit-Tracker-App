@@ -1,8 +1,8 @@
 import Dexie, { type DBCore, type EntityTable, type Table } from 'dexie'
 import { notifyLocalChange } from './changes'
 import type {
-  DailyNote, DayRoutine, Entry, Exercise, Habit, JournalEntry, LearningPillar, LearningResource,
-  LearningSession, LegacySupplement, LegacySupplementLog, Meal, MigrationRow, Quote, QuoteDay,
+  DailyNote, DayMark, DayPlan, DayRoutine, Entry, Exercise, Habit, JournalEntry, LearningPillar, LearningResource,
+  LearningSession, LegacySupplement, LegacySupplementLog, Meal, Measurement, MigrationRow, Quote, QuoteDay,
   RoutineItem, Session, SetLog, SettingRow, WeeklyRecord, WeeklyReview, WeightEntry, WorkoutRoutine,
 } from './types'
 
@@ -34,6 +34,10 @@ export type AppDb = Dexie & {
   learning_resources: EntityTable<LearningResource, 'id'>
   learning_sessions: EntityTable<LearningSession, 'id'>
   day_routines: EntityTable<DayRoutine, 'id'>
+  // v5
+  day_marks: Table<DayMark, string>
+  day_plans: Table<DayPlan, string>
+  measurements: EntityTable<Measurement, 'id'>
 }
 
 export const DB_NAME = 'habit-tracker'
@@ -93,6 +97,13 @@ export function createDb(name: string = DB_NAME): AppDb {
     learning_resources: '++id, status, pillar_id',
     learning_sessions: '++id, date, resource_id',
     day_routines: '++id, sort_order',
+  })
+
+  // v5 — days off, the plan for tomorrow, body measurements (the roadmap of 2026-11-13).
+  database.version(5).stores({
+    day_marks: 'date',
+    day_plans: 'date',
+    measurements: '++id, date',
   })
 
   // Another tab still holding the old schema open blocks this tab's upgrade indefinitely. Closing

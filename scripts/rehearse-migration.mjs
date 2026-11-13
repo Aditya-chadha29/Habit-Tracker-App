@@ -210,7 +210,7 @@ try {
 
   check('the app starts (no safe mode)', !/could not start|out of date/i.test(heading), heading.trim().slice(0, 60))
   check('no console errors on first start', problems.length === 0, problems.slice(0, 3).join(' | ').slice(0, 300))
-  check('database is at version 4', after.version === 40, `v${after.version / 10}`)
+  check('database is at version 5', after.version === 50, `v${after.version / 10}`)
 
   const ledger = (after.tables.migrations ?? []).map((row) => row.id).sort()
   check('every data step ran once', JSON.stringify(ledger) === JSON.stringify(LEDGER), ledger.join(', '))

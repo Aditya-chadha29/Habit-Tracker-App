@@ -128,7 +128,7 @@ export default function HabitHistoryScreen({ params }: RouteProps) {
       if (progress && progress.flexible) return { x: start, y: progress.done, met: progress.state === 'met', judged: progress.state === 'met' || progress.state === 'missed' }
       let done = 0
       for (let date = start; date <= period.end && date <= today; date = addDays(date, 1)) {
-        if (isDueOn(habit, date) && completedBy(habit, date, index) !== null) done += 1
+        if (isDueOn(habit, date, index.daysOff) && completedBy(habit, date, index) !== null) done += 1
       }
       return { x: start, y: done, met: false, judged: false }
     })

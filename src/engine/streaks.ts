@@ -29,7 +29,7 @@ function dayStreak(habit: Habit, today: DateStr, index: CompletionIndex): Streak
   let longest = 0
   let run = 0
   for (let date = habit.created_on; date <= today; date = addDays(date, 1)) {
-    if (!isDueOn(habit, date)) continue
+    if (!isDueOn(habit, date, index.daysOff)) continue
     if (isComplete(habit, date, index)) {
       run += 1
       if (run > longest) longest = run
@@ -92,7 +92,7 @@ export function consistency(
   const start = from < habit.created_on ? habit.created_on : from
   const end = to > today ? today : to
   for (let date = start; date <= end; date = addDays(date, 1)) {
-    if (!isDueOn(habit, date)) continue
+    if (!isDueOn(habit, date, index.daysOff)) continue
     const complete = isComplete(habit, date, index)
     if (date === today && !complete) continue
     due += 1
@@ -115,7 +115,7 @@ export function weekdayRates(
   const start = from < habit.created_on ? habit.created_on : from
   const end = to > today ? today : to
   for (let date = start; date <= end; date = addDays(date, 1)) {
-    if (!isDueOn(habit, date)) continue
+    if (!isDueOn(habit, date, index.daysOff)) continue
     const complete = isComplete(habit, date, index)
     if (date === today && !complete) continue
     const weekday = weekdayOf(date)

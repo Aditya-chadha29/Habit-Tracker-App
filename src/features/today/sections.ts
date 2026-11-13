@@ -57,7 +57,8 @@ export function buildDayView(
   /** One list in the order of the habits themselves (the order of the day), with no pillar groups. */
   flat = false,
 ): DayView {
-  const due = dueItems(habits, date, index)
+  // A day off still lists its rows, so they can be ticked; they are simply not scored.
+  const due = dueItems(habits, date, index, true)
   const byId = new Map(due.map((item) => [item.habit.id!, item]))
   const placed = new Set<number>()
   const sections: DaySection[] = []
