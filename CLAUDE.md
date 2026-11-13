@@ -116,3 +116,8 @@ Decisions the user has already made, so they are not re-opened:
 - Weights are always stored in kg; `settings.weight_unit` only changes what is shown and typed. Dumbbell weights are both dumbbells together.
 - From 2026-11-02 a finished session with no sets does not complete Gym. Unweighted reps on a weighted lift are not hard sets for muscles.
 - Train opens with the body map (hard sets this week; assisting muscles count for half). Review has a Gym and diet card computed on the device. No cloud agent was built, and no Firebase admin key exists.
+
+## Roadmap (2026-11-13)
+
+The next work is laid out step by step in [`docs/ROADMAP.md`](docs/ROADMAP.md). Follow it in order and tick phases off there.
+User decisions recorded with it: no PIN lock; Gym target stays 7 a week; Wake up at 4:00 AM stays a tick; dark theme only (the light theme is to be removed); the Journal stays and Plan tomorrow is added beside it.
