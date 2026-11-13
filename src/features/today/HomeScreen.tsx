@@ -19,7 +19,9 @@ import { useLearningNow } from '../learn/hooks'
 import { UpNext } from '../learn/UpNext'
 import { useQuoteOfDay } from '../quotes/hooks'
 import { useTodaysWorkout } from '../train/hooks'
+import { lastExportDay } from '../data/lastExport'
 import { PlanCard } from './PlanCard'
+import { SavedLine } from './SavedLine'
 
 /** The order the user asked for on Home: Learning and Exercise first, then Mind and Body. */
 const HOME_ORDER = ['learning', 'exercise', 'mind', 'body']
@@ -63,6 +65,9 @@ export default function HomeScreen() {
   const pillars = useLive(() => db.learning_pillars.toArray(), [], NO_PILLARS)
 
   const day = useMemo(() => dayScore(habits, today, index), [habits, today, index])
+  const signedInBefore = hasCloudAccount()
+  // The first day anything was tracked, for the backup reminder (shown only without a cloud copy).
+  const firstDay = habits.reduce<string | null>((first, habit) => (first === null || habit.created_on < first ? habit.created_on : first), null)
   const learningOpen = day.items.some((item) => item.version.area === 'learning' && !item.done)
   const tally = useMemo(() => weekTally(habits, week, today, index), [habits, week, today, index])
 
@@ -84,8 +89,10 @@ export default function HomeScreen() {
         lastWeekReviewed,
         sets,
         exercisesById,
+        lastExport: signedInBefore ? undefined : lastExportDay(),
+        firstDay,
       }),
-    [habits, index, today, hour, weekStart, settings, workout, learning, lastWeekReviewed, sets, exercisesById],
+    [habits, index, today, hour, weekStart, settings, workout, learning, lastWeekReviewed, sets, exercisesById, signedInBefore, firstDay],
   )
 
 
@@ -105,10 +112,14 @@ export default function HomeScreen() {
             </div>
           )}
 
-          {!hasCloudAccount() && (
+          {signedInBefore ? (
+            <div className="order-1 -my-2 flex lg:order-none">
+              <SavedLine />
+            </div>
+          ) : (
             <Link to="/data" className="order-1 flex min-h-[48px] items-center justify-between gap-3 rounded-card bg-surface px-4 py-2.5 shadow-card lg:order-none">
               <span className="min-w-0 text-[13.5px] leading-snug text-ink-2">Your record is not saved to the cloud from this device yet.</span>
-              <span className="shrink-0 text-[13.5px] font-medium text-accent-ink">Sign in</span>
+              <span className="shrink-0 text-[13.5px] font-medium text-cream underline underline-offset-2">Sign in to save</span>
             </Link>
           )}
           <nav aria-label="Scores" className="order-2 grid grid-cols-2 gap-2.5 lg:order-none lg:gap-4">

@@ -12,6 +12,7 @@ import { useToast } from '../../ui/Toast'
 import { BackupsCard } from './BackupsCard'
 import { CloudCard } from './CloudCard'
 import { ImportCard } from './ImportCard'
+import { rememberExport } from './lastExport'
 import { canShareFiles, downloadJson, formatBytes, shareJson } from './transfer'
 
 const NO_ROWS: MigrationRow[] = []
@@ -63,6 +64,7 @@ function ExportCard() {
         downloadJson(json, filename)
         toast.show('Download started. Check that the file has arrived before relying on it.')
       }
+      rememberExport(today)
     } catch {
       toast.show('The export could not be made. Nothing was changed.', { tone: 'risk' })
     } finally {
