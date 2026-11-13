@@ -429,11 +429,16 @@ lines, and tick the phase off below.
 
 ## Progress
 
-- [ ] Phase 0
-- [ ] Phase 1 (A B C D E F G H I)
-- [ ] Phase 2 (A B C D)
-- [ ] Phase 3 (A B C D E)
-- [ ] Phase 4 (A B C D E F)
-- [ ] Phase 5 (A B C D E)
-- [ ] Phase 6 (A B)
-- [ ] Phase 7 (A B C D E F G)
+Built and shipped to main on 2026-11-13, in one session, a phase per release.
+
+- [ ] Phase 0: still owed by the user (iPhone screenshots, confirmation that the cloud copy holds the history, a fresh export). Screens were checked in Edge and WebKit only.
+- [x] Phase 1 (A B C D E F G H I). 1-F was done for links and section actions and for Train and the workout screen; the other screens' primary buttons were not audited one by one. 1-I: contrast measured, nothing needed changing (ink-3 5.69:1 on surface, 6.05:1 on ground, 4.5:1 on surface-3; on-accent 8.66:1).
+- [x] Phase 2 (A B C D). Storage: Dexie version 5 adds day_marks, day_plans and measurements. The weigh-in prompt is inside the Gym and diet card.
+- [x] Phase 3 (A B C D E).
+- [x] Phase 4 (A B C D E F). Reorder is a sheet ("Change the order") with the drag handles, not a drag on the workout cards. Swap moves the not-yet-done sets into a block of their own when some sets of the exercise are already done.
+- [x] Phase 5 (A B C D E). Ledger step 019-water-by-the-glass.
+- [x] Phase 6 (A B).
+- [ ] Phase 7: A B C D done. The backup reminder (C) is shown only on a device that has never signed in to the cloud copy.
+  - E not done, on purpose: /nutrition is linked from the Body pillar, /learn/today is used by acceptance scenario C, /learn/library is linked from Progress and /learn/reading from the habit-source routes. Only the Priority line was removed. Removing these needs the links and the acceptance scenario moved first.
+  - F not done. Finding: the existing import merge cannot combine two devices. Rows in auto-numbered tables (ticks, sessions, sets) made on two devices take the same ids, and mergeBlockers rightly refuses them. A real combine needs clashing rows re-keyed (and set_logs.session_id remapped), a rule for deletions (a merge that only adds brings back anything deleted on one side), and a two-device test against a throwaway account. Until then the choose screen stays.
+  - G not done: no full-size originals were supplied.

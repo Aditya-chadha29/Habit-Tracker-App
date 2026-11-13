@@ -121,3 +121,15 @@ Decisions the user has already made, so they are not re-opened:
 
 The next work is laid out step by step in [`docs/ROADMAP.md`](docs/ROADMAP.md). Follow it in order and tick phases off there.
 User decisions recorded with it: no PIN lock; Gym target stays 7 a week; Wake up at 4:00 AM stays a tick; dark theme only (the light theme is to be removed); the Journal stays and Plan tomorrow is added beside it.
+
+## Built from the roadmap (2026-11-13)
+
+- Dark theme only: the light tokens, the Theme setting and the boot script choice are gone; `settings.theme` stays in the record for old exports. This replaces "Themes are System / Light / Dark only" and "Light theme is the same design" above.
+- A day off (`day_marks`: rest, travel, sick) has nothing due: `index.daysOff` is honoured by `dueItems`, `dayStatus` and `isDueOn`. It can only be set inside the editing window, so locked days and frozen weeks never change. Rows stay tickable on a day off.
+- Dexie is at version 5 (`day_marks`, `day_plans`, `measurements`). The ledger ends at `019-water-by-the-glass`; the next id is `020-...`.
+- The opening screen shows once a day. A tick shows an Undo toast (the one allowed acknowledgement besides the tick-pop). Meals rest as one line and open on tap.
+- Train opens on Start: today's routine carries the only filled button; other routines are rows. The kg/lb switch lives in Settings only.
+- Home also carries, when they apply: Up next for learning, the plan for tomorrow (from the evening hour) or "Planned for today", and one line saying whether the record is saved.
+- Text size is a zoom on `#root` (`--text-scale`), with the root height divided by the same factor.
+- Cloud merge was not built: see the finding under Phase 7 in `docs/ROADMAP.md` before attempting it.
+- Two source files with names differing only in case break the build on Windows (`whatsNew.ts` and `ChangesSheet.tsx` are named apart for this reason).
