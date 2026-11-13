@@ -21,7 +21,10 @@ import { areaTagline } from './areaMeta'
 /** Where each pillar's own tools live. */
 const DOORS: Record<string, { to: string; icon: IconName; title: string; detail: string }[]> = {
   mind: [{ to: '/journal', icon: 'journal', title: 'Journal', detail: 'Morning and evening entries' }],
-  body: [{ to: '/nutrition', icon: 'utensils', title: 'Nutrition', detail: 'Meals, supplements and food history' }],
+  body: [
+    { to: '/progress/weight', icon: 'scale', title: 'Body weight', detail: 'Weekly weigh-in, trend and measurements' },
+    { to: '/nutrition', icon: 'utensils', title: 'Nutrition', detail: 'Meals, supplements and food history' },
+  ],
   learning: [{ to: '/learn', icon: 'learn', title: 'Learn', detail: 'Today’s learning and the queue' }],
   exercise: [{ to: '/train', icon: 'train', title: 'Train', detail: 'Today’s workout, history and programme' }],
 }

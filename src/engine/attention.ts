@@ -1,6 +1,6 @@
 import type { DateStr, Exercise, Habit, SetLog } from '../data/types'
 import type { CompletionIndex } from './completion'
-import { daysBetween, weekdayIndex } from './dates'
+import { addDays, daysBetween, WEEKDAY_LONG, weekdayIndex } from './dates'
 import { periodOf, shiftPeriod } from './periods'
 import { muscleWeek } from './history'
 import { dueItems } from './score'
@@ -52,6 +52,9 @@ export interface AttentionInput {
   lastExport?: DateStr | null
   /** The first day anything was recorded. */
   firstDay?: DateStr | null
+  /** Weekday of the weekly weigh-in, and the days a weight was logged. Optional. */
+  weighInDay?: number
+  weightDates?: readonly DateStr[]
 }
 
 /** A muscle worked before but not in this many days is pointed out. */
@@ -182,6 +185,20 @@ export function attentionItems(input: AttentionInput): AttentionItem[] {
   if (input.lastExport !== undefined && input.firstDay && daysBetween(input.firstDay, today) > EXPORT_DAYS) {
     if (input.lastExport === null || daysBetween(input.lastExport, today) > EXPORT_DAYS) {
       items.push({ id: 'export', level: 'normal', title: 'Backup', detail: `No export downloaded in ${EXPORT_DAYS} days.`, to: '/data' })
+    }
+  }
+
+  // 4d. The weekly weigh-in: from its day until a weight has been logged on or after it.
+  if (input.weighInDay !== undefined && input.weightDates) {
+    const due = addDays(today, -((weekdayIndex(today) - input.weighInDay + 7) % 7))
+    if (!input.weightDates.some((date) => date >= due)) {
+      items.push({
+        id: 'weigh-in',
+        level: 'normal',
+        title: 'Weigh-in',
+        detail: due === today ? `${WEEKDAY_LONG[input.weighInDay]} is the weigh-in day. No weight logged yet.` : `No weight logged since ${WEEKDAY_LONG[input.weighInDay]}.`,
+        to: '/progress/weight',
+      })
     }
   }
 

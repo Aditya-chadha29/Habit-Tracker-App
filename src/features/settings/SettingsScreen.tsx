@@ -101,6 +101,17 @@ export default function SettingsScreen() {
               </Select>
             </span>
           </Row>
+          <Row title="Weigh-in day">
+            <span className="block w-[136px]">
+              <Select aria-label="Weigh-in day" value={settings.weigh_in_day} onChange={(event) => save({ weigh_in_day: Number(event.target.value) })}>
+                {WEEKDAY_LONG.map((day, i) => (
+                  <option key={day} value={i}>
+                    {day}
+                  </option>
+                ))}
+              </Select>
+            </span>
+          </Row>
           <Row title="A new day begins at">
             <span className="block w-[136px]">
               <Select aria-label="A new day begins at" value={settings.day_start_hour} onChange={(event) => save({ day_start_hour: Number(event.target.value) })}>

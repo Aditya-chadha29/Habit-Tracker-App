@@ -41,6 +41,8 @@ export const DEFAULT_SETTINGS: Settings = {
   data_format: DATA_FORMAT,
   eat_out_weekly_cap: null,
   goal_weight_kg: null,
+  // Sunday: the day the user weighs in.
+  weigh_in_day: 6,
   text_scale: 1,
 }
 
@@ -108,6 +110,7 @@ export function settingsFromRows(rows: readonly SettingRow[]): Settings {
     data_format: clampInt(get('data_format'), 1, 1_000_000, DATA_FORMAT),
     eat_out_weekly_cap: typeof cap === 'number' && Number.isInteger(cap) && cap >= 1 && cap <= 21 ? cap : null,
     goal_weight_kg: typeof goal === 'number' && goal >= 20 && goal <= 400 ? goal : null,
+    weigh_in_day: clampInt(get('weigh_in_day'), 0, 6, d.weigh_in_day),
     text_scale: scale === 1.1 || scale === 1.2 ? scale : 1,
   }
 }

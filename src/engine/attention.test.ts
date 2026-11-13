@@ -178,3 +178,17 @@ describe('the backup reminder', () => {
     expect(attentionItems(input({ today: '2026-10-07', lastExport: null, firstDay: '2026-09-20' }))).toEqual([])
   })
 })
+
+describe('the weekly weigh-in', () => {
+  // 2026-10-11 is a Sunday; weekday 6.
+  it('is pointed out from its day until a weight is logged', () => {
+    const sunday = attentionItems(input({ today: '2026-10-11', reviewDay: 0, weighInDay: 6, weightDates: ['2026-10-04'] }))
+    expect(sunday).toEqual([{ id: 'weigh-in', level: 'normal', title: 'Weigh-in', detail: 'Sunday is the weigh-in day. No weight logged yet.', to: '/progress/weight' }])
+    const tuesday = attentionItems(input({ today: '2026-10-13', weighInDay: 6, weightDates: ['2026-10-04'] }))
+    expect(tuesday[0].detail).toBe('No weight logged since Sunday.')
+  })
+
+  it('goes once a weight is logged on or after the day', () => {
+    expect(attentionItems(input({ today: '2026-10-13', weighInDay: 6, weightDates: ['2026-10-12'] }))).toEqual([])
+  })
+})

@@ -5,7 +5,7 @@ import { AttentionList } from '../../components/AttentionList'
 import { QuoteLine } from '../../components/QuoteLine'
 import { ScoreRing } from '../../components/ScoreRing'
 import { db } from '../../data/db'
-import type { Exercise, LearningPillar, LearningResource, SetLog } from '../../data/types'
+import type { DateStr, Exercise, LearningPillar, LearningResource, SetLog } from '../../data/types'
 import { attentionItems } from '../../engine/attention'
 import { formatDayTitle } from '../../engine/dates'
 import { periodOf, shiftPeriod } from '../../engine/periods'
@@ -32,6 +32,7 @@ const NO_SETS: SetLog[] = []
 const NO_EXERCISES: Exercise[] = []
 const NO_RESOURCES: LearningResource[] = []
 const NO_PILLARS: LearningPillar[] = []
+const NO_DATES: DateStr[] = []
 
 function greeting(hour: number, name: string): string {
   const part = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
@@ -63,6 +64,7 @@ export default function HomeScreen() {
   const exercisesById = useMemo(() => new Map(exercises.map((exercise) => [exercise.id!, exercise])), [exercises])
   const resources = useLive(() => db.learning_resources.toArray(), [], NO_RESOURCES)
   const pillars = useLive(() => db.learning_pillars.toArray(), [], NO_PILLARS)
+  const weightDates = useLive(async () => (await db.weight_entries.toArray()).map((row) => row.date), [], NO_DATES)
 
   const day = useMemo(() => dayScore(habits, today, index), [habits, today, index])
   const signedInBefore = hasCloudAccount()
@@ -91,8 +93,10 @@ export default function HomeScreen() {
         exercisesById,
         lastExport: signedInBefore ? undefined : lastExportDay(),
         firstDay,
+        weighInDay: settings.weigh_in_day,
+        weightDates,
       }),
-    [habits, index, today, hour, weekStart, settings, workout, learning, lastWeekReviewed, sets, exercisesById, signedInBefore, firstDay],
+    [habits, index, today, hour, weekStart, settings, workout, learning, lastWeekReviewed, sets, exercisesById, signedInBefore, firstDay, weightDates],
   )
 
 

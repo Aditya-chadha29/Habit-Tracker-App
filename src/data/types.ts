@@ -571,6 +571,8 @@ export interface Settings {
   eat_out_weekly_cap: number | null
   /** A weight to draw as a line on the weight chart, in kg; null = none. */
   goal_weight_kg: number | null
+  /** Weekday of the weekly weigh-in (0 = Monday … 6 = Sunday). */
+  weigh_in_day: number
   /** How large everything is drawn. */
   text_scale: 1 | 1.1 | 1.2
 }
