@@ -1,10 +1,15 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from '../../app/router'
 import { REASON_LABEL } from '../../components/MissReason'
 import { db } from '../../data/db'
 import type { DateStr, Entry, Exercise, Meal, MuscleGroup, Session, SetLog, WeightEntry } from '../../data/types'
 import { addDays, weekStartOf } from '../../engine/dates'
-import { weekReport, type ReportRow } from '../../engine/weekReport'
+import { formatRange, minDate } from '../../engine/dates'
+import { consistency } from '../../engine/streaks'
+import { currentVersion } from '../../engine/timeline'
+import { weekReport, weekSummaryText, type ReportRow } from '../../engine/weekReport'
+import { Button } from '../../ui/Button'
+import { useToast } from '../../ui/Toast'
 import { useCore } from '../../state/core'
 import { useLive } from '../../state/live'
 import { Card, SectionTitle } from '../../ui/Card'
@@ -47,6 +52,8 @@ export function WeekReportCard({ start }: { start: DateStr }) {
   const weights = useLive(() => db.weight_entries.toArray(), [], NO_WEIGHTS)
   // Only the ticks that carry a reason: a few rows, read without a cursor.
   const reasoned = useLive(async () => (await db.entries.where('date').between(start, addDays(start, 6), true, true).toArray()).filter((entry) => entry.reason), [start], NO_ENTRIES)
+  const toast = useToast()
+  const [manual, setManual] = useState<string | null>(null)
   const isThisWeek = start === weekStartOf(today, weekStart)
   const weighedThisWeek = weights.some((row) => row.date >= start && row.date <= addDays(start, 6))
   const report = useMemo(
@@ -59,6 +66,17 @@ export function WeekReportCard({ start }: { start: DateStr }) {
       }),
     [start, today, habits, index, sessions, sets, meals, weights, exercises, settings.weight_unit, reasoned],
   )
+  const copy = () => {
+    const end = minDate(addDays(start, 6), today)
+    const rows = habits
+      .map((habit) => ({ name: currentVersion(habit).name, ...consistency(habit, start, end, today, index) }))
+      .filter((row) => row.due > 0)
+    const text = weekSummaryText(`Week of ${formatRange(start, addDays(start, 6))}`, report, rows)
+    const fallback = () => setManual(text)
+    if (!navigator.clipboard?.writeText) return fallback()
+    navigator.clipboard.writeText(text).then(() => toast.show('Summary copied.', { tone: 'ok' }), fallback)
+  }
+
   return (
     <section className="flex flex-col gap-2">
       <SectionTitle>Gym and diet</SectionTitle>
@@ -81,6 +99,15 @@ export function WeekReportCard({ start }: { start: DateStr }) {
           <p className="text-[13px] leading-relaxed text-ink-2">
             Misses with a reason: {report.reasons.map((row) => `${REASON_LABEL[row.reason].toLowerCase()} ${row.count}`).join(', ')}.
           </p>
+        )}
+        <Button variant="secondary" icon="copy" onClick={copy} className="self-start">
+          Copy summary
+        </Button>
+        {manual !== null && (
+          <label className="flex flex-col gap-1.5 text-[12.5px] text-ink-3">
+            Copying was not allowed here. Select the text and copy it by hand.
+            <textarea readOnly value={manual} rows={8} onFocus={(event) => event.currentTarget.select()} className="w-full rounded-control bg-surface-2 p-3 text-[13px] text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)]" />
+          </label>
         )}
       </Card>
     </section>

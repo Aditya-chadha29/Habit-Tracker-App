@@ -9,6 +9,7 @@ import {
   streakLeaders, weeklySeries, type Comparison, type RangeKey,
 } from '../../engine/insights'
 import { MonthlyHistory } from './LongerViews'
+import { PatternsCard } from './PatternsCard'
 import { currentVersion, isRetired } from '../../engine/timeline'
 import { ReviewTabs } from '../../components/ReviewTabs'
 import { useCore } from '../../state/core'
@@ -155,6 +156,8 @@ export default function ProgressScreen() {
               )}
               {pointsWithData(series) >= 2 && <p className="text-[12px] text-ink-3">The last point is this week up to yesterday.</p>}
             </Card>
+
+            <PatternsCard />
 
             <section className="flex flex-col gap-2">
               <SectionTitle>Habits · {rangeInfo.label}</SectionTitle>

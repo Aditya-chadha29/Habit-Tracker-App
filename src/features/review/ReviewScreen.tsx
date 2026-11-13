@@ -188,6 +188,9 @@ export default function ReviewScreen({ params }: RouteProps) {
                   Go to this week
                 </Link>
               )}
+              <Link to={`/review/month/${start.slice(0, 7)}`} className="ml-auto inline-flex min-h-11 items-center text-[13px] font-medium text-cream underline underline-offset-2">
+                {start === current ? 'This month' : 'That month'}
+              </Link>
             </div>
 
             <Card className="flex flex-col gap-5">

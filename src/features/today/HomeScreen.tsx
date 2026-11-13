@@ -5,15 +5,18 @@ import { AttentionList } from '../../components/AttentionList'
 import { QuoteLine } from '../../components/QuoteLine'
 import { ScoreRing } from '../../components/ScoreRing'
 import { db } from '../../data/db'
+import type { Exercise, LearningPillar, LearningResource, SetLog } from '../../data/types'
 import { attentionItems } from '../../engine/attention'
 import { formatDayTitle } from '../../engine/dates'
 import { periodOf, shiftPeriod } from '../../engine/periods'
 import { dayScore, weekTally } from '../../engine/score'
 import { useCore } from '../../state/core'
+import { useLive } from '../../state/live'
 import { hasCloudAccount } from '../../sync/state'
 import { areaTone } from '../../ui/Chip'
 import { Page } from '../../ui/Page'
 import { useLearningNow } from '../learn/hooks'
+import { UpNext } from '../learn/UpNext'
 import { useQuoteOfDay } from '../quotes/hooks'
 import { useTodaysWorkout } from '../train/hooks'
 import { PlanCard } from './PlanCard'
@@ -23,6 +26,10 @@ const HOME_ORDER = ['learning', 'exercise', 'mind', 'body']
 const rank = (id: string): number => (HOME_ORDER.includes(id) ? HOME_ORDER.indexOf(id) : HOME_ORDER.length)
 /** One thing a day: shown as a tick when done, not as "0 / 1". */
 const SINGLE_ON_HOME: string[] = ['learning', 'exercise']
+const NO_SETS: SetLog[] = []
+const NO_EXERCISES: Exercise[] = []
+const NO_RESOURCES: LearningResource[] = []
+const NO_PILLARS: LearningPillar[] = []
 
 function greeting(hour: number, name: string): string {
   const part = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
@@ -49,7 +56,14 @@ export default function HomeScreen() {
       return [review.reflection_good, review.reflection_bad, review.reflection_learned, review.reflection_change].some((text) => text.trim() !== '')
     }, [lastWeekStart]) ?? true
 
+  const sets = useLive(() => db.set_logs.toArray(), [], NO_SETS)
+  const exercises = useLive(() => db.exercises.toArray(), [], NO_EXERCISES)
+  const exercisesById = useMemo(() => new Map(exercises.map((exercise) => [exercise.id!, exercise])), [exercises])
+  const resources = useLive(() => db.learning_resources.toArray(), [], NO_RESOURCES)
+  const pillars = useLive(() => db.learning_pillars.toArray(), [], NO_PILLARS)
+
   const day = useMemo(() => dayScore(habits, today, index), [habits, today, index])
+  const learningOpen = day.items.some((item) => item.version.area === 'learning' && !item.done)
   const tally = useMemo(() => weekTally(habits, week, today, index), [habits, week, today, index])
 
   const attention = useMemo(
@@ -68,8 +82,10 @@ export default function HomeScreen() {
             ? { title: learning.current.title, daysInProgress: learning.currentDaysInProgress, staleDays: settings.learning_stale_days }
             : null,
         lastWeekReviewed,
+        sets,
+        exercisesById,
       }),
-    [habits, index, today, hour, weekStart, settings, workout, learning, lastWeekReviewed],
+    [habits, index, today, hour, weekStart, settings, workout, learning, lastWeekReviewed, sets, exercisesById],
   )
 
 
@@ -111,6 +127,12 @@ export default function HomeScreen() {
               )
             })}
           </nav>
+
+          {learningOpen && (
+            <div className="order-3 empty:hidden lg:order-none">
+              <UpNext resources={resources} pillars={pillars} />
+            </div>
+          )}
 
           <div className="order-3 empty:hidden lg:order-none">
             <PlanCard />

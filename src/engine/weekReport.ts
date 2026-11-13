@@ -53,6 +53,20 @@ function doneOfDue(input: ReportInput, days: readonly DateStr[], match: (item: R
   return due ? `${done} of ${due}` : '—'
 }
 
+/** The report as plain text to paste elsewhere: the same labels and numbers as on screen. */
+export function weekSummaryText(title: string, report: WeekReport, habits: readonly { name: string; done: number; due: number }[]): string {
+  const lines: string[] = [title, '', 'Gym']
+  for (const row of report.gym) lines.push(`${row.label}: ${row.value} (week before ${row.before})`)
+  if (report.newBests.length) lines.push(`New bests: ${report.newBests.join(', ')}`)
+  lines.push('', 'Diet')
+  for (const row of report.diet) lines.push(`${row.label}: ${row.value} (week before ${row.before})`)
+  if (habits.length) {
+    lines.push('', 'Habits')
+    for (const habit of habits) lines.push(`${habit.name}: ${habit.done} of ${habit.due}`)
+  }
+  return lines.join('\n')
+}
+
 /** The week so far beside the whole week before. Every figure is read from the record. */
 export function weekReport(input: ReportInput): WeekReport {
   const { start, today } = input

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { habit, indexOf, ticks, version } from '../testing/builders'
+import type { Exercise, SetLog } from '../data/types'
 import { attentionItems, type AttentionInput } from './attention'
 
 const hair = () => habit({ id: 12, name: 'Hair oiling', from: '2026-09-28', day: { kind: 'flexible' }, target: { per: 'week', count: 2 } })
@@ -151,5 +152,29 @@ describe('learning and review', () => {
       }),
     )
     expect(items.map((i) => i.level)).toEqual(['at_risk', 'attention', 'normal', 'normal'])
+  })
+})
+
+describe('muscles that have gone untrained', () => {
+  const squat = { id: 1, name: 'Squat', primary_muscle: 'quads', kind: 'weight_reps' } as Exercise
+  const curl = { id: 2, name: 'Leg curl', primary_muscle: 'hamstrings', kind: 'weight_reps' } as Exercise
+  const set = (exercise_id: number, date: string) => ({ exercise_id, date, weight_kg: 40, reps: 10, rir: null, done: true, kind: 'work' }) as SetLog
+  const byId = new Map([[1, squat], [2, curl]])
+
+  it('names a muscle worked before but not in fourteen days, and leaves out one never trained', () => {
+    const items = attentionItems(input({ today: '2026-10-07', sets: [set(1, '2026-10-05'), set(2, '2026-09-20')], exercisesById: byId }))
+    expect(items).toEqual([{ id: 'untrained', level: 'normal', title: 'Not trained in 14 days', detail: 'Hamstrings.', to: '/train' }])
+  })
+
+  it('says nothing when everything was trained recently', () => {
+    expect(attentionItems(input({ today: '2026-10-07', sets: [set(1, '2026-10-05'), set(2, '2026-09-30')], exercisesById: byId }))).toEqual([])
+  })
+})
+
+describe('the backup reminder', () => {
+  it('appears after thirty days without an export, once the record is a month old', () => {
+    expect(attentionItems(input({ today: '2026-10-07', lastExport: null, firstDay: '2026-08-01' })).map((item) => item.id)).toEqual(['export'])
+    expect(attentionItems(input({ today: '2026-10-07', lastExport: '2026-09-30', firstDay: '2026-08-01' }))).toEqual([])
+    expect(attentionItems(input({ today: '2026-10-07', lastExport: null, firstDay: '2026-09-20' }))).toEqual([])
   })
 })

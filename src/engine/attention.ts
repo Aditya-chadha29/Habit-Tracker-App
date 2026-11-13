@@ -1,7 +1,8 @@
-import type { DateStr, Habit } from '../data/types'
+import type { DateStr, Exercise, Habit, SetLog } from '../data/types'
 import type { CompletionIndex } from './completion'
 import { daysBetween, weekdayIndex } from './dates'
 import { periodOf, shiftPeriod } from './periods'
+import { muscleWeek } from './history'
 import { dueItems } from './score'
 import { daysLeftPhrase, remainingPhrase, targetsFor } from './targets'
 import { currentVersion, isRetired } from './timeline'
@@ -44,7 +45,19 @@ export interface AttentionInput {
   learning: { title: string; daysInProgress: number; staleDays: number } | null
   /** Whether last week's review already has a reflection written. */
   lastWeekReviewed: boolean
+  /** The training log, for muscles that have gone untrained. Optional. */
+  sets?: readonly SetLog[]
+  exercisesById?: ReadonlyMap<number, Exercise>
+  /** Date of the last export downloaded on this device, or null. Undefined: not looked at. */
+  lastExport?: DateStr | null
+  /** The first day anything was recorded. */
+  firstDay?: DateStr | null
 }
+
+/** A muscle worked before but not in this many days is pointed out. */
+export const UNTRAINED_DAYS = 14
+/** An export older than this is pointed out. */
+export const EXPORT_DAYS = 30
 
 const ORDER: Record<AttentionLevel, number> = { at_risk: 0, missed: 1, attention: 2, normal: 3 }
 
@@ -152,6 +165,24 @@ export function attentionItems(input: AttentionInput): AttentionItem[] {
       detail: `In progress for ${plural(input.learning.daysInProgress, 'day', 'days')}.`,
       to: '/learn',
     })
+  }
+
+  // 4b. Muscles that have been trained before but not in the last two weeks: one combined line.
+  if (input.sets && input.exercisesById) {
+    const stale = muscleWeek(input.sets, input.exercisesById, '0000-01-01', today)
+      .filter((row) => daysBetween(row.last, today) >= UNTRAINED_DAYS)
+      .map((row) => row.muscle as string)
+    if (stale.length) {
+      const names = stale.join(', ')
+      items.push({ id: 'untrained', level: 'normal', title: `Not trained in ${UNTRAINED_DAYS} days`, detail: `${names.charAt(0).toUpperCase()}${names.slice(1)}.`, to: '/train' })
+    }
+  }
+
+  // 4c. No export downloaded for a month, once there is a month of record to lose.
+  if (input.lastExport !== undefined && input.firstDay && daysBetween(input.firstDay, today) > EXPORT_DAYS) {
+    if (input.lastExport === null || daysBetween(input.lastExport, today) > EXPORT_DAYS) {
+      items.push({ id: 'export', level: 'normal', title: 'Backup', detail: `No export downloaded in ${EXPORT_DAYS} days.`, to: '/data' })
+    }
   }
 
   // 5. The weekly review, on its day.
